@@ -9,9 +9,19 @@ const theme = {
 	textPrimary: '#0f1c2b',
 	textSecondary: '#4a5a6e',
 	textMuted: '#8a97a8',
+	textOnDark: '#ffffff',
+	textOnLight: '#0f1c2b',
 
 	// accent (deep navy)
 	accent: '#1b2a3b',
+
+	// buttons
+	buttonPrimaryBg: '#1b2a3b',
+	buttonPrimaryText: '#ffffff',
+
+	buttonSecondaryBg: '#eaeef4',
+	buttonSecondaryText: '#0f1c2b',
+	buttonSecondaryBorder: '#dde2ea',
 
 	// status
 	online: '#16a34a',

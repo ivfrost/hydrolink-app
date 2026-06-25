@@ -1,0 +1,22 @@
+import { create } from 'zustand'
+import { createJSONStorage, persist } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+
+interface OnboardingState {
+	hasOnboarded: boolean
+	toggleOnboarding: () => void
+}
+
+export const useOnboarding = create(
+	persist<OnboardingState>(
+		(set) => ({
+			hasOnboarded: false,
+			toggleOnboarding: () =>
+				set((state) => ({ hasOnboarded: !state.hasOnboarded })),
+		}),
+		{
+			name: 'oboarding-store',
+			storage: createJSONStorage(() => AsyncStorage),
+		},
+	),
+)

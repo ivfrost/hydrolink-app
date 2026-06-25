@@ -11,6 +11,9 @@ export default function Layout() {
 				tabBarStyle: {
 					backgroundColor: theme.card,
 					borderTopColor: theme.border,
+					paddingTop: 8,
+					paddingBottom: 12,
+					height: 90,
 				},
 				tabBarActiveTintColor: theme.accent,
 				tabBarInactiveTintColor: theme.textMuted,
