@@ -1,0 +1,78 @@
+import { theme } from '@/theme'
+import { Tabs } from 'expo-router'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { StyleSheet } from 'react-native'
+
+export default function Layout() {
+	return (
+		<Tabs
+			screenOptions={{
+				tabBarActiveTintColor: theme.stormyTeal,
+			}}
+		>
+			<Tabs.Screen
+				name="index"
+				options={{
+					tabBarIcon: ({ color, size }) => (
+						<MaterialCommunityIcons
+							name="view-dashboard-outline"
+							size={size}
+							color={color}
+						/>
+					),
+					title: 'Dashboard',
+					tabBarLabel: 'Dashboard',
+					tabBarLabelStyle: styles.label,
+				}}
+			/>
+			<Tabs.Screen
+				name="schedules"
+				options={{
+					tabBarIcon: ({ color, size }) => (
+						<MaterialCommunityIcons
+							name="calendar-blank-outline"
+							size={size}
+							color={color}
+						/>
+					),
+					title: 'Schedules',
+					tabBarLabel: 'Schedules',
+					tabBarLabelStyle: styles.label,
+				}}
+			/>
+			<Tabs.Screen
+				name="devices"
+				options={{
+					tabBarIcon: ({ color, size }) => (
+						<MaterialCommunityIcons name="antenna" size={size} color={color} />
+					),
+					title: 'Devices',
+					tabBarLabel: 'Devices',
+					tabBarLabelStyle: styles.label,
+				}}
+			/>
+			<Tabs.Screen
+				name="settings"
+				options={{
+					tabBarIcon: ({ color, size }) => (
+						<MaterialCommunityIcons
+							name="cog-outline"
+							size={size}
+							color={color}
+						/>
+					),
+					title: 'Settings',
+					tabBarLabel: 'Settings',
+					tabBarLabelStyle: styles.label,
+				}}
+			/>
+		</Tabs>
+	)
+}
+
+const styles = StyleSheet.create({
+	label: {
+		fontSize: 12,
+		fontWeight: 'semibold',
+	},
+})
