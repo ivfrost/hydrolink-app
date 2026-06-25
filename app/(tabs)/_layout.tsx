@@ -1,13 +1,19 @@
-import { theme } from '@/theme'
 import { Tabs } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { StyleSheet } from 'react-native'
+import { useTheme } from '@/theme'
 
 export default function Layout() {
+	const theme = useTheme()
 	return (
 		<Tabs
 			screenOptions={{
-				tabBarActiveTintColor: theme.stormyTeal,
+				tabBarStyle: {
+					backgroundColor: theme.card,
+					borderTopColor: theme.border,
+				},
+				tabBarActiveTintColor: theme.accent,
+				tabBarInactiveTintColor: theme.textMuted,
 			}}
 		>
 			<Tabs.Screen
