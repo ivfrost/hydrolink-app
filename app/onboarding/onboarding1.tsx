@@ -1,15 +1,17 @@
 import HydroButton from '@/components/HydroButton'
 import { useTheme } from '@/theme'
 import { useRouter } from 'expo-router'
-import { Text, StyleSheet, View } from 'react-native'
+import { Text, StyleSheet, View, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-devices_i15y.svg'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useEffect } from 'react'
+import * as SecureStore from 'expo-secure-store'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 export default function Onboarding1() {
 	const router = useRouter()
 	const theme = useTheme()
-
 	const styles = StyleSheet.create({
 		container: {
 			justifyContent: 'space-evenly',
@@ -48,6 +50,24 @@ export default function Onboarding1() {
 			lineHeight: 24,
 		},
 	})
+
+	interface LoginPayload {
+		email: string
+		password: string
+	}
+
+	interface LoginResponse {
+		accessToken: string
+		user: {
+			id: number
+			email: string
+		}
+	}
+
+	const API_URL =
+		Platform.OS === 'android'
+			? 'http://192.168.1.124:3000'
+			: 'http://localhost:3000'
 
 	const handleNextStep = () => {
 		router.push('/onboarding/onboarding2')

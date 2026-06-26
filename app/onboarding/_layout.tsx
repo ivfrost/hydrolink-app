@@ -21,6 +21,25 @@ export default function Layout() {
 			<Stack.Screen
 				name="onboarding2"
 				options={{
+					title: 'Sign In',
+					headerTransparent: true,
+					headerShadowVisible: false,
+					headerTitle: 'Back',
+					headerLeft: () => (
+						<TouchableOpacity
+							hitSlop={40}
+							onPress={() => router.back()}
+							style={{ marginRight: 16 }}
+						>
+							<Ionicons name="arrow-back" size={24} color="black" />
+						</TouchableOpacity>
+					),
+					animation: 'slide_from_right',
+				}}
+			/>
+			<Stack.Screen
+				name="onboarding3"
+				options={{
 					title: 'Link Device',
 					headerTransparent: true,
 					headerShadowVisible: false,

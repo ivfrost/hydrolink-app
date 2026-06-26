@@ -2,7 +2,7 @@ import { useTheme } from '@/theme'
 import { StyleSheet, Text, TouchableOpacity } from 'react-native'
 import * as Haptics from 'expo-haptics'
 
-interface HydroButtonProps {
+export interface HydroButtonProps {
 	label: string
 	variant?: 'primary' | 'secondary' | 'tertiary'
 	modifier?: ('tall' | 'full')[]

@@ -1,21 +1,18 @@
 import HydroButton from '@/components/HydroButton'
-import { useOnboarding } from '@/stores/onboardingStore'
 import { useTheme } from '@/theme'
-import { Text, StyleSheet, View } from 'react-native'
+import { useRouter } from 'expo-router'
+import { Text, StyleSheet, View, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import { LinearGradient } from 'expo-linear-gradient'
-import CurrentLocationIllustration from '@/assets/images/onboarding/undraw_current-location_c8qn.svg'
-import BottomSheet from '@gorhom/bottom-sheet'
-import { useRef } from 'react'
-import HydroBottomSheet from '@/components/HydroBottomSheet'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import HydroBottomSheetInput from '@/components/HydroBottomSheetInput'
+import { useEffect } from 'react'
+import * as SecureStore from 'expo-secure-store'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import HydroSubmitButton from '@/components/HydroSubmitButton'
 
 export default function Onboarding1() {
-	const toggleOnboarding = useOnboarding().toggleOnboarding
+	const router = useRouter()
 	const theme = useTheme()
-	const bottomSheetRef = useRef<BottomSheet>(null)
-
 	const styles = StyleSheet.create({
 		container: {
 			justifyContent: 'space-evenly',
@@ -25,7 +22,7 @@ export default function Onboarding1() {
 		heroGroup: {
 			justifyContent: 'center',
 			alignItems: 'center',
-			gap: 32,
+			gap: 22,
 		},
 		textContainer: {
 			justifyContent: 'center',
@@ -52,121 +49,55 @@ export default function Onboarding1() {
 			alignItems: 'center',
 			gap: 12,
 		},
-		inputLabel: {
-			fontSize: theme.fontSmall,
-			fontWeight: '500',
-			color: theme.textSecondary,
-			marginBottom: 8,
-		},
 	})
 
-	const handleSelectLinkMethod = () => {
-		bottomSheetRef.current?.expand()
-		toggleOnboarding()
+	interface LoginPayload {
+		email: string
+		password: string
 	}
+
+	interface LoginResponse {
+		accessToken: string
+		user: {
+			id: number
+			email: string
+		}
+	}
+
+	const API_URL =
+		Platform.OS === 'android'
+			? 'http://192.168.1.124:3000'
+			: 'http://localhost:3000'
+
+	const handleNextStep = () => {
+		// TODO: Push next onboard screen on successful login
+		// login()
+		router.push('/onboarding/onboarding3')
+	}
+
+	const login = () => {}
 
 	return (
 		<LinearGradient colors={['#f4f6f9', '#eef1fb']} style={{ flex: 1 }}>
 			<SafeAreaView style={styles.container}>
 				<View style={styles.heroGroup}>
-					<CurrentLocationIllustration
-						width={300}
-						height={300}
+					<LoginIllustration
+						width={260}
+						height={290}
 						color={theme.illustrationPrimary}
 					/>
 					<View style={styles.textContainer}>
-						<Text style={styles.textTitle}>Add your first area</Text>
+						<Text style={styles.textTitle}>Sign in to your account</Text>
 						<Text style={styles.textSubtitle}>
-							Each device controls one area of your irrigation system. Scan the
-							QR code or enter your{' '}
-							<Text
-								style={{
-									fontVariant: ['small-caps'],
-									color: theme.textPrimary,
-									fontWeight: '500',
-								}}
-							>
-								Link Code
-							</Text>{' '}
-							to connect your device.
+							Your account keeps your devices together and under your control.
+							An account is required to continue. You can create one for free.
 						</Text>
 					</View>
 				</View>
 				<View style={styles.buttonGroup}>
-					<HydroButton label="Add Area" onPress={handleSelectLinkMethod} />
-					<HydroButton
-						label="Skip for now"
-						onPress={handleSelectLinkMethod}
-						variant="secondary"
-					/>
+					<HydroButton label="Sign In" onPress={handleNextStep} />
+					<HydroButton label="Create Account" variant="secondary" />
 				</View>
-				<HydroBottomSheet ref={bottomSheetRef} snapPoints={[400]}>
-					<HydroButton
-						label="Scan QR Code"
-						modifier={['tall', 'full']}
-						icon={
-							<MaterialIcons
-								name="qr-code-scanner"
-								size={24}
-								color={theme.buttonPrimaryText}
-							/>
-						}
-						onPress={() => bottomSheetRef.current?.close()}
-					/>
-					<View
-						style={{
-							flexDirection: 'row',
-							width: '100%',
-							alignItems: 'center',
-							gap: 20,
-							marginVertical: 10,
-						}}
-					>
-						<View
-							style={{
-								backgroundColor: theme.border,
-								height: 2,
-								flex: 1,
-							}}
-						/>
-						<Text style={{ color: theme.textSecondary }}>
-							or enter manually
-						</Text>
-						<View
-							style={{
-								width: 'auto',
-								backgroundColor: theme.border,
-								height: 2,
-								flex: 1,
-							}}
-						/>
-					</View>
-					<View style={{ gap: 20 }}>
-						<View>
-							<Text style={styles.inputLabel}>Link code</Text>
-							<HydroBottomSheetInput
-								placeholder="Enter link code"
-								value=""
-								onChangeText={() => {}}
-								onSubmitEditing={() => {}}
-							/>
-						</View>
-						<HydroButton
-							label="Submit"
-							variant="secondary"
-							modifier={['tall', 'full']}
-							icon={
-								<MaterialIcons
-									name="arrow-forward"
-									size={24}
-									color={theme.buttonSecondaryText}
-								/>
-							}
-							iconPosition="right"
-							onPress={() => bottomSheetRef.current?.close()}
-						/>
-					</View>
-				</HydroBottomSheet>
 			</SafeAreaView>
 		</LinearGradient>
 	)

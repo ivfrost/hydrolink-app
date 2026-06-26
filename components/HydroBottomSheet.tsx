@@ -2,6 +2,7 @@ import { useTheme } from '@/theme'
 import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetView,
+	useBottomSheetSpringConfigs,
 } from '@gorhom/bottom-sheet'
 import { BottomSheetDefaultBackdropProps } from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
@@ -21,6 +22,13 @@ export default function HydroBottomSheet({
 	style,
 }: HydroBottomSheetProps) {
 	const theme = useTheme()
+
+	const animConfigs = useBottomSheetSpringConfigs({
+		mass: 1,
+		damping: 35,
+		stiffness: 250,
+		overshootClamping: true,
+	})
 
 	const renderBackdrop = useCallback(
 		(props: BottomSheetDefaultBackdropProps) => (
@@ -45,6 +53,7 @@ export default function HydroBottomSheet({
 			keyboardBlurBehavior="restore"
 			backdropComponent={renderBackdrop}
 			backgroundStyle={{ backgroundColor: theme.card }}
+			animationConfigs={animConfigs}
 		>
 			<BottomSheetView
 				style={[{ marginHorizontal: 20, marginVertical: 20, gap: 14 }, style]}
