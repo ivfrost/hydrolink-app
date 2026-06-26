@@ -8,7 +8,7 @@ export default function SettingsScreen() {
 	const router = useRouter()
 	const resetOnboarding = () => {
 		toggleOnboarding()
-		router.replace('/onboarding/step1')
+		router.replace('/onboarding/onboarding1')
 	}
 	return (
 		<View>

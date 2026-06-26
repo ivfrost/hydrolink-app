@@ -1,5 +1,4 @@
 import HydroButton from '@/components/HydroButton'
-import { useOnboarding } from '@/stores/onboardingStore'
 import { useTheme } from '@/theme'
 import { useRouter } from 'expo-router'
 import { Text, StyleSheet, View } from 'react-native'
@@ -8,7 +7,6 @@ import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-device
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function Onboarding1() {
-	const toggleOnboarding = useOnboarding().toggleOnboarding
 	const router = useRouter()
 	const theme = useTheme()
 
@@ -27,6 +25,7 @@ export default function Onboarding1() {
 		heroGroup: {
 			justifyContent: 'center',
 			alignItems: 'center',
+			gap: 22,
 		},
 		textContainer: {
 			justifyContent: 'center',
@@ -46,12 +45,12 @@ export default function Onboarding1() {
 			textAlign: 'center',
 			color: theme.textSecondary,
 			paddingHorizontal: 20,
+			lineHeight: 24,
 		},
 	})
 
 	const handleNextStep = () => {
-		router.replace('/')
-		toggleOnboarding()
+		router.push('/onboarding/onboarding2')
 	}
 
 	return (
@@ -61,7 +60,7 @@ export default function Onboarding1() {
 				<View style={styles.heroGroup}>
 					<WebDevicesIllustration
 						width={300}
-						height={300}
+						height={230}
 						color={theme.illustrationPrimary}
 					/>
 					<View style={styles.textContainer}>
@@ -72,7 +71,7 @@ export default function Onboarding1() {
 						</Text>
 					</View>
 				</View>
-				<HydroButton label="Let's get started" onPress={handleNextStep} />
+				<HydroButton label="Let's Get Started" onPress={handleNextStep} />
 			</SafeAreaView>
 		</LinearGradient>
 	)

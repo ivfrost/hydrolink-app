@@ -1,49 +1,59 @@
 const theme = {
-	// surfaces
-	background: '#f4f6f9',
+	// neutrals
+	background: '#f6f8fb',
 	card: '#ffffff',
-	surface: '#eaeef4', // inputs, pressed states
-	border: '#dde2ea',
+	surface: '#edf1f5',
+	border: '#d7dee5',
+	borderActive: '#4a6a8a',
 
 	// text
-	textPrimary: '#0f1c2b',
-	textSecondary: '#4a5a6e',
+	textPrimary: '#1b2a3b',
+	textSecondary: '#4d5a66',
 	textMuted: '#8a97a8',
 	textOnDark: '#ffffff',
-	textOnLight: '#0f1c2b',
+	textOnLight: '#1b2a3b',
+
 	fontExtraLarge: 42,
 	fontLarge: 28,
 	fontBase: 18,
+	fontSmall: 16,
 
-	// accent (deep navy)
+	// accent
 	accent: '#1b2a3b',
+	accentLight: '#32465a',
+	accentBlue: '#4a6a8a',
 
 	// buttons
 	buttonPrimaryBg: '#1b2a3b',
 	buttonPrimaryText: '#ffffff',
 
-	buttonSecondaryBg: '#eaeef4',
-	buttonSecondaryText: '#0f1c2b',
-	buttonSecondaryBorder: '#dde2ea',
+	buttonSecondaryBg: '#edf1f5',
+	buttonSecondaryText: '#1b2a3b',
+	buttonSecondaryBorder: '#d7dee5',
+
+	buttonTertiaryText: '#4d5a66',
+
+	// sizing
+	inputBorderRadius: 6,
+	buttonBorderRadius: 6,
 
 	// status
-	online: '#16a34a',
-	warning: '#d97706',
-	fault: '#dc2626',
+	online: '#3a8f55',
+	warning: '#c58a2a',
+	fault: '#c44f3f',
 	offline: '#8a97a8',
-	scheduled: '#4f6af0',
+	scheduled: '#1b2a3b',
 
-	// status backgrounds (for pills/banners)
-	onlineBg: '#e8f8ef',
-	warningBg: '#fff8e6',
-	faultBg: '#fef0f0',
-	scheduledBg: '#eff2ff',
+	// status backgrounds
+	onlineBg: '#eaf6ef',
+	warningBg: '#faf3e6',
+	faultBg: '#f8eceb',
+	scheduledBg: '#e9edf3',
 
 	// illustrations
-	illustrationPrimary: '#4f6af0',
+	illustrationPrimary: '#4a6a8a',
 	illustrationDark: '#1b2a3b',
-	illustrationLight: '#a6b3f5',
-	illustrationBloom: '#6c5fd6',
+	illustrationLight: '#bcc7d4',
 } as const
 
 interface ThemeProps {
