@@ -23,6 +23,8 @@ export default function HydroButton({
 				variant === 'primary' ? theme.buttonPrimaryBg : theme.buttonSecondaryBg,
 		},
 		buttonText: {
+			fontSize: theme.fontBase,
+			fontWeight: '500',
 			color:
 				variant === 'primary'
 					? theme.buttonPrimaryText

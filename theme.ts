@@ -11,6 +11,9 @@ const theme = {
 	textMuted: '#8a97a8',
 	textOnDark: '#ffffff',
 	textOnLight: '#0f1c2b',
+	fontExtraLarge: 42,
+	fontLarge: 28,
+	fontBase: 18,
 
 	// accent (deep navy)
 	accent: '#1b2a3b',
@@ -35,6 +38,12 @@ const theme = {
 	warningBg: '#fff8e6',
 	faultBg: '#fef0f0',
 	scheduledBg: '#eff2ff',
+
+	// illustrations
+	illustrationPrimary: '#4f6af0',
+	illustrationDark: '#1b2a3b',
+	illustrationLight: '#a6b3f5',
+	illustrationBloom: '#6c5fd6',
 } as const
 
 interface ThemeProps {
