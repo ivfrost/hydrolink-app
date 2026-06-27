@@ -23,6 +23,7 @@ export default function Onboarding1() {
 			fontWeight: '500',
 			textAlign: 'center',
 			color: theme.accent,
+			letterSpacing: -0.4,
 		},
 		heroGroup: {
 			justifyContent: 'center',

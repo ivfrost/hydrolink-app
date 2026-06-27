@@ -144,12 +144,12 @@ export default function Onboarding1() {
 					</View>
 					<View style={{ gap: 20 }}>
 						<View>
-							<Text style={styles.inputLabel}>Link code</Text>
 							<HydroBottomSheetInput
-								placeholder="Enter link code"
+								label="Enter link code"
 								value=""
 								onChangeText={() => {}}
 								onSubmitEditing={() => {}}
+								labelBackground={theme.card}
 							/>
 						</View>
 						<HydroSubmitButton

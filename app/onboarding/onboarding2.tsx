@@ -5,10 +5,6 @@ import { Text, StyleSheet, View, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useEffect } from 'react'
-import * as SecureStore from 'expo-secure-store'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import HydroSubmitButton from '@/components/HydroSubmitButton'
 
 export default function Onboarding1() {
 	const router = useRouter()
@@ -51,32 +47,6 @@ export default function Onboarding1() {
 		},
 	})
 
-	interface LoginPayload {
-		email: string
-		password: string
-	}
-
-	interface LoginResponse {
-		accessToken: string
-		user: {
-			id: number
-			email: string
-		}
-	}
-
-	const API_URL =
-		Platform.OS === 'android'
-			? 'http://192.168.1.124:3000'
-			: 'http://localhost:3000'
-
-	const handleNextStep = () => {
-		// TODO: Push next onboard screen on successful login
-		// login()
-		router.push('/onboarding/onboarding3')
-	}
-
-	const login = () => {}
-
 	return (
 		<LinearGradient colors={['#f4f6f9', '#eef1fb']} style={{ flex: 1 }}>
 			<SafeAreaView style={styles.container}>
@@ -95,8 +65,15 @@ export default function Onboarding1() {
 					</View>
 				</View>
 				<View style={styles.buttonGroup}>
-					<HydroButton label="Sign In" onPress={handleNextStep} />
-					<HydroButton label="Create Account" variant="secondary" />
+					<HydroButton
+						label="Sign In"
+						onPress={() => router.push('/(auth)/signin')}
+					/>
+					<HydroButton
+						label="Create Account"
+						variant="secondary"
+						onPress={() => router.push('/(auth)/register')}
+					/>
 				</View>
 			</SafeAreaView>
 		</LinearGradient>

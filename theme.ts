@@ -1,7 +1,9 @@
 const theme = {
 	// neutrals
 	background: '#f6f8fb',
+	inputBackground: '#ffffff',
 	card: '#ffffff',
+	modalBackground: '#ffffff',
 	surface: '#edf1f5',
 	border: '#d7dee5',
 	borderActive: '#4a6a8a',
@@ -14,7 +16,7 @@ const theme = {
 	textOnLight: '#1b2a3b',
 
 	fontExtraLarge: 42,
-	fontLarge: 28,
+	fontLarge: 30,
 	fontBase: 18,
 	fontSmall: 16,
 
@@ -22,6 +24,7 @@ const theme = {
 	accent: '#1b2a3b',
 	accentLight: '#32465a',
 	accentBlue: '#4a6a8a',
+	accentBlueLight: '#dde6ef',
 
 	// buttons
 	buttonPrimaryBg: '#1b2a3b',

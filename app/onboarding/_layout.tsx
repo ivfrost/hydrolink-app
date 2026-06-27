@@ -1,13 +1,11 @@
-import { Stack, useRouter } from 'expo-router'
-import { TouchableOpacity } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { Stack } from 'expo-router'
 
 export default function Layout() {
-	const router = useRouter()
 	return (
 		<Stack
 			screenOptions={{
-				headerShown: false,
+				headerShown: true,
+				animation: 'slide_from_right',
 			}}
 		>
 			<Stack.Screen
@@ -24,17 +22,6 @@ export default function Layout() {
 					title: 'Sign In',
 					headerTransparent: true,
 					headerShadowVisible: false,
-					headerTitle: 'Back',
-					headerLeft: () => (
-						<TouchableOpacity
-							hitSlop={40}
-							onPress={() => router.back()}
-							style={{ marginRight: 16 }}
-						>
-							<Ionicons name="arrow-back" size={24} color="black" />
-						</TouchableOpacity>
-					),
-					animation: 'slide_from_right',
 				}}
 			/>
 			<Stack.Screen
@@ -43,17 +30,6 @@ export default function Layout() {
 					title: 'Link Device',
 					headerTransparent: true,
 					headerShadowVisible: false,
-					headerTitle: 'Back',
-					headerLeft: () => (
-						<TouchableOpacity
-							hitSlop={40}
-							onPress={() => router.back()}
-							style={{ marginRight: 16 }}
-						>
-							<Ionicons name="arrow-back" size={24} color="black" />
-						</TouchableOpacity>
-					),
-					animation: 'slide_from_right',
 				}}
 			/>
 		</Stack>

@@ -8,7 +8,7 @@ export interface HydroButtonProps {
 	modifier?: ('tall' | 'full')[]
 	icon?: React.ReactNode
 	iconPosition?: 'left' | 'right'
-	onPress?: () => void
+	onPress?: () => any
 }
 
 export default function HydroButton({
@@ -29,7 +29,7 @@ export default function HydroButton({
 
 	const styles = StyleSheet.create({
 		button: {
-			borderRadius: 6,
+			borderRadius: theme.buttonBorderRadius,
 			paddingVertical: isTall ? 22 : 14,
 			paddingHorizontal: 20,
 			alignItems: 'center',
