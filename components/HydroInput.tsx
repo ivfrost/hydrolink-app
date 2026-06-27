@@ -1,8 +1,8 @@
 import { useTheme } from '@/theme'
 import { useRef, useState } from 'react'
-import { Animated, TextInput, TextInputProps, View, Text } from 'react-native'
+import { Animated, TextInput, TextInputProps, View } from 'react-native'
 
-interface HydroInputProps extends TextInputProps {
+export interface HydroInputProps extends TextInputProps {
 	label: string
 	labelBackground?: string
 }
@@ -13,6 +13,7 @@ export default function HydroInput({
 	labelBackground,
 	onFocus,
 	onBlur,
+	onSubmitEditing,
 	...props
 }: HydroInputProps) {
 	const theme = useTheme()
@@ -78,6 +79,7 @@ export default function HydroInput({
 					value={value}
 					onFocus={handleFocus}
 					onBlur={handleBlur}
+					onSubmitEditing={onSubmitEditing}
 					style={{
 						fontSize: theme.fontBase,
 						color: theme.textPrimary,

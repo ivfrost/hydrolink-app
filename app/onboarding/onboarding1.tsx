@@ -8,10 +8,12 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useEffect } from 'react'
 import * as SecureStore from 'expo-secure-store'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/stores/authStore'
 
 export default function Onboarding1() {
 	const router = useRouter()
 	const theme = useTheme()
+	const accessToken = useAuth().accessToken
 	const styles = StyleSheet.create({
 		container: {
 			justifyContent: 'space-evenly',
@@ -52,26 +54,12 @@ export default function Onboarding1() {
 		},
 	})
 
-	interface LoginPayload {
-		email: string
-		password: string
-	}
-
-	interface LoginResponse {
-		accessToken: string
-		user: {
-			id: number
-			email: string
-		}
-	}
-
-	const API_URL =
-		Platform.OS === 'android'
-			? 'http://192.168.1.124:3000'
-			: 'http://localhost:3000'
-
 	const handleNextStep = () => {
-		router.push('/onboarding/onboarding2')
+		if (accessToken) {
+			router.replace('/onboarding/onboarding3')
+		} else {
+			router.replace('/onboarding/onboarding2')
+		}
 	}
 
 	return (

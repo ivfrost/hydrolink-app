@@ -137,17 +137,6 @@ export default function Register() {
 				>
 					Create your account
 				</Text>
-				<Text
-					style={{
-						fontSize: theme.fontSmall,
-						textAlign: 'center',
-						fontWeight: '400',
-						color: theme.textSecondary,
-						marginTop: 6,
-					}}
-				>
-					It only takes a moment
-				</Text>
 			</View>
 
 			<View style={{ width: '100%', gap: 26 }}>

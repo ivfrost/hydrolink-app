@@ -2,9 +2,16 @@ import { Tabs } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { StyleSheet } from 'react-native'
 import { useTheme } from '@/theme'
+import { useQuery } from '@tanstack/react-query'
+import { profileQuery } from '@/queries/profile'
+import { areasQuery } from '@/queries/areas'
+import { MaterialIcons } from '@expo/vector-icons'
 
-export default function Layout() {
+export default function TabsLayout() {
 	const theme = useTheme()
+	useQuery(profileQuery)
+	useQuery(areasQuery)
+
 	return (
 		<Tabs
 			screenOptions={{
@@ -50,13 +57,13 @@ export default function Layout() {
 				}}
 			/>
 			<Tabs.Screen
-				name="devices"
+				name="areas"
 				options={{
 					tabBarIcon: ({ color, size }) => (
-						<MaterialCommunityIcons name="antenna" size={size} color={color} />
+						<MaterialIcons name="sensors" size={size} color={color} />
 					),
-					title: 'Devices',
-					tabBarLabel: 'Devices',
+					title: 'Areas',
+					tabBarLabel: 'Areas',
 					tabBarLabelStyle: styles.label,
 				}}
 			/>

@@ -8,6 +8,10 @@ import { TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 
+export const unstable_settings = {
+	initialRouteName: 'index',
+}
+
 export default function RootLayout() {
 	const theme = useTheme()
 	const hasOnboarded = useOnboarding().hasOnboarded

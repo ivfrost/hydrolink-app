@@ -2,6 +2,7 @@ import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useTheme } from '@/theme'
 import { useRef, useState } from 'react'
 import { Animated, View } from 'react-native'
+import { HydroInputProps } from './HydroInput'
 
 export default function HydroBottomSheetInput({
 	label,
@@ -9,13 +10,7 @@ export default function HydroBottomSheetInput({
 	onChangeText,
 	onSubmitEditing,
 	labelBackground,
-}: {
-	label: string
-	value: string
-	onChangeText: (text: string) => void
-	onSubmitEditing: () => void
-	labelBackground?: string
-}) {
+}: HydroInputProps) {
 	const theme = useTheme()
 	const [focused, setFocused] = useState(false)
 	const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current

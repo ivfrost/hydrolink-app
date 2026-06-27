@@ -1,7 +1,7 @@
 import HydroButton from '@/components/HydroButton'
 import HydroInput from '@/components/HydroInput'
 import { useTheme } from '@/theme'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { useMutation } from '@tanstack/react-query'
@@ -32,6 +32,7 @@ export default function SignIn() {
 	const [errorState, setErrorState] = useState<ErrorState>({})
 	const router = useRouter()
 	const setAccessToken = useAuth().setAccessToken
+	const accessToken = useAuth().accessToken
 	const signinFn = async (input: SignInInput): Promise<LoginResponse> => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users/auth`, {
@@ -70,6 +71,8 @@ export default function SignIn() {
 			const refreshToken = data.details.find(
 				(t) => t.type === 'AUTH_REFRESH_TOKEN',
 			)
+			console.log('Access Token:', accessToken)
+			console.log('Refresh Token:', refreshToken)
 			if (!accessToken || !refreshToken) {
 				Burnt.toast({ title: 'Authentication error', preset: 'error' })
 				return
@@ -103,6 +106,12 @@ export default function SignIn() {
 		}))
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
+
+	useEffect(() => {
+		if (accessToken) {
+			router.replace('/onboarding/onboarding3')
+		}
+	}, [router, accessToken])
 
 	const styles = StyleSheet.create({
 		groupSpacer: {
@@ -195,6 +204,7 @@ export default function SignIn() {
 							autoCorrect={false}
 							onChangeText={(value) => handleInputChange('password', value)}
 							labelBackground={theme.modalBackground}
+							onSubmitEditing={signin}
 							secureTextEntry
 						/>
 						{errorState.password ? (

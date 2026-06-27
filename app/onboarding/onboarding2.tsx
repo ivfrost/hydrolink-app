@@ -1,14 +1,17 @@
 import HydroButton from '@/components/HydroButton'
 import { useTheme } from '@/theme'
 import { useRouter } from 'expo-router'
-import { Text, StyleSheet, View, Platform } from 'react-native'
+import { Text, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useEffect } from 'react'
+import { useAuth } from '@/stores/authStore'
 
 export default function Onboarding1() {
 	const router = useRouter()
 	const theme = useTheme()
+	const accessToken = useAuth().accessToken
 	const styles = StyleSheet.create({
 		container: {
 			justifyContent: 'space-evenly',
@@ -46,6 +49,12 @@ export default function Onboarding1() {
 			gap: 12,
 		},
 	})
+
+	useEffect(() => {
+		if (accessToken) {
+			router.replace('/onboarding/onboarding3')
+		}
+	}, [router, accessToken])
 
 	return (
 		<LinearGradient colors={['#f4f6f9', '#eef1fb']} style={{ flex: 1 }}>
