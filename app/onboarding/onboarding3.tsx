@@ -11,11 +11,13 @@ import HydroBottomSheet from '@/components/HydroBottomSheet'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import HydroBottomSheetInput from '@/components/HydroBottomSheetInput'
 import HydroSubmitButton from '@/components/HydroSubmitButton'
+import { useRouter } from 'expo-router'
 
 export default function Onboarding1() {
 	const toggleOnboarding = useOnboarding().toggleOnboarding
 	const theme = useTheme()
 	const bottomSheetRef = useRef<BottomSheet>(null)
+	const router = useRouter()
 
 	const styles = StyleSheet.create({
 		container: {
@@ -52,12 +54,6 @@ export default function Onboarding1() {
 			justifyContent: 'center',
 			alignItems: 'center',
 			gap: 12,
-		},
-		inputLabel: {
-			fontSize: theme.fontSmall,
-			fontWeight: '500',
-			color: theme.textSecondary,
-			marginBottom: 8,
 		},
 	})
 
@@ -97,7 +93,7 @@ export default function Onboarding1() {
 					<HydroButton label="Add Area" onPress={handleSelectLinkMethod} />
 					<HydroButton
 						label="Skip for now"
-						onPress={handleSelectLinkMethod}
+						onPress={() => router.replace('/(tabs)')}
 						variant="secondary"
 					/>
 				</View>

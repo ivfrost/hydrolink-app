@@ -50,7 +50,7 @@ export default function HydroInput({
 	const labelColor = focused ? theme.borderActive : theme.textMuted
 
 	return (
-		<View style={{ width: '100%', marginBottom: 16 }}>
+		<View style={{ width: '100%' }}>
 			<View
 				style={{
 					borderWidth: 1.5,

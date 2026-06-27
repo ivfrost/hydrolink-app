@@ -1,11 +1,17 @@
 import { useTheme } from '@/theme'
-import { StyleSheet, Text, TouchableOpacity } from 'react-native'
+import {
+	ActivityIndicator,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+} from 'react-native'
 import * as Haptics from 'expo-haptics'
 
 export interface HydroButtonProps {
 	label: string
 	variant?: 'primary' | 'secondary' | 'tertiary'
 	modifier?: ('tall' | 'full')[]
+	loading?: boolean
 	icon?: React.ReactNode
 	iconPosition?: 'left' | 'right'
 	onPress?: () => any
@@ -15,6 +21,7 @@ export default function HydroButton({
 	label,
 	variant = 'primary',
 	modifier,
+	loading = false,
 	icon,
 	iconPosition = 'left',
 	onPress,
@@ -61,9 +68,21 @@ export default function HydroButton({
 			onPress={handlePress}
 			activeOpacity={0.9}
 		>
-			{(iconPosition === 'left' && icon) ?? null}
+			{iconPosition === 'left' && icon ? (
+				loading ? (
+					<ActivityIndicator color={theme.buttonPrimaryText} size="small" />
+				) : (
+					icon
+				)
+			) : null}
 			<Text style={styles.buttonText}>{label}</Text>
-			{(iconPosition === 'right' && icon) ?? null}
+			{iconPosition === 'right' && icon ? (
+				loading ? (
+					<ActivityIndicator color={theme.buttonPrimaryText} size="small" />
+				) : (
+					icon
+				)
+			) : null}
 		</TouchableOpacity>
 	)
 }

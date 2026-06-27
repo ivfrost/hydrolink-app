@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import Toast from 'react-native-toast-message'
 
 export default function RootLayout() {
 	const theme = useTheme()
@@ -70,6 +71,7 @@ export default function RootLayout() {
 						}}
 					/>
 				</Stack>
+				<Toast />
 			</GestureHandlerRootView>
 		</QueryClientProvider>
 	)
