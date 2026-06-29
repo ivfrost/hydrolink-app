@@ -12,6 +12,7 @@ export interface HydroButtonProps {
 	variant?: 'primary' | 'secondary' | 'tertiary'
 	modifier?: ('tall' | 'full')[]
 	loading?: boolean
+	disabled?: boolean
 	icon?: React.ReactNode
 	iconPosition?: 'left' | 'right'
 	onPress?: () => any
@@ -23,6 +24,7 @@ export default function HydroButton({
 	modifier,
 	loading = false,
 	icon,
+	disabled = false,
 	iconPosition = 'left',
 	onPress,
 }: HydroButtonProps) {
@@ -66,6 +68,7 @@ export default function HydroButton({
 		<TouchableOpacity
 			style={[styles.button, icon ? styles.buttonWithIcon : null]}
 			onPress={handlePress}
+			disabled={disabled}
 			activeOpacity={0.9}
 		>
 			{iconPosition === 'left' && icon ? (

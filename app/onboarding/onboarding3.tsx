@@ -15,15 +15,18 @@ import * as Burnt from 'burnt'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { areaLinkMutation } from '@/mutations/areas'
 import { areasQuery } from '@/queries/areas'
+import { useOnboarding } from '@/stores/onboardingStore'
 
 export default function Onboarding1() {
 	const theme = useTheme()
 	const bottomSheetRef = useRef<BottomSheet>(null)
 	const router = useRouter()
 	const [linkCode, setLinkCode] = useState('')
+	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const { mutate, isPending: linkPending } = useMutation({
 		...areaLinkMutation,
 		onSuccess: () => {
+			setHasOnboarded(true)
 			Burnt.toast({ title: 'Area linked successfully', preset: 'done' })
 			router.replace('/(tabs)')
 		},
@@ -133,6 +136,7 @@ export default function Onboarding1() {
 						label="Add Area"
 						onPress={() => bottomSheetRef.current?.expand()}
 						iconPosition="right"
+						disabled={fetchAreasPending}
 						icon={
 							linkPending ? (
 								<ActivityIndicator
@@ -158,6 +162,7 @@ export default function Onboarding1() {
 					<HydroButton
 						label="Scan QR Code"
 						modifier={['tall', 'full']}
+						disabled={fetchAreasPending}
 						icon={
 							<MaterialIcons
 								name="qr-code-scanner"
@@ -207,6 +212,7 @@ export default function Onboarding1() {
 						</View>
 						<HydroSubmitButton
 							modifier={['tall', 'full']}
+							disabled={linkCode.length !== 32 || linkPending}
 							variant="secondary"
 							onPress={handleLinkCodeSubmit}
 						/>

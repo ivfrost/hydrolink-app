@@ -57,9 +57,7 @@ export default function HydroInput({
 					borderWidth: 1.5,
 					borderColor: focused ? theme.borderActive : theme.border,
 					borderRadius: theme.inputBorderRadius,
-					paddingHorizontal: 14,
-					paddingTop: 18,
-					paddingBottom: 10,
+					padding: 14,
 				}}
 			>
 				<Animated.Text

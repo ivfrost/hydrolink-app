@@ -1,20 +1,39 @@
 import { Tabs } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { StyleSheet } from 'react-native'
+import { Animated, StyleSheet } from 'react-native'
 import { useTheme } from '@/theme'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
 import { MaterialIcons } from '@expo/vector-icons'
+import { useScrollY } from '@/context/ScrollContext'
 
 export default function TabsLayout() {
-	const theme = useTheme()
 	useQuery(profileQuery)
 	useQuery(areasQuery)
+	const scrollY = useScrollY()
+	const headerOpacity = scrollY.interpolate({
+		inputRange: [0, 60],
+		outputRange: [0, 1],
+		extrapolate: 'clamp',
+	})
+	const theme = useTheme()
 
 	return (
 		<Tabs
 			screenOptions={{
+				headerTransparent: true,
+				headerBackground: () => (
+					<Animated.View
+						style={[
+							StyleSheet.absoluteFill,
+							{
+								backgroundColor: theme.headerBackground,
+								opacity: headerOpacity,
+							},
+						]}
+					/>
+				),
 				tabBarStyle: {
 					backgroundColor: theme.card,
 					borderTopColor: theme.border,

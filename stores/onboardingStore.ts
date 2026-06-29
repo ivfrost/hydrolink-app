@@ -4,15 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface OnboardingState {
 	hasOnboarded: boolean
-	toggleOnboarding: () => void
+	setHasOnboarded: (value: boolean) => void
 }
 
 export const useOnboarding = create(
 	persist<OnboardingState>(
 		(set) => ({
 			hasOnboarded: false,
-			toggleOnboarding: () =>
-				set((state) => ({ hasOnboarded: !state.hasOnboarded })),
+			setHasOnboarded: (value: boolean) => set({ hasOnboarded: value }),
 		}),
 		{
 			name: 'oboarding-store',

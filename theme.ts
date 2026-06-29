@@ -20,11 +20,15 @@ const theme = {
 	fontBase: 18,
 	fontSmall: 16,
 
+	// header
+	headerBackground: '#ffffff',
+	headerHeight: 40,
+
 	// accent
 	accent: '#1b2a3b',
 	accentLight: '#32465a',
 	accentBlue: '#4a6a8a',
-	accentBlueLight: '#dde6ef',
+	accentBlueLight: '#eef2f7',
 
 	// buttons
 	buttonPrimaryBg: '#1b2a3b',
@@ -39,6 +43,8 @@ const theme = {
 	// sizing
 	inputBorderRadius: 6,
 	buttonBorderRadius: 6,
+	themeFabRadius: 12,
+	cardBorderRadius: 18,
 
 	// status
 	online: '#3a8f55',

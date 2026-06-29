@@ -12,6 +12,7 @@ import * as Burnt from 'burnt'
 import { useAuth } from '@/stores/authStore'
 import { LoginResponse } from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
+import { useOnboarding } from '@/stores/onboardingStore'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
@@ -33,6 +34,8 @@ export default function SignIn() {
 	const router = useRouter()
 	const setAccessToken = useAuth().setAccessToken
 	const accessToken = useAuth().accessToken
+	const setHasOnboarded = useOnboarding().setHasOnboarded
+	const hasOnboarded = useOnboarding().hasOnboarded
 	const signinFn = async (input: SignInInput): Promise<LoginResponse> => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users/auth`, {
@@ -71,13 +74,12 @@ export default function SignIn() {
 			const refreshToken = data.details.find(
 				(t) => t.type === 'AUTH_REFRESH_TOKEN',
 			)
-			console.log('Access Token:', accessToken)
-			console.log('Refresh Token:', refreshToken)
 			if (!accessToken || !refreshToken) {
 				Burnt.toast({ title: 'Authentication error', preset: 'error' })
 				return
 			}
 			setAccessToken(accessToken.value)
+			if (!hasOnboarded) setHasOnboarded(true)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
 			router.replace('/onboarding/onboarding3')
 		},

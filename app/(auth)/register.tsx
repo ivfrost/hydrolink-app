@@ -5,10 +5,15 @@ import { useState } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { z } from 'zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as Burnt from 'burnt'
 import { MaterialIcons } from '@expo/vector-icons'
+import { useOnboarding } from '@/stores/onboardingStore'
+import { RegisterPayload, RegisterResponse } from '@/types/auth'
+import * as SecureStore from 'expo-secure-store'
+import { useAuth } from '@/stores/authStore'
+import { areasQuery } from '@/queries/areas'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
@@ -34,8 +39,19 @@ export default function Register() {
 	const [errorState, setErrorState] = useState<ErrorState>({})
 	const theme = useTheme()
 	const router = useRouter()
+	const hasOnboarded = useOnboarding().hasOnboarded
+	const setHasOnboarded = useOnboarding().setHasOnboarded
+	const setAccessToken = useAuth().setAccessToken
+	const accessToken = useAuth().accessToken
+	const {
+		data: areas,
+		isPending: isPendingAreas,
+		error: areasError,
+	} = useQuery(areasQuery)
 
-	const registerFn = async (input: RegisterInput): Promise<void> => {
+	const registerFn = async (
+		input: RegisterInput,
+	): Promise<RegisterResponse> => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users`, {
 				method: 'POST',
@@ -46,6 +62,7 @@ export default function Register() {
 			if (!response.ok) {
 				throw new Error('REGISTER_FAILED')
 			}
+			return (await response.json()) as RegisterResponse
 		} catch (e) {
 			if (e instanceof TypeError) {
 				throw new Error('NETWORK_ERROR')
@@ -54,7 +71,11 @@ export default function Register() {
 		}
 	}
 
-	const { mutate, isPending } = useMutation({
+	const { mutate, isPending } = useMutation<
+		RegisterResponse,
+		Error,
+		RegisterPayload
+	>({
 		mutationKey: ['register'],
 		mutationFn: registerFn,
 		onError: (error) => {
@@ -66,12 +87,34 @@ export default function Register() {
 				preset: 'error',
 			})
 		},
-		onSuccess: () => {
-			router.replace('/(tabs)')
+		onSuccess: async (data) => {
+			const accessToken = data.details.find(
+				(t) => t.type === 'AUTH_ACCESS_TOKEN',
+			)
+			const refreshToken = data.details.find(
+				(t) => t.type === 'AUTH_REFRESH_TOKEN',
+			)
+
+			if (!accessToken || !refreshToken) {
+				Burnt.toast({ title: 'Authentication error', preset: 'error' })
+				return
+			}
+
+			setAccessToken(accessToken.value)
+			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
+
+			if (areas && areas.details.length > 0) {
+				router.replace('/(tabs)')
+			} else {
+				if (!hasOnboarded) setHasOnboarded(true)
+				router.replace('/onboarding/onboarding3')
+			}
 		},
 	})
 
 	const register = () => {
+		if (isPendingAreas) return
+
 		const { success, error, data } = registerSchema.safeParse(inputState)
 
 		if (!success) {
@@ -193,6 +236,7 @@ export default function Register() {
 					modifier={['full']}
 					loading={isPending}
 					onPress={register}
+					disabled={isPendingAreas || isPending}
 					iconPosition="right"
 					icon={
 						<MaterialIcons
