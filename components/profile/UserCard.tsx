@@ -8,7 +8,7 @@ import {
 	StyleProp,
 	ViewStyle,
 } from 'react-native'
-import UserAvatar from './UserAvatar'
+import UserAvatar from '../ui/UserAvatar'
 
 export interface UserCardProps {
 	name: string

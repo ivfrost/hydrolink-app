@@ -1,6 +1,6 @@
 import { useTheme } from '@/context/ThemeContext'
 import { View, Text, StyleSheet } from 'react-native'
-import UserAvatar from './UserAvatar'
+import UserAvatar from '../ui/UserAvatar'
 
 interface ProfileHeaderProps {
 	email: string

@@ -12,14 +12,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
 import { useTheme } from '@/context/ThemeContext'
-import { ProfileHeader } from '@/components/ProfileHeader'
-import { EditableInfoCard } from '@/components/EditableInfoCard'
-import { AccountActionsCard } from '@/components/AccountActionsCard'
-import { StickyActionButtons } from '@/components/StickyActionButtons'
+import { ProfileHeader } from '@/components/profile/ProfileHeader'
+import { AccountActionsCard } from '@/components/profile/AccountActionsCard'
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import HydroSectionTitle from '@/components/HydroSectionTitle'
+import SectionTitle from '@/components/ui/SectionTitle'
+import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
+import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 
 export interface ProfileInfo {
 	fullName: string
@@ -186,8 +186,8 @@ export default function ProfileScreen() {
 
 				<View style={{ gap: theme.space.x2l }}>
 					<View>
-						<HydroSectionTitle text="Profile" />
-						<EditableInfoCard
+						<SectionTitle text="Profile" />
+						<EditableProfileInfoCard
 							name={profileState.fullName}
 							username={profileState.username}
 							phoneNumber={profileState.phoneNumber}
@@ -197,7 +197,7 @@ export default function ProfileScreen() {
 					</View>
 
 					<View>
-						<HydroSectionTitle text="Account" />
+						<SectionTitle text="Account" />
 						<AccountActionsCard
 							onChangeEmail={() => router.push('/settings/change-email')}
 							onChangePassword={() => router.push('/settings/change-password')}

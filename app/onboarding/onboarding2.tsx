@@ -1,15 +1,15 @@
-import HydroButton from '@/components/HydroButton'
+import Button from '@/components/ui/Button'
 import { useTheme } from '@/context/ThemeContext'
 import { useRouter } from 'expo-router'
 import { View } from 'react-native'
 import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import { useEffect } from 'react'
 import { useAuth } from '@/stores/authStore'
-import HydroSubtitle from '@/components/HydroSubtitle'
-import HydroTitle from '@/components/HydroTitle'
-import HydroOnbTextWrapper from '@/components/HydroOnbTextWrapper'
-import HydroButtonStackWrapper from '@/components/HydroButtonStackWrapper'
-import HydroOnbContainer from '@/components/HydroOnbContainer'
+import Subtitle from '@/components/ui/Subtitle'
+import Title from '@/components/ui/Title'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import ButtonColumnWrapper from '@/components/layout/ButtonColumnWrapper'
+import OnboardContainer from '@/components/onboard/OnboardContainer'
 
 export default function Onboarding2() {
 	const router = useRouter()
@@ -23,7 +23,7 @@ export default function Onboarding2() {
 	}, [router, accessToken])
 
 	return (
-		<HydroOnbContainer>
+		<OnboardContainer>
 			<View
 				style={{
 					justifyContent: 'center',
@@ -36,22 +36,19 @@ export default function Onboarding2() {
 					height={290}
 					color={theme.colors.accentBlue}
 				/>
-				<HydroOnbTextWrapper>
-					<HydroTitle text="Sign in to your account" />
-					<HydroSubtitle text="Your account keeps your devices together and under your control. An account is required to continue. You can create one for free." />
-				</HydroOnbTextWrapper>
+				<OnboardTextWrapper>
+					<Title text="Sign in to your account" />
+					<Subtitle text="Your account keeps your devices together and under your control. An account is required to continue. You can create one for free." />
+				</OnboardTextWrapper>
 			</View>
-			<HydroButtonStackWrapper>
-				<HydroButton
-					label="Sign In"
-					onPress={() => router.push('/(auth)/signin')}
-				/>
-				<HydroButton
+			<ButtonColumnWrapper>
+				<Button label="Sign In" onPress={() => router.push('/(auth)/signin')} />
+				<Button
 					label="Create Account"
 					variant="secondary"
 					onPress={() => router.push('/(auth)/register')}
 				/>
-			</HydroButtonStackWrapper>
-		</HydroOnbContainer>
+			</ButtonColumnWrapper>
+		</OnboardContainer>
 	)
 }

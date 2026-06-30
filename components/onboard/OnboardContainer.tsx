@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useTheme } from '@/context/ThemeContext'
 
-export default function HydroOnbContainer({
+export default function OnboardContainer({
 	children,
 }: {
 	children: React.ReactNode

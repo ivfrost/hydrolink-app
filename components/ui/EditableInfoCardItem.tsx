@@ -2,31 +2,18 @@ import { useTheme } from '@/context/ThemeContext'
 import { useRef } from 'react'
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native'
 
-interface ProfileInfoCardProps {
+interface EditableInfoCardItemProps extends TextInputProps {
 	label: string
 	text: string
 	icon: React.ReactNode
-	editable?: boolean
-	onChangeText?: (value: string) => void
-	secureTextEntry?: TextInputProps['secureTextEntry']
-	textContentType?: TextInputProps['textContentType']
-	autoComplete?: TextInputProps['autoComplete']
-	autoCapitalize?: TextInputProps['autoCapitalize']
-	keyboardType?: TextInputProps['keyboardType']
 }
 
-export default function ProfileInfoCard({
+export default function EditableInfoCardItem({
 	label,
 	text,
 	icon,
-	editable = false,
-	onChangeText,
-	secureTextEntry = false,
-	textContentType = 'none',
-	autoComplete = 'off',
-	autoCapitalize = 'none',
-	keyboardType = 'default',
-}: ProfileInfoCardProps) {
+	...props
+}: EditableInfoCardItemProps) {
 	const theme = useTheme()
 	const inputRef = useRef<TextInput>(null)
 
@@ -74,18 +61,13 @@ export default function ProfileInfoCard({
 			<View style={styles.iconWrapper}>{icon}</View>
 			<View style={styles.textContainer}>
 				<Text style={styles.label}>{label}</Text>
-				{editable ? (
+				{props.editable ? (
 					<TextInput
 						ref={inputRef}
 						value={text}
-						onChangeText={onChangeText}
-						keyboardType={keyboardType}
 						style={[styles.text, styles.input]}
 						placeholderTextColor={theme.colors.textMuted}
-						textContentType={textContentType}
-						autoComplete={autoComplete}
-						autoCapitalize={autoCapitalize}
-						secureTextEntry={secureTextEntry}
+						{...props}
 					/>
 				) : (
 					<Text style={styles.text}>{text}</Text>

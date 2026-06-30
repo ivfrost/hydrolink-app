@@ -2,18 +2,16 @@ import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
 import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, View } from 'react-native'
-import { HydroInputProps } from './HydroInput'
+import { InputProps } from '@/components/ui/Input'
 
-export default function HydroBottomSheetInput({
+export default function BottomSheetInput({
 	label,
-	value,
-	onChangeText,
-	onSubmitEditing,
 	labelBackground,
-}: HydroInputProps) {
+	...props
+}: InputProps) {
 	const theme = useTheme()
 	const [focused, setFocused] = useState(false)
-	const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current
+	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
 
 	const animate = (toValue: number) => {
 		Animated.timing(labelAnim, {
@@ -23,14 +21,16 @@ export default function HydroBottomSheetInput({
 		}).start()
 	}
 
-	const handleFocus = () => {
+	const handleFocus = (e: any) => {
 		setFocused(true)
 		animate(1)
+		props.onFocus?.(e)
 	}
 
-	const handleBlur = () => {
+	const handleBlur = (e: any) => {
 		setFocused(false)
-		if (!value) animate(0)
+		if (!props.value) animate(0)
+		props.onBlur?.(e)
 	}
 
 	const labelTop = labelAnim.interpolate({
@@ -41,6 +41,7 @@ export default function HydroBottomSheetInput({
 		inputRange: [0, 1],
 		outputRange: [16, 12],
 	})
+	const labelColor = focused ? theme.colors.accentBlue : theme.colors.textMuted
 
 	return (
 		<View
@@ -60,7 +61,7 @@ export default function HydroBottomSheetInput({
 					left: 14,
 					top: labelTop,
 					fontSize: labelSize,
-					color: focused ? theme.colors.accentBlue : theme.colors.textMuted,
+					color: labelColor,
 					backgroundColor: labelBackground ?? theme.colors.background,
 					paddingHorizontal: 4,
 				}}
@@ -68,9 +69,6 @@ export default function HydroBottomSheetInput({
 				{label}
 			</Animated.Text>
 			<BottomSheetTextInput
-				value={value}
-				onChangeText={onChangeText}
-				onSubmitEditing={onSubmitEditing}
 				onFocus={handleFocus}
 				onBlur={handleBlur}
 				style={{
@@ -78,6 +76,7 @@ export default function HydroBottomSheetInput({
 					color: theme.colors.textPrimary,
 					padding: 0,
 				}}
+				{...props}
 			/>
 		</View>
 	)

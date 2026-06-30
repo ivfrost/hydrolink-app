@@ -2,23 +2,19 @@ import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, TextInput, TextInputProps, View } from 'react-native'
 
-export interface HydroInputProps extends TextInputProps {
+export interface InputProps extends TextInputProps {
 	label: string
 	labelBackground?: string
 }
 
-export default function HydroInput({
+export default function Input({
 	label,
-	value,
 	labelBackground,
-	onFocus,
-	onBlur,
-	onSubmitEditing,
 	...props
-}: HydroInputProps) {
+}: InputProps) {
 	const theme = useTheme()
 	const [focused, setFocused] = useState(false)
-	const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current
+	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
 
 	const animate = (toValue: number) => {
 		Animated.timing(labelAnim, {
@@ -31,13 +27,13 @@ export default function HydroInput({
 	const handleFocus = (e: any) => {
 		setFocused(true)
 		animate(1)
-		onFocus?.(e)
+		props.onFocus?.(e)
 	}
 
 	const handleBlur = (e: any) => {
 		setFocused(false)
-		if (!value) animate(0)
-		onBlur?.(e)
+		if (!props.value) animate(0)
+		props.onBlur?.(e)
 	}
 
 	const labelTop = labelAnim.interpolate({
@@ -74,10 +70,8 @@ export default function HydroInput({
 					{label}
 				</Animated.Text>
 				<TextInput
-					value={value}
 					onFocus={handleFocus}
 					onBlur={handleBlur}
-					onSubmitEditing={onSubmitEditing}
 					style={{
 						fontSize: theme.font.base,
 						color: theme.colors.textPrimary,

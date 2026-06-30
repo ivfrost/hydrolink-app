@@ -1,8 +1,8 @@
-import HydroButton from '@/components/HydroButton'
+import Button from '@/components/ui/Button'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useRouter } from 'expo-router'
 import { useRef } from 'react'
-import { View, StyleSheet, Text, ScrollView } from 'react-native'
+import { View, StyleSheet, Text } from 'react-native'
 import QrCodeIllustration from '@/assets/images/onboarding/undraw_qr-code-scan_bewe.svg'
 import { useTheme } from '@/context/ThemeContext'
 export default function Link() {
@@ -49,7 +49,7 @@ export default function Link() {
 		return (
 			<View style={styles.container}>
 				<View style={styles.heroGroup}>
-					<QrCodeIllustration height={240} color={theme.illustrationPrimary} />
+					<QrCodeIllustration height={240} color={theme.colors.accentBlue} />
 					<View style={styles.textContainer}>
 						<Text style={styles.textTitle}>Camera access needed</Text>
 						<Text style={styles.textSubtitle}>
@@ -57,7 +57,7 @@ export default function Link() {
 						</Text>
 					</View>
 				</View>
-				<HydroButton
+				<Button
 					label="Allow camera access"
 					onPress={requestPermission}
 					modifier={['full']}

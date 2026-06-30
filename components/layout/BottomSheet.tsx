@@ -1,5 +1,6 @@
 import { useTheme } from '@/context/ThemeContext'
-import BottomSheet, {
+import GorhomBottomSheet, {
+	BottomSheetProps as GorhomBottomSheetProps,
 	BottomSheetBackdrop,
 	BottomSheetView,
 	useBottomSheetSpringConfigs,
@@ -9,19 +10,17 @@ import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
 import { RefObject, useCallback } from 'react'
 import { StyleProp, ViewStyle } from 'react-native'
 
-interface HydroBottomSheetProps {
+interface BottomSheetProps extends GorhomBottomSheetProps {
 	ref: RefObject<BottomSheetMethods | null>
-	snapPoints?: number[]
-	children?: React.ReactNode
 	extraStyles?: StyleProp<ViewStyle>
 }
 
-export default function HydroBottomSheet({
+export default function BottomSheet({
 	ref,
 	snapPoints = [200, 500],
 	children,
 	extraStyles,
-}: HydroBottomSheetProps) {
+}: BottomSheetProps) {
 	const theme = useTheme()
 
 	const animConfigs = useBottomSheetSpringConfigs({
@@ -44,9 +43,8 @@ export default function HydroBottomSheet({
 	)
 
 	return (
-		<BottomSheet
+		<GorhomBottomSheet
 			ref={ref}
-			index={-1}
 			snapPoints={snapPoints}
 			enablePanDownToClose
 			enableDynamicSizing={false}
@@ -68,6 +66,6 @@ export default function HydroBottomSheet({
 			>
 				{children}
 			</BottomSheetView>
-		</BottomSheet>
+		</GorhomBottomSheet>
 	)
 }

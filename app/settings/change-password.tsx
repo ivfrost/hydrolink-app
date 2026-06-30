@@ -12,15 +12,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
 import { useTheme } from '@/context/ThemeContext'
-import { EditableInfoCard } from '@/components/EditableInfoCard'
-import { CredentialChangeHeader } from '@/components/CredentialChangeHeader'
-import { StickyActionButtons } from '@/components/StickyActionButtons'
+import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHeader'
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { ProfileInfo } from './profile'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import HydroSectionTitle from '@/components/HydroSectionTitle'
-import HydroHint from '@/components/HintContainer'
+import SectionTitle from '@/components/ui/SectionTitle'
+import HydroHint from '@/components/ui/HintContainer'
+import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
+import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 
 export default function ChangePasswordScreen() {
 	const theme = useTheme()
@@ -124,8 +124,8 @@ export default function ChangePasswordScreen() {
 				/>
 
 				<View>
-					<HydroSectionTitle text="Password Details" />
-					<EditableInfoCard
+					<SectionTitle text="Password Details" />
+					<EditableProfileInfoCard
 						password={password}
 						currentPassword={currentPassword}
 						onInfoChange={handleInfoChange}

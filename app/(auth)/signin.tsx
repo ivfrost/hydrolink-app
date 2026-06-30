@@ -1,5 +1,5 @@
-import HydroButton from '@/components/HydroButton'
-import HydroInput from '@/components/HydroInput'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
 import { useTheme } from '@/context/ThemeContext'
 import { useEffect, useState } from 'react'
 import { View, Text, KeyboardAvoidingView, ScrollView } from 'react-native'
@@ -183,7 +183,7 @@ export default function SignIn() {
 				{/* Inputs */}
 				<View style={{ width: '100%', gap: 26 }}>
 					<View>
-						<HydroInput
+						<Input
 							label="Email"
 							value={inputState.email}
 							keyboardType="email-address"
@@ -205,7 +205,7 @@ export default function SignIn() {
 						) : null}
 					</View>
 					<View>
-						<HydroInput
+						<Input
 							label="Password"
 							value={inputState.password}
 							autoCapitalize="none"
@@ -229,7 +229,7 @@ export default function SignIn() {
 					</View>
 				</View>
 				<View style={{ marginTop: theme.space.x2l }}>
-					<HydroButton
+					<Button
 						label="Sign In"
 						modifier={['full']}
 						onPress={signin}

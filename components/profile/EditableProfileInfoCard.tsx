@@ -1,8 +1,8 @@
 import { useTheme } from '@/context/ThemeContext'
 import { View } from 'react-native'
-import ProfileInfoCard from './ProfileInfoCard'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { ProfileInfo } from '@/app/settings/profile'
+import EditableInfoCardItem from '../ui/EditableInfoCardItem'
 
 interface EditableInfoCardProps {
 	name?: string
@@ -16,7 +16,7 @@ interface EditableInfoCardProps {
 	isCredentialChanging?: boolean
 }
 
-export function EditableInfoCard({
+export function EditableProfileInfoCard({
 	name,
 	username,
 	email,
@@ -39,7 +39,7 @@ export function EditableInfoCard({
 			}}
 		>
 			{name !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Full name"
 					text={name}
 					onChangeText={(value) => onInfoChange('fullName', value)}
@@ -55,7 +55,7 @@ export function EditableInfoCard({
 			)}
 
 			{username !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Username"
 					text={username}
 					onChangeText={(value) => onInfoChange('username', value)}
@@ -71,7 +71,7 @@ export function EditableInfoCard({
 			)}
 
 			{email !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Email address"
 					text={email}
 					onChangeText={(value) => onInfoChange('email', value)}
@@ -88,7 +88,7 @@ export function EditableInfoCard({
 			)}
 
 			{password !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="New Password"
 					text={password}
 					onChangeText={(value) => onInfoChange('password', value)}
@@ -107,7 +107,7 @@ export function EditableInfoCard({
 			)}
 
 			{isCredentialChanging && currentPassword !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Current Password (Required)"
 					text={currentPassword}
 					onChangeText={(value) => onInfoChange('currentPassword', value)}
@@ -126,7 +126,7 @@ export function EditableInfoCard({
 			)}
 
 			{phoneNumber !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Phone number"
 					text={phoneNumber}
 					onChangeText={(value) => onInfoChange('phoneNumber', value)}
@@ -143,7 +143,7 @@ export function EditableInfoCard({
 			)}
 
 			{address !== undefined && (
-				<ProfileInfoCard
+				<EditableInfoCardItem
 					label="Site address"
 					text={address}
 					onChangeText={(value) => onInfoChange('address', value)}

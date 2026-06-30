@@ -1,7 +1,7 @@
 import { useTheme } from '@/context/ThemeContext'
 import { Text } from 'react-native'
 
-export default function HydroSubtitle({
+export default function Subtitle({
 	text,
 	children,
 }: {

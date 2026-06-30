@@ -1,26 +1,25 @@
-import HydroButton from '@/components/HydroButton'
+import Button from '@/components/ui/Button'
 import { useTheme } from '@/context/ThemeContext'
 import { Text, View, ActivityIndicator } from 'react-native'
 import CurrentLocationIllustration from '@/assets/images/onboarding/undraw_current-location_c8qn.svg'
 import BottomSheet from '@gorhom/bottom-sheet'
 import { useEffect, useRef, useState } from 'react'
-import HydroBottomSheet from '@/components/HydroBottomSheet'
+import HydroBSheet from '@/components/layout/BottomSheet'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import HydroBottomSheetInput from '@/components/HydroBottomSheetInput'
-import HydroSubmitButton from '@/components/HydroSubmitButton'
+import BottomSheetInput from '@/components/ui/BottomSheetInput'
 import { useRouter } from 'expo-router'
 import * as Burnt from 'burnt'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { areaLinkMutation } from '@/mutations/areas'
 import { areasQuery } from '@/queries/areas'
 import { useOnboarding } from '@/stores/onboardingStore'
-import HydroOnbTextWrapper from '@/components/HydroOnbTextWrapper'
-import HydroTitle from '@/components/HydroTitle'
-import HydroSubtitle from '@/components/HydroSubtitle'
-import HydroButtonStackWrapper from '@/components/HydroButtonStackWrapper'
-import HydroOnbContainer from '@/components/HydroOnbContainer'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import Title from '@/components/ui/Title'
+import Subtitle from '@/components/ui/Subtitle'
+import ButtonColumnWrapper from '@/components/layout/ButtonColumnWrapper'
+import OnboardContainer from '@/components/onboard/OnboardContainer'
 
-export default function Onboarding1() {
+export default function Onboarding3() {
 	const theme = useTheme()
 	const bottomSheetRef = useRef<BottomSheet>(null)
 	const router = useRouter()
@@ -70,7 +69,7 @@ export default function Onboarding1() {
 	}
 
 	return (
-		<HydroOnbContainer>
+		<OnboardContainer>
 			<View
 				style={{
 					justifyContent: 'center',
@@ -83,9 +82,9 @@ export default function Onboarding1() {
 					height={300}
 					color={theme.colors.accentBlue}
 				/>
-				<HydroOnbTextWrapper>
-					<HydroTitle text="Add your first area" />
-					<HydroSubtitle>
+				<OnboardTextWrapper>
+					<Title text="Add your first area" />
+					<Subtitle>
 						Each device controls one area of your irrigation system. Scan the QR
 						code or enter your{' '}
 						<Text
@@ -98,11 +97,11 @@ export default function Onboarding1() {
 							Link Code
 						</Text>{' '}
 						to connect your device.
-					</HydroSubtitle>
-				</HydroOnbTextWrapper>
+					</Subtitle>
+				</OnboardTextWrapper>
 			</View>
-			<HydroButtonStackWrapper>
-				<HydroButton
+			<ButtonColumnWrapper>
+				<Button
 					label="Add Area"
 					onPress={() => bottomSheetRef.current?.expand()}
 					iconPosition="right"
@@ -122,14 +121,14 @@ export default function Onboarding1() {
 						)
 					}
 				/>
-				<HydroButton
+				<Button
 					label="Skip for now"
 					onPress={() => router.replace('/(tabs)')}
 					variant="secondary"
 				/>
-			</HydroButtonStackWrapper>
-			<HydroBottomSheet ref={bottomSheetRef} snapPoints={[364]}>
-				<HydroButton
+			</ButtonColumnWrapper>
+			<HydroBSheet ref={bottomSheetRef} snapPoints={[364]}>
+				<Button
 					label="Scan QR Code"
 					modifier={['tall', 'full']}
 					disabled={fetchAreasPending}
@@ -172,7 +171,7 @@ export default function Onboarding1() {
 				</View>
 				<View style={{ gap: 20 }}>
 					<View>
-						<HydroBottomSheetInput
+						<BottomSheetInput
 							label="Enter Link Code"
 							value={linkCode}
 							onChangeText={setLinkCode}
@@ -180,14 +179,23 @@ export default function Onboarding1() {
 							labelBackground={theme.colors.card}
 						/>
 					</View>
-					<HydroSubmitButton
+					<Button
+						label={'Submit'}
+						variant="secondary"
 						modifier={['tall', 'full']}
 						disabled={linkCode.length !== 32 || linkPending}
-						variant="secondary"
 						onPress={handleLinkCodeSubmit}
+						iconPosition="right"
+						icon={
+							<MaterialIcons
+								name="arrow-forward"
+								size={24}
+								color={theme.colors.buttonSecondaryText}
+							/>
+						}
 					/>
 				</View>
-			</HydroBottomSheet>
-		</HydroOnbContainer>
+			</HydroBSheet>
+		</OnboardContainer>
 	)
 }

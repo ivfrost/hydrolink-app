@@ -1,8 +1,8 @@
 import { View, StyleSheet } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useTheme } from '@/context/ThemeContext'
-import HydroButton from './HydroButton'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Button from '../ui/Button'
 
 interface StickyActionButtonsProps {
 	hasChanges: boolean
@@ -46,7 +46,7 @@ export function StickyActionButtons({
 
 	return (
 		<View style={styles.buttonGroup}>
-			<HydroButton
+			<Button
 				variant="secondary"
 				onPress={onDiscard}
 				icon={
@@ -69,7 +69,7 @@ export function StickyActionButtons({
 				disabled={!hasChanges || isLoading}
 				label="Discard"
 			/>
-			<HydroButton
+			<Button
 				label="Save"
 				variant="primary"
 				onPress={onSave}

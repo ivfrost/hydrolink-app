@@ -36,13 +36,9 @@ export default function UserAvatar({
 			height: size + 8,
 			borderRadius: (size + 8) / 2,
 			borderWidth: 2,
-			borderColor: theme.illustrationPrimary,
+			borderColor: theme.colors.accentBlue,
 			justifyContent: 'center',
 			alignItems: 'center',
-			shadowColor: theme.illustrationPrimary,
-			shadowOpacity: 0.25,
-			shadowRadius: 10,
-			shadowOffset: { width: 0, height: 4 },
 			elevation: 4,
 		},
 		avatarWrapper: {
@@ -50,7 +46,7 @@ export default function UserAvatar({
 			height: size,
 			borderRadius: size / 2,
 			overflow: 'hidden',
-			backgroundColor: theme.surface,
+			backgroundColor: theme.colors.card,
 		},
 	})
 

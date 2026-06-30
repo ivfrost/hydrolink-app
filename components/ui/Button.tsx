@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 
-export interface HydroButtonProps {
+export interface ButtonProps {
 	label: string
 	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
 	modifier?: ('tall' | 'full' | 'fab')[]
@@ -21,7 +21,7 @@ export interface HydroButtonProps {
 	onPress?: () => any
 }
 
-export default function HydroButton({
+export default function Button({
 	label,
 	variant = 'primary',
 	modifier,
@@ -31,7 +31,7 @@ export default function HydroButton({
 	iconPosition = 'left',
 	extraStyles,
 	onPress,
-}: HydroButtonProps) {
+}: ButtonProps) {
 	const isTall = modifier?.includes('tall') ?? false
 	const isFull = modifier?.includes('full') ?? false
 	const isFab = modifier?.includes('fab') ?? false

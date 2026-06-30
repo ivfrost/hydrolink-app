@@ -3,16 +3,16 @@ import { usePathname, useRouter } from 'expo-router'
 import { View, Text, ActivityIndicator, Animated } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
-import { UserCard } from '@/components/UserCard'
+import { UserCard } from '@/components/profile/UserCard'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { tabScrollValues } from './_layout'
 import { useTheme } from '@/context/ThemeContext'
-import HydroCardWrapper from '@/components/HydroCardWrapper'
+import CardWrapper from '@/components/layout/CardWrapper'
 import React from 'react'
-import SettingRow from '@/components/SettingRow'
+import SimpleRowCard from '@/components/ui/SimpleRowCard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import HydroSectionTitle from '@/components/HydroSectionTitle'
+import SectionTitle from '@/components/ui/SectionTitle'
 
 interface SettingsRow {
 	label: string
@@ -142,17 +142,17 @@ export default function SettingsScreen() {
 
 			{sections.map((section) => (
 				<View key={section.title}>
-					<HydroSectionTitle text={section.title} />
-					<HydroCardWrapper>
+					<SectionTitle text={section.title} />
+					<CardWrapper>
 						{section.rows.map((row) => (
-							<SettingRow
+							<SimpleRowCard
 								key={row.label}
 								label={row.label}
 								icon={row.icon}
 								onPress={row.onPress}
 							/>
 						))}
-					</HydroCardWrapper>
+					</CardWrapper>
 				</View>
 			))}
 		</Animated.ScrollView>

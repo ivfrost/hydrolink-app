@@ -1,7 +1,7 @@
 import { useTheme } from '@/context/ThemeContext'
 import { View } from 'react-native'
 
-export default function HydroButtonStackWrapper({
+export default function OnboardTextWrapper({
 	children,
 }: {
 	children: React.ReactNode

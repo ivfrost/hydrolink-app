@@ -1,23 +1,17 @@
 import { useState } from 'react'
-import {
-	ScrollView,
-	View,
-	Text,
-	StyleSheet,
-	KeyboardAvoidingView,
-} from 'react-native'
+import { ScrollView, View, KeyboardAvoidingView } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
 import { useTheme } from '@/context/ThemeContext'
-import { EditableInfoCard } from '@/components/EditableInfoCard'
-import { CredentialChangeHeader } from '@/components/CredentialChangeHeader'
-import { StickyActionButtons } from '@/components/StickyActionButtons'
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { ProfileInfo } from './profile'
-import HydroSectionTitle from '@/components/HydroSectionTitle'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHeader'
+import SectionTitle from '@/components/ui/SectionTitle'
+import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
+import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 
 export default function ChangeEmailScreen() {
 	const theme = useTheme()
@@ -147,8 +141,8 @@ export default function ChangeEmailScreen() {
 				/>
 
 				<View>
-					<HydroSectionTitle text="Email Details" />
-					<EditableInfoCard
+					<SectionTitle text="Email Details" />
+					<EditableProfileInfoCard
 						email={email}
 						currentPassword={currentPassword}
 						onInfoChange={handleInfoChange}

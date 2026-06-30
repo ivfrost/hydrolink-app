@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react'
-import { View, Pressable, StyleSheet, Text } from 'react-native'
+import { View, StyleSheet, Text } from 'react-native'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import BottomSheet from '@gorhom/bottom-sheet'
-import HydroBottomSheet from '@/components/HydroBottomSheet'
-import HydroButton from '@/components/HydroButton'
-import HydroBottomSheetInput from '@/components/HydroBottomSheetInput'
-import HydroSubmitButton from '@/components/HydroSubmitButton'
+import HydroBSheet from '@/components/layout/BottomSheet'
+import Button from '@/components/ui/Button'
+import BottomSheetInput from '@/components/ui/BottomSheetInput'
 import { useTheme } from '@/context/ThemeContext'
 import { useRouter } from 'expo-router'
 import { useMutation } from '@tanstack/react-query'
@@ -58,7 +57,7 @@ export default function DevicesScreen() {
 
 	return (
 		<View style={{ flex: 1 }}>
-			<HydroButton
+			<Button
 				label={''}
 				modifier={['fab']}
 				icon={
@@ -73,8 +72,8 @@ export default function DevicesScreen() {
 			/>
 
 			<Portal>
-				<HydroBottomSheet ref={bottomSheetRef} snapPoints={[364]}>
-					<HydroButton
+				<HydroBSheet ref={bottomSheetRef} snapPoints={[364]}>
+					<Button
 						label="Scan QR Code"
 						modifier={['tall', 'full']}
 						icon={
@@ -114,21 +113,30 @@ export default function DevicesScreen() {
 						/>
 					</View>
 					<View style={{ gap: theme.space.md, marginTop: theme.space.x2l }}>
-						<HydroBottomSheetInput
+						<BottomSheetInput
 							label="Enter Link Code"
 							value={linkCode}
 							onChangeText={setLinkCode}
 							onSubmitEditing={handleLinkCodeSubmit}
 							labelBackground={theme.colors.card}
 						/>
-						<HydroSubmitButton
+						<Button
+							label={'Submit'}
+							variant="secondary"
 							modifier={['tall', 'full']}
 							disabled={linkCode.length !== 32 || linkPending}
-							variant="secondary"
 							onPress={handleLinkCodeSubmit}
+							iconPosition="right"
+							icon={
+								<MaterialIcons
+									name="arrow-forward"
+									size={24}
+									color={theme.colors.buttonSecondaryText}
+								/>
+							}
 						/>
 					</View>
-				</HydroBottomSheet>
+				</HydroBSheet>
 			</Portal>
 		</View>
 	)

@@ -2,12 +2,8 @@ import '@/global.css'
 import { areasQuery } from '@/queries/areas'
 import { useQuery } from '@tanstack/react-query'
 import { StyleSheet, Text, View } from 'react-native'
-import { tabScrollValues } from './_layout'
-import { usePathname } from 'expo-router'
 export default function Index() {
 	const { data: areas, isPending, error } = useQuery(areasQuery)
-	const pathname = usePathname()
-	const currentScrollY = tabScrollValues[pathname] || new Animated.Value(0)
 
 	return (
 		<View style={styles.container}>

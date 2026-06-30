@@ -1,13 +1,13 @@
-import HydroButton from '@/components/HydroButton'
+import Button from '@/components/ui/Button'
 import { useTheme } from '@/context/ThemeContext'
 import { useRouter } from 'expo-router'
 import { Text, View } from 'react-native'
 import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-devices_i15y.svg'
 import { useAuth } from '@/stores/authStore'
-import HydroTitle from '@/components/HydroTitle'
-import HydroSubtitle from '@/components/HydroSubtitle'
-import HydroOnbTextWrapper from '@/components/HydroOnbTextWrapper'
-import HydroOnbContainer from '@/components/HydroOnbContainer'
+import Title from '@/components/ui/Title'
+import Subtitle from '@/components/ui/Subtitle'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import OnboardContainer from '@/components/onboard/OnboardContainer'
 
 export default function Onboarding1() {
 	const router = useRouter()
@@ -23,7 +23,7 @@ export default function Onboarding1() {
 	}
 
 	return (
-		<HydroOnbContainer>
+		<OnboardContainer>
 			<Text
 				style={{
 					fontSize: theme.font.xl,
@@ -47,12 +47,12 @@ export default function Onboarding1() {
 					height={230}
 					color={theme.colors.accentBlue}
 				/>
-				<HydroOnbTextWrapper>
-					<HydroTitle text="All your valves, one app." />
-					<HydroSubtitle text="Connect every controller, zone, and sensor across your garden — and water smarter, automatically." />
-				</HydroOnbTextWrapper>
+				<OnboardTextWrapper>
+					<Title text="All your valves, one app." />
+					<Subtitle text="Connect every controller, zone, and sensor across your garden — and water smarter, automatically." />
+				</OnboardTextWrapper>
 			</View>
-			<HydroButton label="Let's Get Started" onPress={handleNextStep} />
-		</HydroOnbContainer>
+			<Button label="Let's Get Started" onPress={handleNextStep} />
+		</OnboardContainer>
 	)
 }

@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
 import { MaterialIcons } from '@expo/vector-icons'
-import FadeHeaderBackground from '@/components/FadeHeaderBackground'
 import { useEffect, useState } from 'react'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
@@ -43,7 +42,15 @@ export default function TabsLayout() {
 					backgroundColor: theme.colors.background,
 				},
 				headerBackground: () => (
-					<FadeHeaderBackground opacity={headerOpacity} theme={theme} />
+					<Animated.View
+						style={[
+							StyleSheet.absoluteFill,
+							{
+								backgroundColor: theme.colors.background,
+								opacity: headerOpacity,
+							},
+						]}
+					/>
 				),
 				tabBarStyle: {
 					backgroundColor: theme.colors.modal,

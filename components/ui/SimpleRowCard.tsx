@@ -3,13 +3,17 @@ import { useTheme } from '@/context/ThemeContext'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
-interface SettingsRowProps {
+interface SimpleRowCardProps {
 	label: string
 	icon: keyof typeof MaterialIcons.glyphMap
 	onPress?: () => void
 }
 
-export default function SettingRow({ label, icon, onPress }: SettingsRowProps) {
+export default function SimpleRowCard({
+	label,
+	icon,
+	onPress,
+}: SimpleRowCardProps) {
 	const theme = useTheme()
 
 	const styles = StyleSheet.create({
@@ -41,11 +45,13 @@ export default function SettingRow({ label, icon, onPress }: SettingsRowProps) {
 				<MaterialIcons name={icon} size={18} color={theme.colors.accentBlue} />
 			</View>
 			<Text style={styles.label}>{label}</Text>
-			<MaterialIcons
-				name="chevron-right"
-				size={20}
-				color={theme.colors.textMuted}
-			/>
+			{onPress ? (
+				<MaterialIcons
+					name="chevron-right"
+					size={20}
+					color={theme.colors.textMuted}
+				/>
+			) : null}
 		</Pressable>
 	)
 }

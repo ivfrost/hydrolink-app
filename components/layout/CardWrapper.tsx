@@ -2,11 +2,11 @@ import { useTheme } from '@/context/ThemeContext'
 import { Children, Fragment } from 'react'
 import { View, StyleSheet } from 'react-native'
 
-export interface HydroCardWrapperProps {
+export interface CardWrapperProps {
 	children: React.ReactNode
 }
 
-export default function HydroCardWrapper({ children }: HydroCardWrapperProps) {
+export default function CardWrapper({ children }: CardWrapperProps) {
 	const theme = useTheme()
 
 	const styles = StyleSheet.create({
