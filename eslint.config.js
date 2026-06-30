@@ -14,6 +14,7 @@ module.exports = defineConfig([
 		rules: {
 			'react-native/no-unused-styles': 'error',
 			'prettier/prettier': ['error', require('./.prettierrc.js')],
+			'react/no-unescaped-entities': 'off',
 		},
 	},
 	{

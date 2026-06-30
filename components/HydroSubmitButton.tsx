@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import HydroButton, { HydroButtonProps } from './HydroButton'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 
 export default function HydroSubmitButton({
 	label,
@@ -21,7 +21,7 @@ export default function HydroSubmitButton({
 					size={24}
 					color={
 						variant === 'primary'
-							? theme.buttonPrimaryText
+							? theme.colors.buttonPrimaryText
 							: theme.buttonSecondaryText
 					}
 				/>

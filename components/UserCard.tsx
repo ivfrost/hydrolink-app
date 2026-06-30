@@ -1,21 +1,30 @@
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { Pressable, View, Text, StyleSheet, Image } from 'react-native'
+import {
+	Pressable,
+	View,
+	Text,
+	StyleSheet,
+	StyleProp,
+	ViewStyle,
+} from 'react-native'
 import UserAvatar from './UserAvatar'
 
-interface UserCardProps {
+export interface UserCardProps {
 	name: string
 	email: string
-	avatarUrl?: string
+	imageUrl?: string
 	avatarSize?: number | undefined
+	extraStyles?: StyleProp<ViewStyle>
 	onPress?: () => void
 }
 
 export function UserCard({
 	name,
 	email,
-	avatarUrl,
+	imageUrl,
 	avatarSize,
+	extraStyles,
 	onPress,
 }: UserCardProps) {
 	const theme = useTheme()
@@ -23,8 +32,8 @@ export function UserCard({
 		card: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			backgroundColor: theme.card,
-			borderRadius: theme.cardBorderRadius,
+			backgroundColor: theme.colors.card,
+			borderRadius: theme.radius.card,
 			padding: 16,
 			gap: 14,
 		},
@@ -32,29 +41,31 @@ export function UserCard({
 			flex: 1,
 		},
 		name: {
-			fontSize: theme.fontBase,
+			fontSize: theme.font.base,
 			fontWeight: '600',
-			color: theme.textPrimary,
+			color: theme.colors.textPrimary,
 		},
 		email: {
 			fontSize: 13,
-			color: theme.textSecondary,
+			color: theme.colors.textSecondary,
 			marginTop: 2,
 		},
 	})
 
 	return (
-		<Pressable style={styles.card} onPress={onPress}>
-			<UserAvatar seed={avatarUrl} size={avatarSize} />
+		<Pressable style={[styles.card, extraStyles]} onPress={onPress}>
+			<UserAvatar imageUrl={imageUrl} seed={email} size={avatarSize} />
 			<View style={styles.info}>
 				<Text style={styles.name}>{name}</Text>
 				<Text style={styles.email}>{email}</Text>
 			</View>
-			<MaterialCommunityIcons
-				name="chevron-right"
-				size={24}
-				color={theme.textMuted}
-			/>
+			{onPress ? (
+				<MaterialCommunityIcons
+					name="chevron-right"
+					size={24}
+					color={theme.colors.textMuted}
+				/>
+			) : null}
 		</Pressable>
 	)
 }

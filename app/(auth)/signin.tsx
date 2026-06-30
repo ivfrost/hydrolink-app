@@ -1,10 +1,10 @@
 import HydroButton from '@/components/HydroButton'
 import HydroInput from '@/components/HydroInput'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, KeyboardAvoidingView, ScrollView } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -13,6 +13,7 @@ import { useAuth } from '@/stores/authStore'
 import { LoginResponse } from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
 import { useOnboarding } from '@/stores/onboardingStore'
+import { areasQuery } from '@/queries/areas'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
@@ -36,6 +37,7 @@ export default function SignIn() {
 	const accessToken = useAuth().accessToken
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const hasOnboarded = useOnboarding().hasOnboarded
+	const { data: areas, isPending: isPendingAreas } = useQuery(areasQuery)
 	const signinFn = async (input: SignInInput): Promise<LoginResponse> => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users/auth`, {
@@ -79,9 +81,14 @@ export default function SignIn() {
 				return
 			}
 			setAccessToken(accessToken.value)
-			if (!hasOnboarded) setHasOnboarded(true)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
-			router.replace('/onboarding/onboarding3')
+
+			if (areas && areas.details.length > 0) {
+				if (!hasOnboarded) setHasOnboarded(true)
+				router.replace('/(tabs)')
+			} else {
+				router.replace('/onboarding/onboarding3')
+			}
 		},
 	})
 
@@ -110,36 +117,31 @@ export default function SignIn() {
 	}
 
 	useEffect(() => {
-		if (accessToken) {
+		if (accessToken && areas && areas.details.length > 0) {
+			if (!hasOnboarded) setHasOnboarded(true)
+			router.replace('/(tabs)')
+		} else if (accessToken && areas && areas.details.length === 0) {
 			router.replace('/onboarding/onboarding3')
 		}
-	}, [router, accessToken])
+	}, [router, accessToken, areas, hasOnboarded, setHasOnboarded])
 
-	const styles = StyleSheet.create({
-		groupSpacer: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 38,
-			width: '100%',
-		},
-	})
 	return (
-		<View
-			style={{
-				flex: 1,
-				justifyContent: 'center',
-				alignItems: 'center',
-				paddingTop: 12,
-				paddingHorizontal: 26,
-				paddingBottom: 80,
-			}}
-		>
-			<View style={styles.groupSpacer}>
-				{/* Logo + heading */}
-				<View style={{ width: '100%', alignItems: 'center' }}>
+		<KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+			<ScrollView
+				style={{ flex: 1 }}
+				contentContainerStyle={{
+					flexGrow: 1,
+					justifyContent: 'center',
+					paddingTop: theme.space.md,
+					paddingHorizontal: theme.space.x2l,
+					paddingBottom: 80,
+				}}
+				keyboardShouldPersistTaps="handled"
+			>
+				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
 					<View
 						style={{
-							backgroundColor: theme.accentBlueLight,
+							backgroundColor: theme.colors.accentBlueLight,
 							borderRadius: 18,
 							width: 68,
 							height: 68,
@@ -148,14 +150,18 @@ export default function SignIn() {
 							marginBottom: 14,
 						}}
 					>
-						<FontAwesome6 name="droplet" size={30} color={theme.accentBlue} />
+						<FontAwesome6
+							name="droplet"
+							size={30}
+							color={theme.colors.accentBlue}
+						/>
 					</View>
 					<Text
 						style={{
-							fontSize: theme.fontLarge,
+							fontSize: theme.font.lg,
 							fontWeight: '600',
 							textAlign: 'center',
-							color: theme.textPrimary,
+							color: theme.colors.textPrimary,
 							letterSpacing: -0.5,
 						}}
 					>
@@ -163,10 +169,10 @@ export default function SignIn() {
 					</Text>
 					<Text
 						style={{
-							fontSize: theme.fontSmall,
+							fontSize: theme.font.sm,
 							textAlign: 'center',
 							fontWeight: '400',
-							color: theme.textSecondary,
+							color: theme.colors.textSecondary,
 							marginTop: 6,
 						}}
 					>
@@ -184,13 +190,13 @@ export default function SignIn() {
 							autoCapitalize="none"
 							autoCorrect={false}
 							onChangeText={(value) => handleInputChange('email', value)}
-							labelBackground={theme.modalBackground}
+							labelBackground={theme.colors.modal}
 						/>
 						{errorState.email ? (
 							<Text
 								style={{
-									color: theme.fault,
-									fontSize: theme.fontSmall,
+									color: theme.colors.fault,
+									fontSize: theme.font.sm,
 									marginTop: 4,
 								}}
 							>
@@ -205,15 +211,15 @@ export default function SignIn() {
 							autoCapitalize="none"
 							autoCorrect={false}
 							onChangeText={(value) => handleInputChange('password', value)}
-							labelBackground={theme.modalBackground}
+							labelBackground={theme.colors.modal}
 							onSubmitEditing={signin}
 							secureTextEntry
 						/>
 						{errorState.password ? (
 							<Text
 								style={{
-									color: theme.fault,
-									fontSize: theme.fontSmall,
+									color: theme.colors.fault,
+									fontSize: theme.font.sm,
 									marginTop: 4,
 								}}
 							>
@@ -222,21 +228,23 @@ export default function SignIn() {
 						) : null}
 					</View>
 				</View>
-				<HydroButton
-					label="Sign In"
-					modifier={['full']}
-					onPress={signin}
-					iconPosition="right"
-					loading={isPending}
-					icon={
-						<MaterialIcons
-							name="arrow-forward"
-							size={24}
-							color={theme.buttonPrimaryText}
-						/>
-					}
-				/>
-			</View>
-		</View>
+				<View style={{ marginTop: theme.space.x2l }}>
+					<HydroButton
+						label="Sign In"
+						modifier={['full']}
+						onPress={signin}
+						iconPosition="right"
+						loading={isPending}
+						icon={
+							<MaterialIcons
+								name="arrow-forward"
+								size={24}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						}
+					/>
+				</View>
+			</ScrollView>
+		</KeyboardAvoidingView>
 	)
 }

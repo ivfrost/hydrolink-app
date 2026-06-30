@@ -1,8 +1,8 @@
 import HydroButton from '@/components/HydroButton'
 import HydroInput from '@/components/HydroInput'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import { useState } from 'react'
-import { View, Text, ScrollView } from 'react-native'
+import { View, Text, ScrollView, KeyboardAvoidingView } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -36,18 +36,13 @@ export default function Register() {
 		password: '',
 		preferredLanguage: 'en',
 	})
+	const setAccessToken = useAuth().setAccessToken
 	const [errorState, setErrorState] = useState<ErrorState>({})
 	const theme = useTheme()
 	const router = useRouter()
 	const hasOnboarded = useOnboarding().hasOnboarded
 	const setHasOnboarded = useOnboarding().setHasOnboarded
-	const setAccessToken = useAuth().setAccessToken
-	const accessToken = useAuth().accessToken
-	const {
-		data: areas,
-		isPending: isPendingAreas,
-		error: areasError,
-	} = useQuery(areasQuery)
+	const { data: areas, isPending: isPendingAreas } = useQuery(areasQuery)
 
 	const registerFn = async (
 		input: RegisterInput,
@@ -87,26 +82,24 @@ export default function Register() {
 				preset: 'error',
 			})
 		},
-		onSuccess: async (data) => {
+		onSuccess: async (data: RegisterResponse) => {
 			const accessToken = data.details.find(
 				(t) => t.type === 'AUTH_ACCESS_TOKEN',
 			)
 			const refreshToken = data.details.find(
 				(t) => t.type === 'AUTH_REFRESH_TOKEN',
 			)
-
 			if (!accessToken || !refreshToken) {
 				Burnt.toast({ title: 'Authentication error', preset: 'error' })
 				return
 			}
-
 			setAccessToken(accessToken.value)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
 
 			if (areas && areas.details.length > 0) {
+				if (!hasOnboarded) setHasOnboarded(true)
 				router.replace('/(tabs)')
 			} else {
-				if (!hasOnboarded) setHasOnboarded(true)
 				router.replace('/onboarding/onboarding3')
 			}
 		},
@@ -138,115 +131,127 @@ export default function Register() {
 	const errorText = (field: keyof ErrorState) =>
 		errorState[field] ? (
 			<Text
-				style={{ color: theme.fault, fontSize: theme.fontSmall, marginTop: 4 }}
+				style={{
+					color: theme.colors.fault,
+					fontSize: theme.font.sm,
+					marginTop: 4,
+				}}
 			>
 				{errorState[field]}
 			</Text>
 		) : null
 
 	return (
-		<ScrollView
-			contentContainerStyle={{
-				flexGrow: 1,
-				justifyContent: 'center',
-				paddingTop: 12,
-				paddingHorizontal: 26,
-				paddingBottom: 80,
-			}}
-			keyboardShouldPersistTaps="handled"
-		>
-			<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
-				<View
-					style={{
-						backgroundColor: theme.accentBlueLight,
-						borderRadius: 18,
-						width: 68,
-						height: 68,
-						alignItems: 'center',
-						justifyContent: 'center',
-						marginBottom: 14,
-					}}
-				>
-					<FontAwesome6 name="droplet" size={30} color={theme.accentBlue} />
-				</View>
-				<Text
-					style={{
-						fontSize: theme.fontLarge,
-						fontWeight: '600',
-						textAlign: 'center',
-						color: theme.textPrimary,
-						letterSpacing: -0.5,
-					}}
-				>
-					Create your account
-				</Text>
-			</View>
-
-			<View style={{ width: '100%', gap: 26 }}>
-				<View>
-					<HydroInput
-						label="Full name"
-						value={inputState.fullName}
-						autoCorrect={false}
-						onChangeText={(value) => handleInputChange('fullName', value)}
-						labelBackground={theme.modalBackground}
-					/>
-					{errorText('fullName')}
-				</View>
-				<View>
-					<HydroInput
-						label="Username"
-						value={inputState.username}
-						autoCapitalize="none"
-						autoCorrect={false}
-						onChangeText={(value) => handleInputChange('username', value)}
-						labelBackground={theme.modalBackground}
-					/>
-					{errorText('username')}
-				</View>
-				<View>
-					<HydroInput
-						label="Email"
-						value={inputState.email}
-						keyboardType="email-address"
-						autoCapitalize="none"
-						autoCorrect={false}
-						onChangeText={(value) => handleInputChange('email', value)}
-						labelBackground={theme.modalBackground}
-					/>
-					{errorText('email')}
-				</View>
-				<View>
-					<HydroInput
-						label="Password"
-						value={inputState.password}
-						autoCapitalize="none"
-						autoCorrect={false}
-						secureTextEntry
-						onChangeText={(value) => handleInputChange('password', value)}
-						labelBackground={theme.modalBackground}
-					/>
-					{errorText('password')}
-				</View>
-			</View>
-
-			<View style={{ marginTop: 32 }}>
-				<HydroButton
-					label="Create account"
-					modifier={['full']}
-					loading={isPending}
-					onPress={register}
-					disabled={isPendingAreas || isPending}
-					iconPosition="right"
-					icon={
-						<MaterialIcons
-							name="arrow-forward"
-							size={24}
-							color={theme.buttonPrimaryText}
+		<KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+			<ScrollView
+				style={{ flex: 1 }}
+				contentContainerStyle={{
+					flexGrow: 1,
+					justifyContent: 'center',
+					paddingTop: theme.space.md,
+					paddingHorizontal: theme.space.x2l,
+					paddingBottom: 80,
+				}}
+				keyboardShouldPersistTaps="handled"
+			>
+				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
+					<View
+						style={{
+							backgroundColor: theme.colors.accentBlueLight,
+							borderRadius: 18,
+							width: 68,
+							height: 68,
+							alignItems: 'center',
+							justifyContent: 'center',
+							marginBottom: 14,
+						}}
+					>
+						<FontAwesome6
+							name="droplet"
+							size={30}
+							color={theme.colors.accentBlue}
 						/>
-					}
-				/>
-			</View>
-		</ScrollView>
+					</View>
+					<Text
+						style={{
+							fontSize: theme.font.lg,
+							fontWeight: '600',
+							textAlign: 'center',
+							color: theme.colors.textPrimary,
+							letterSpacing: -0.5,
+						}}
+					>
+						Create your account
+					</Text>
+				</View>
+
+				<View style={{ width: '100%', gap: 26 }}>
+					<View>
+						<HydroInput
+							label="Full name"
+							value={inputState.fullName}
+							autoCorrect={false}
+							onChangeText={(value) => handleInputChange('fullName', value)}
+							labelBackground={theme.colors.modal}
+						/>
+						{errorText('fullName')}
+					</View>
+					<View>
+						<HydroInput
+							label="Username"
+							value={inputState.username}
+							autoCapitalize="none"
+							autoCorrect={false}
+							onChangeText={(value) => handleInputChange('username', value)}
+							labelBackground={theme.colors.modal}
+						/>
+						{errorText('username')}
+					</View>
+					<View>
+						<HydroInput
+							label="Email"
+							value={inputState.email}
+							keyboardType="email-address"
+							autoCapitalize="none"
+							autoCorrect={false}
+							onChangeText={(value) => handleInputChange('email', value)}
+							labelBackground={theme.colors.modal}
+						/>
+						{errorText('email')}
+					</View>
+					<View>
+						<HydroInput
+							label="Password"
+							value={inputState.password}
+							autoCapitalize="none"
+							autoCorrect={false}
+							secureTextEntry
+							onChangeText={(value) => handleInputChange('password', value)}
+							labelBackground={theme.colors.modal}
+						/>
+						{errorText('password')}
+					</View>
+				</View>
+
+				<View style={{ marginTop: theme.space.x2l }}>
+					<HydroButton
+						label="Create account"
+						variant="primary"
+						modifier={['full']}
+						loading={isPending}
+						onPress={register}
+						disabled={isPendingAreas || isPending}
+						iconPosition="right"
+						icon={
+							<MaterialIcons
+								name="arrow-forward"
+								size={24}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						}
+					/>
+				</View>
+			</ScrollView>
+		</KeyboardAvoidingView>
 	)
 }

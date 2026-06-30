@@ -1,5 +1,5 @@
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, View } from 'react-native'
 import { HydroInputProps } from './HydroInput'
@@ -47,8 +47,8 @@ export default function HydroBottomSheetInput({
 			style={{
 				width: '100%',
 				borderWidth: 1.5,
-				borderColor: focused ? theme.borderActive : theme.border,
-				borderRadius: theme.inputBorderRadius,
+				borderColor: focused ? theme.colors.accentBlue : theme.colors.border,
+				borderRadius: theme.radius.input,
 				paddingHorizontal: 14,
 				paddingTop: 18,
 				paddingBottom: 10,
@@ -60,8 +60,8 @@ export default function HydroBottomSheetInput({
 					left: 14,
 					top: labelTop,
 					fontSize: labelSize,
-					color: focused ? theme.borderActive : theme.textMuted,
-					backgroundColor: labelBackground ?? theme.background,
+					color: focused ? theme.colors.accentBlue : theme.colors.textMuted,
+					backgroundColor: labelBackground ?? theme.colors.background,
 					paddingHorizontal: 4,
 				}}
 			>
@@ -74,8 +74,8 @@ export default function HydroBottomSheetInput({
 				onFocus={handleFocus}
 				onBlur={handleBlur}
 				style={{
-					fontSize: theme.fontBase,
-					color: theme.textPrimary,
+					fontSize: theme.font.base,
+					color: theme.colors.textPrimary,
 					padding: 0,
 				}}
 			/>

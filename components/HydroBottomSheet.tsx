@@ -1,4 +1,4 @@
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetView,
@@ -7,19 +7,20 @@ import BottomSheet, {
 import { BottomSheetDefaultBackdropProps } from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
 import { RefObject, useCallback } from 'react'
+import { StyleProp, ViewStyle } from 'react-native'
 
 interface HydroBottomSheetProps {
 	ref: RefObject<BottomSheetMethods | null>
 	snapPoints?: number[]
 	children?: React.ReactNode
-	style?: object
+	extraStyles?: StyleProp<ViewStyle>
 }
 
 export default function HydroBottomSheet({
 	ref,
 	snapPoints = [200, 500],
 	children,
-	style,
+	extraStyles,
 }: HydroBottomSheetProps) {
 	const theme = useTheme()
 
@@ -52,11 +53,18 @@ export default function HydroBottomSheet({
 			keyboardBehavior="interactive"
 			keyboardBlurBehavior="restore"
 			backdropComponent={renderBackdrop}
-			backgroundStyle={{ backgroundColor: theme.card }}
+			backgroundStyle={{ backgroundColor: theme.colors.card }}
 			animationConfigs={animConfigs}
 		>
 			<BottomSheetView
-				style={[{ marginHorizontal: 20, marginVertical: 20, gap: 14 }, style]}
+				style={[
+					{
+						marginHorizontal: theme.space.xl,
+						marginVertical: theme.space.xl,
+						gap: theme.space.lg,
+					},
+					extraStyles,
+				]}
 			>
 				{children}
 			</BottomSheetView>

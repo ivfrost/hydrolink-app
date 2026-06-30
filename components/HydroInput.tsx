@@ -1,4 +1,4 @@
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, TextInput, TextInputProps, View } from 'react-native'
 
@@ -48,15 +48,15 @@ export default function HydroInput({
 		inputRange: [0, 1],
 		outputRange: [16, 12],
 	})
-	const labelColor = focused ? theme.borderActive : theme.textMuted
+	const labelColor = focused ? theme.colors.accentBlue : theme.colors.textMuted
 
 	return (
 		<View style={{ width: '100%' }}>
 			<View
 				style={{
 					borderWidth: 1.5,
-					borderColor: focused ? theme.borderActive : theme.border,
-					borderRadius: theme.inputBorderRadius,
+					borderColor: focused ? theme.colors.accentBlue : theme.colors.border,
+					borderRadius: theme.radius.input,
 					padding: 14,
 				}}
 			>
@@ -67,7 +67,7 @@ export default function HydroInput({
 						top: labelTop,
 						fontSize: labelSize,
 						color: labelColor,
-						backgroundColor: labelBackground ?? theme.background,
+						backgroundColor: labelBackground ?? theme.colors.background,
 						paddingHorizontal: 4,
 					}}
 				>
@@ -79,8 +79,8 @@ export default function HydroInput({
 					onBlur={handleBlur}
 					onSubmitEditing={onSubmitEditing}
 					style={{
-						fontSize: theme.fontBase,
-						color: theme.textPrimary,
+						fontSize: theme.font.base,
+						color: theme.colors.textPrimary,
 						padding: 0,
 					}}
 					{...props}

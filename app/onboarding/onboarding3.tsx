@@ -1,8 +1,6 @@
 import HydroButton from '@/components/HydroButton'
-import { useTheme } from '@/theme'
-import { Text, StyleSheet, View, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
+import { useTheme } from '@/context/ThemeContext'
+import { Text, View, ActivityIndicator } from 'react-native'
 import CurrentLocationIllustration from '@/assets/images/onboarding/undraw_current-location_c8qn.svg'
 import BottomSheet from '@gorhom/bottom-sheet'
 import { useEffect, useRef, useState } from 'react'
@@ -16,6 +14,11 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { areaLinkMutation } from '@/mutations/areas'
 import { areasQuery } from '@/queries/areas'
 import { useOnboarding } from '@/stores/onboardingStore'
+import HydroOnbTextWrapper from '@/components/HydroOnbTextWrapper'
+import HydroTitle from '@/components/HydroTitle'
+import HydroSubtitle from '@/components/HydroSubtitle'
+import HydroButtonStackWrapper from '@/components/HydroButtonStackWrapper'
+import HydroOnbContainer from '@/components/HydroOnbContainer'
 
 export default function Onboarding1() {
 	const theme = useTheme()
@@ -54,44 +57,6 @@ export default function Onboarding1() {
 		}
 	}, [router, areas, fetchAreasPending])
 
-	const styles = StyleSheet.create({
-		container: {
-			justifyContent: 'space-evenly',
-			alignItems: 'center',
-			flex: 1,
-		},
-		heroGroup: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 32,
-		},
-		textContainer: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 16,
-			paddingHorizontal: 20,
-		},
-		textTitle: {
-			fontSize: theme.fontLarge,
-			fontWeight: '500',
-			textAlign: 'center',
-			color: theme.textPrimary,
-		},
-		textSubtitle: {
-			fontSize: theme.fontBase,
-			fontWeight: '400',
-			textAlign: 'center',
-			color: theme.textSecondary,
-			paddingHorizontal: 20,
-			lineHeight: 24,
-		},
-		buttonGroup: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 12,
-		},
-	})
-
 	const handleLinkCodeSubmit = () => {
 		if (linkCode.length !== 32) {
 			Burnt.dismissAllAlerts()
@@ -105,120 +70,124 @@ export default function Onboarding1() {
 	}
 
 	return (
-		<LinearGradient colors={['#f4f6f9', '#eef1fb']} style={{ flex: 1 }}>
-			<SafeAreaView style={styles.container}>
-				<View style={styles.heroGroup}>
-					<CurrentLocationIllustration
-						width={300}
-						height={300}
-						color={theme.illustrationPrimary}
-					/>
-					<View style={styles.textContainer}>
-						<Text style={styles.textTitle}>Add your first area</Text>
-						<Text style={styles.textSubtitle}>
-							Each device controls one area of your irrigation system. Scan the
-							QR code or enter your{' '}
-							<Text
-								style={{
-									fontVariant: ['small-caps'],
-									color: theme.textPrimary,
-									fontWeight: '500',
-								}}
-							>
-								Link Code
-							</Text>{' '}
-							to connect your device.
-						</Text>
-					</View>
-				</View>
-				<View style={styles.buttonGroup}>
-					<HydroButton
-						label="Add Area"
-						onPress={() => bottomSheetRef.current?.expand()}
-						iconPosition="right"
-						disabled={fetchAreasPending}
-						icon={
-							linkPending ? (
-								<ActivityIndicator
-									size="small"
-									color={theme.buttonPrimaryText}
-								/>
-							) : (
-								<MaterialIcons
-									name="add"
-									size={24}
-									color={theme.buttonPrimaryText}
-								/>
-							)
-						}
-					/>
-					<HydroButton
-						label="Skip for now"
-						onPress={() => router.replace('/(tabs)')}
-						variant="secondary"
-					/>
-				</View>
-				<HydroBottomSheet ref={bottomSheetRef} snapPoints={[400]}>
-					<HydroButton
-						label="Scan QR Code"
-						modifier={['tall', 'full']}
-						disabled={fetchAreasPending}
-						icon={
-							<MaterialIcons
-								name="qr-code-scanner"
-								size={24}
-								color={theme.buttonPrimaryText}
+		<HydroOnbContainer>
+			<View
+				style={{
+					justifyContent: 'center',
+					alignItems: 'center',
+					gap: theme.space.xl,
+				}}
+			>
+				<CurrentLocationIllustration
+					width={300}
+					height={300}
+					color={theme.colors.accentBlue}
+				/>
+				<HydroOnbTextWrapper>
+					<HydroTitle text="Add your first area" />
+					<HydroSubtitle>
+						Each device controls one area of your irrigation system. Scan the QR
+						code or enter your{' '}
+						<Text
+							style={{
+								fontVariant: ['small-caps'],
+								color: theme.colors.textPrimary,
+								fontWeight: '500',
+							}}
+						>
+							Link Code
+						</Text>{' '}
+						to connect your device.
+					</HydroSubtitle>
+				</HydroOnbTextWrapper>
+			</View>
+			<HydroButtonStackWrapper>
+				<HydroButton
+					label="Add Area"
+					onPress={() => bottomSheetRef.current?.expand()}
+					iconPosition="right"
+					disabled={fetchAreasPending}
+					icon={
+						linkPending ? (
+							<ActivityIndicator
+								size="small"
+								color={theme.colors.textPrimary}
 							/>
-						}
-						onPress={() => router.push('/(area)/scan')}
-					/>
+						) : (
+							<MaterialIcons
+								name="add"
+								size={24}
+								color={theme.colors.textPrimary}
+							/>
+						)
+					}
+				/>
+				<HydroButton
+					label="Skip for now"
+					onPress={() => router.replace('/(tabs)')}
+					variant="secondary"
+				/>
+			</HydroButtonStackWrapper>
+			<HydroBottomSheet ref={bottomSheetRef} snapPoints={[364]}>
+				<HydroButton
+					label="Scan QR Code"
+					modifier={['tall', 'full']}
+					disabled={fetchAreasPending}
+					icon={
+						<MaterialIcons
+							name="qr-code-scanner"
+							size={24}
+							color={theme.colors.textPrimary}
+						/>
+					}
+					onPress={() => router.push('/(area)/scan')}
+				/>
+				<View
+					style={{
+						flexDirection: 'row',
+						width: '100%',
+						alignItems: 'center',
+						gap: 20,
+						marginVertical: 10,
+					}}
+				>
 					<View
 						style={{
-							flexDirection: 'row',
-							width: '100%',
-							alignItems: 'center',
-							gap: 20,
-							marginVertical: 10,
+							backgroundColor: theme.colors.border,
+							height: 2,
+							flex: 1,
 						}}
-					>
-						<View
-							style={{
-								backgroundColor: theme.border,
-								height: 2,
-								flex: 1,
-							}}
-						/>
-						<Text style={{ color: theme.textSecondary }}>
-							or enter manually
-						</Text>
-						<View
-							style={{
-								width: 'auto',
-								backgroundColor: theme.border,
-								height: 2,
-								flex: 1,
-							}}
-						/>
-					</View>
-					<View style={{ gap: 20 }}>
-						<View>
-							<HydroBottomSheetInput
-								label="Enter Link Code"
-								value={linkCode}
-								onChangeText={setLinkCode}
-								onSubmitEditing={handleLinkCodeSubmit}
-								labelBackground={theme.card}
-							/>
-						</View>
-						<HydroSubmitButton
-							modifier={['tall', 'full']}
-							disabled={linkCode.length !== 32 || linkPending}
-							variant="secondary"
-							onPress={handleLinkCodeSubmit}
+					/>
+					<Text style={{ color: theme.colors.textSecondary }}>
+						or enter manually
+					</Text>
+					<View
+						style={{
+							width: 'auto',
+							backgroundColor: theme.colors.border,
+							height: 2,
+							flex: 1,
+						}}
+					/>
+				</View>
+				<View style={{ gap: 20 }}>
+					<View>
+						<HydroBottomSheetInput
+							label="Enter Link Code"
+							value={linkCode}
+							onChangeText={setLinkCode}
+							onSubmitEditing={handleLinkCodeSubmit}
+							labelBackground={theme.colors.card}
 						/>
 					</View>
-				</HydroBottomSheet>
-			</SafeAreaView>
-		</LinearGradient>
+					<HydroSubmitButton
+						modifier={['tall', 'full']}
+						disabled={linkCode.length !== 32 || linkPending}
+						variant="secondary"
+						onPress={handleLinkCodeSubmit}
+					/>
+				</View>
+			</HydroBottomSheet>
+		</HydroOnbContainer>
 	)
 }

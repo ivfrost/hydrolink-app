@@ -1,14 +1,13 @@
-import { Stack, useRouter } from 'expo-router'
-import { useTheme } from '@/theme'
-import { StatusBar } from 'expo-status-bar'
-import { useOnboarding } from '@/stores/onboardingStore'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { TouchableOpacity } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { StatusBar } from 'expo-status-bar'
+import { Stack, useRouter } from 'expo-router'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import Toast from 'react-native-toast-message'
+import { TouchableOpacity } from 'react-native'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
-import { ScrollProvider } from '@/context/ScrollContext'
+import { PortalProvider } from '@gorhom/portal'
+import { ThemeProvider, useTheme } from '@/context/ThemeContext'
+import { Ionicons } from '@expo/vector-icons'
 
 export const unstable_settings = {
 	initialRouteName: 'index',
@@ -17,43 +16,47 @@ export const unstable_settings = {
 const queryClient = new QueryClient()
 
 export default function RootLayout() {
+	return (
+		<ThemeProvider>
+			<AppContent />
+		</ThemeProvider>
+	)
+}
+
+function AppContent() {
 	const theme = useTheme()
-	const hasOnboarded = useOnboarding().hasOnboarded
 	const router = useRouter()
 
 	return (
-		<ScrollProvider>
+		<GestureHandlerRootView style={{ flex: 1 }}>
 			<QueryClientProvider client={queryClient}>
 				<BottomSheetModalProvider>
-					<GestureHandlerRootView style={{ flex: 1 }}>
-						<StatusBar style="dark" />
+					<PortalProvider>
+						<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
 						<Stack
 							screenOptions={{
 								contentStyle: {
-									backgroundColor: theme.background,
+									backgroundColor: theme.colors.background,
 								},
-								headerStyle: { backgroundColor: theme.card },
-								headerTintColor: theme.textPrimary,
+								headerStyle: { backgroundColor: theme.colors.card },
+								headerTintColor: theme.colors.textPrimary,
 								headerShown: false,
 							}}
 						>
-							{hasOnboarded ? (
-								<Stack.Screen
-									name="(tabs)"
-									options={{ headerShown: false, animation: 'fade' }}
-								/>
-							) : (
-								<Stack.Screen
-									name="onboarding"
-									options={{ headerShown: false }}
-								/>
-							)}
+							<Stack.Screen
+								name="(tabs)"
+								options={{ headerShown: false, animation: 'fade' }}
+							/>
+							<Stack.Screen
+								name="onboarding"
+								options={{ headerShown: false }}
+							/>
 							<Stack.Screen
 								name="(auth)/signin"
 								options={{
 									headerBackVisible: false,
 									contentStyle: {
-										backgroundColor: theme.modalBackground,
+										backgroundColor: theme.colors.card,
 									},
 									headerShown: true,
 									headerShadowVisible: false,
@@ -67,43 +70,42 @@ export default function RootLayout() {
 											<Ionicons
 												name="close"
 												size={26}
-												color={theme.textPrimary}
+												color={theme.colors.textPrimary}
 											/>
 										</TouchableOpacity>
 									),
 								}}
 							/>
 							<Stack.Screen
-								name="settings/profile"
+								name="(auth)/register"
 								options={{
-									headerBackVisible: true,
+									headerBackVisible: false,
 									contentStyle: {
-										backgroundColor: theme.modalBackground,
+										backgroundColor: theme.colors.card,
 									},
 									headerShown: true,
 									headerShadowVisible: false,
-									animation: 'slide_from_right',
-									headerTitle: 'Profile',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/change-password"
-								options={{
-									headerBackVisible: true,
-									contentStyle: {
-										backgroundColor: theme.modalBackground,
-									},
-									headerShown: true,
-									headerShadowVisible: false,
-									animation: 'slide_from_right',
-									headerTitle: 'Change Password',
+									animation: 'slide_from_bottom',
+									headerTitle: '',
+									headerRight: () => (
+										<TouchableOpacity
+											hitSlop={40}
+											onPress={() => router.back()}
+										>
+											<Ionicons
+												name="close"
+												size={26}
+												color={theme.colors.textPrimary}
+											/>
+										</TouchableOpacity>
+									),
 								}}
 							/>
 						</Stack>
 						<Toast />
-					</GestureHandlerRootView>
+					</PortalProvider>
 				</BottomSheetModalProvider>
 			</QueryClientProvider>
-		</ScrollProvider>
+		</GestureHandlerRootView>
 	)
 }

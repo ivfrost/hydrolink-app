@@ -4,9 +4,7 @@ import {
 	View,
 	Text,
 	StyleSheet,
-	StatusBar,
 	KeyboardAvoidingView,
-	Platform,
 } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
@@ -18,25 +16,22 @@ import { StickyActionButtons } from '@/components/StickyActionButtons'
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { ProfileInfo } from './profile'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import HydroSectionTitle from '@/components/HydroSectionTitle'
-import HydroHint from '@/components/HintContainer'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-export default function ChangePasswordScreen() {
+export default function ChangeEmailScreen() {
 	const theme = useTheme()
 	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { data: profile } = useQuery(profileQuery)
-	const insets = useSafeAreaInsets()
 
-	const [password, setPassword] = useState('')
+	const [email, setEmail] = useState('')
 	const [currentPassword, setCurrentPassword] = useState('')
-
-	const isLengthValid = password.length >= 8 && password.length <= 42
+	const insets = useSafeAreaInsets()
 
 	const { mutate, isPending: isUpdating } = useMutation({
 		...profileUpdateFn,
-		mutationKey: ['passwordUpdate'],
+		mutationKey: ['emailUpdate'],
 		onError: (error) => {
 			const errorMessage = error.message || 'UNKNOWN_ERROR'
 
@@ -50,38 +45,64 @@ export default function ChangePasswordScreen() {
 					title: 'Current password is incorrect',
 					preset: 'error',
 				})
+			} else if (errorMessage.includes('already in use')) {
+				Burnt.toast({
+					title: 'Email address is already in use',
+					preset: 'error',
+				})
 			} else {
 				Burnt.toast({
-					title: 'Failed to update password. Please try again',
+					title: 'Failed to update email. Please try again',
 					preset: 'error',
 				})
 			}
 		},
 		onSuccess: async () => {
 			Burnt.toast({
-				title: 'Password updated successfully',
+				title: 'Email updated successfully',
 				preset: 'done',
 			})
+			// Invalidate query cache
 			await queryClient.invalidateQueries({
 				queryKey: ['profile'],
 				refetchType: 'active',
 			})
+			// Navigate back
 			router.back()
 		},
 	})
 
 	const handleInfoChange = (field: keyof ProfileInfo, value: string) => {
-		if (field === 'password') {
-			setPassword(value)
+		if (field === 'email') {
+			setEmail(value)
 		} else if (field === 'currentPassword') {
 			setCurrentPassword(value)
 		}
 	}
 
 	const handleSave = () => {
-		if (!isLengthValid) {
+		if (!email || email.trim() === '') {
 			Burnt.toast({
-				title: 'Password must be between 8 and 42 characters',
+				title: 'Please enter a new email address',
+				preset: 'error',
+			})
+			return
+		}
+
+		// Basic email validation
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+		if (!emailRegex.test(email.trim())) {
+			Burnt.toast({
+				title: 'Please enter a valid email address',
+				preset: 'error',
+			})
+			return
+		}
+
+		// Check if email is same as current
+		if (email.trim().toLowerCase() === profile?.details?.email?.toLowerCase()) {
+			Burnt.toast({
+				title: 'New email is the same as current email',
 				preset: 'error',
 			})
 			return
@@ -97,8 +118,9 @@ export default function ChangePasswordScreen() {
 
 		Burnt.dismissAllAlerts()
 		mutate({
-			password: password.trim(),
+			email: email.trim(),
 			currentPassword: currentPassword.trim(),
+			// Keep other fields to avoid clearing them
 			fullName: profile?.details?.fullName || '',
 			username: profile?.details?.username || '',
 			phoneNumber: profile?.details?.phoneNumber || '',
@@ -119,38 +141,24 @@ export default function ChangePasswordScreen() {
 				keyboardShouldPersistTaps="handled"
 			>
 				<CredentialChangeHeader
-					title="Change Password"
-					description="Enter your new password. Your current password is required for security verification."
+					title="Change Email"
+					description="Enter your new email address. Your current password is required for security verification."
+					currentValue={profile?.details?.email}
 				/>
 
 				<View>
-					<HydroSectionTitle text="Password Details" />
+					<HydroSectionTitle text="Email Details" />
 					<EditableInfoCard
-						password={password}
+						email={email}
 						currentPassword={currentPassword}
 						onInfoChange={handleInfoChange}
 						isCredentialChanging={true}
 					/>
-
-					{password.length > 0 && (
-						<HydroHint
-							text={
-								isLengthValid
-									? 'Password matches the required length rule.'
-									: `Must be between 8 and 42 characters (Current: ${password.length})`
-							}
-							variant={isLengthValid ? 'success' : 'warning'}
-						/>
-					)}
 				</View>
 			</ScrollView>
 
 			<StickyActionButtons
-				hasChanges={
-					password.trim() !== '' &&
-					currentPassword.trim() !== '' &&
-					isLengthValid
-				}
+				hasChanges={email.trim() !== '' || currentPassword.trim() !== ''}
 				onSave={handleSave}
 				onDiscard={() => router.back()}
 				isLoading={isUpdating}

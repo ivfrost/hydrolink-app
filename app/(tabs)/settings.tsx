@@ -1,20 +1,18 @@
 import { useOnboarding } from '@/stores/onboardingStore'
-import { useRouter } from 'expo-router'
-import {
-	View,
-	Text,
-	ActivityIndicator,
-	StyleSheet,
-	Pressable,
-	Animated,
-} from 'react-native'
+import { usePathname, useRouter } from 'expo-router'
+import { View, Text, ActivityIndicator, Animated } from 'react-native'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { UserCard } from '@/components/UserCard'
-import { useTheme } from '@/theme'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useHeaderHeight } from '@react-navigation/elements'
-import { useScrollY } from '@/context/ScrollContext'
+import { tabScrollValues } from './_layout'
+import { useTheme } from '@/context/ThemeContext'
+import HydroCardWrapper from '@/components/HydroCardWrapper'
+import React from 'react'
+import SettingRow from '@/components/SettingRow'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import HydroSectionTitle from '@/components/HydroSectionTitle'
 
 interface SettingsRow {
 	label: string
@@ -31,7 +29,9 @@ export default function SettingsScreen() {
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const router = useRouter()
 	const theme = useTheme()
-	const scrollY = useScrollY()
+	const pathname = usePathname()
+	const currentScrollY = tabScrollValues[pathname] || new Animated.Value(0)
+	const insets = useSafeAreaInsets()
 
 	const resetOnboarding = () => {
 		setHasOnboarded(false)
@@ -40,51 +40,6 @@ export default function SettingsScreen() {
 	const headerHeight = useHeaderHeight()
 
 	const { data: profile, isPending, error } = useQuery(profileQuery)
-
-	const styles = StyleSheet.create({
-		scrollContent: {
-			paddingHorizontal: 14,
-			paddingTop: headerHeight + 6,
-			paddingBottom: 60,
-			gap: 28,
-		},
-		sectionTitle: {
-			fontSize: theme.fontSmall,
-			fontWeight: '500',
-			color: theme.textPrimary,
-			marginBottom: 10,
-			marginLeft: 4,
-		},
-		card: {
-			backgroundColor: theme.card,
-			borderRadius: theme.cardBorderRadius,
-			overflow: 'hidden',
-		},
-		row: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 14,
-			paddingVertical: 16,
-			paddingHorizontal: 16,
-		},
-		rowDivider: {
-			height: 1,
-			backgroundColor: theme.border,
-		},
-		iconWrapper: {
-			width: 32,
-			height: 32,
-			borderRadius: 10,
-			backgroundColor: theme.accentBlueLight,
-			justifyContent: 'center',
-			alignItems: 'center',
-		},
-		rowLabel: {
-			flex: 1,
-			fontSize: theme.fontBase,
-			color: theme.textPrimary,
-		},
-	})
 
 	if (isPending) {
 		return (
@@ -96,8 +51,10 @@ export default function SettingsScreen() {
 					gap: 12,
 				}}
 			>
-				<ActivityIndicator size="large" color={theme.illustrationPrimary} />
-				<Text style={{ color: theme.textSecondary }}>Loading profile...</Text>
+				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<Text style={{ color: theme.colors.textSecondary }}>
+					Loading profile...
+				</Text>
 			</View>
 		)
 	}
@@ -112,9 +69,10 @@ export default function SettingsScreen() {
 					paddingHorizontal: 20,
 				}}
 			>
-				<Text style={{ color: theme.textSecondary, textAlign: 'center' }}>
-					Couldn&nbps;t load your profile. Pull to retry or check your
-					connection.
+				<Text
+					style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
+				>
+					Couldn't load your profile. Pull to retry or check your connection.
 				</Text>
 			</View>
 		)
@@ -123,7 +81,7 @@ export default function SettingsScreen() {
 	if (!profile) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-				<Text style={{ color: theme.textSecondary }}>
+				<Text style={{ color: theme.colors.textSecondary }}>
 					No profile data found.
 				</Text>
 			</View>
@@ -165,11 +123,16 @@ export default function SettingsScreen() {
 	return (
 		<Animated.ScrollView
 			onScroll={Animated.event(
-				[{ nativeEvent: { contentOffset: { y: scrollY } } }],
+				[{ nativeEvent: { contentOffset: { y: currentScrollY } } }],
 				{ useNativeDriver: true },
 			)}
 			scrollEventThrottle={16}
-			contentContainerStyle={styles.scrollContent}
+			contentContainerStyle={{
+				paddingHorizontal: theme.space.lg,
+				paddingTop: headerHeight + theme.space.sm,
+				paddingBottom: insets.bottom + theme.space.lg,
+				gap: theme.space.x2l,
+			}}
 		>
 			<UserCard
 				name={profile.details.fullName}
@@ -179,60 +142,17 @@ export default function SettingsScreen() {
 
 			{sections.map((section) => (
 				<View key={section.title}>
-					<Text style={styles.sectionTitle}>{section.title}</Text>
-					<View style={styles.card}>
-						{section.rows.map((row, index) => (
-							<View key={row.label}>
-								<Pressable style={styles.row} onPress={row.onPress}>
-									<View style={styles.iconWrapper}>
-										<MaterialIcons
-											name={row.icon}
-											size={18}
-											color={theme.accentBlue}
-										/>
-									</View>
-									<Text style={styles.rowLabel}>{row.label}</Text>
-									<MaterialIcons
-										name="chevron-right"
-										size={20}
-										color={theme.textMuted}
-									/>
-								</Pressable>
-								{index < section.rows.length - 1 && (
-									<View style={styles.rowDivider} />
-								)}
-							</View>
+					<HydroSectionTitle text={section.title} />
+					<HydroCardWrapper>
+						{section.rows.map((row) => (
+							<SettingRow
+								key={row.label}
+								label={row.label}
+								icon={row.icon}
+								onPress={row.onPress}
+							/>
 						))}
-					</View>
-				</View>
-			))}
-			{sections.map((section) => (
-				<View key={section.title}>
-					<Text style={styles.sectionTitle}>{section.title}</Text>
-					<View style={styles.card}>
-						{section.rows.map((row, index) => (
-							<View key={row.label}>
-								<Pressable style={styles.row} onPress={row.onPress}>
-									<View style={styles.iconWrapper}>
-										<MaterialIcons
-											name={row.icon}
-											size={18}
-											color={theme.accentBlue}
-										/>
-									</View>
-									<Text style={styles.rowLabel}>{row.label}</Text>
-									<MaterialIcons
-										name="chevron-right"
-										size={20}
-										color={theme.textMuted}
-									/>
-								</Pressable>
-								{index < section.rows.length - 1 && (
-									<View style={styles.rowDivider} />
-								)}
-							</View>
-						))}
-					</View>
+					</HydroCardWrapper>
 				</View>
 			))}
 		</Animated.ScrollView>

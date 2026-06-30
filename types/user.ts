@@ -5,9 +5,9 @@ export const userSchema = z.object({
 	email: z.email(),
 	username: z.string(),
 	fullName: z.string(),
-	profilePictureUrl: z.string().url(),
-	phoneNumber: z.string(),
-	address: z.string().optional(),
+	profilePictureUrl: z.url().nullable(),
+	phoneNumber: z.string().default(''),
+	address: z.string().default(''),
 	preferredLanguage: z.string(),
 	settings: z.record(z.string(), z.any()),
 })

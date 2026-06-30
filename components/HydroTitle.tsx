@@ -1,0 +1,18 @@
+import { useTheme } from '@/context/ThemeContext'
+import { Text } from 'react-native'
+
+export default function HydroTitle({ text }: { text: string }) {
+	const theme = useTheme()
+	return (
+		<Text
+			style={{
+				fontSize: theme.font.lg,
+				fontWeight: '500',
+				color: theme.colors.textPrimary,
+				textAlign: 'center',
+			}}
+		>
+			{text}
+		</Text>
+	)
+}

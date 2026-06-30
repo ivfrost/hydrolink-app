@@ -1,31 +1,34 @@
 import { useMemo } from 'react'
-import { View, StyleSheet, Pressable } from 'react-native'
+import { View, StyleSheet, Pressable, Image } from 'react-native'
 import { Style, Avatar } from '@dicebear/core'
 import shapeGrid from '@dicebear/styles/shape-grid.json' with { type: 'json' }
 import { SvgXml } from 'react-native-svg'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 
 const style = new Style(shapeGrid)
 
 interface UserAvatarProps {
 	seed?: string
+	imageUrl?: string | null
 	size?: number
 	onPress?: () => void
 }
 
 export default function UserAvatar({
 	seed = 'Alice',
+	imageUrl,
 	size = 64,
 	onPress,
 }: UserAvatarProps) {
 	const theme = useTheme()
 
 	const avatar = useMemo(() => {
+		if (imageUrl) return null
 		return new Avatar(style, {
 			seed,
 			size: 128,
 		}).toString()
-	}, [seed])
+	}, [seed, imageUrl])
 
 	const styles = StyleSheet.create({
 		ring: {
@@ -54,7 +57,15 @@ export default function UserAvatar({
 	const content = (
 		<View style={styles.ring}>
 			<View style={styles.avatarWrapper}>
-				<SvgXml xml={avatar} width={size} height={size} />
+				{imageUrl ? (
+					<Image
+						source={{ uri: imageUrl }}
+						style={{ width: size, height: size }}
+						resizeMode="cover"
+					/>
+				) : (
+					<SvgXml xml={avatar!} width={size} height={size} />
+				)}
 			</View>
 		</View>
 	)

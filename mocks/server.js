@@ -6,6 +6,7 @@ const mockUser = {
 	id: 1,
 	email: 'test@hydro.com',
 	username: 'test_user',
+	password: 'password123',
 	fullName: 'Test User',
 	profilePictureUrl: 'https://example.com/profile-picture.jpg',
 	phoneNumber: '+1234567890',
@@ -71,7 +72,7 @@ app.post('/v1/users/auth', (req, res) => {
 	const { email, password } = req.body
 	console.log(email, password)
 
-	if (email !== mockUser.email || password !== 'password123') {
+	if (email !== mockUser.email || password !== mockUser.password) {
 		console.log('Invalid email or password')
 		return res
 			.status(401)
@@ -84,14 +85,14 @@ app.post('/v1/users/auth', (req, res) => {
 		path: '/v1/users/auth/refresh',
 	})
 
-	res.status(200).json(
-		// TODO: Send header from react-native app to server so it knows to send
-		// the refresh token in the response body
-		apiResponse(200, 'User authenticated successfully', [
-			mockAccessToken,
-			mockRefreshToken,
-		]),
-	)
+	res
+		.status(200)
+		.json(
+			apiResponse(200, 'User authenticated successfully', [
+				mockAccessToken,
+				mockRefreshToken,
+			]),
+		)
 })
 
 app.post('/v1/users/auth/refresh', (req, res) => {
@@ -127,6 +128,11 @@ app.post('/v1/users', (req, res) => {
 	console.log(
 		`User registered successfully: ${email}, ${username}, ${fullName}, ${preferredLanguage}`,
 	)
+	mockUser.email = email
+	mockUser.username = username
+	mockUser.fullName = fullName
+	mockUser.password = password
+	mockUser.preferredLanguage = preferredLanguage
 	res
 		.status(201)
 		.json(
@@ -142,6 +148,100 @@ app.get('/v1/me', (req, res) => {
 	res
 		.status(200)
 		.json(apiResponse(200, 'User profile retrieved successfully', mockUser))
+})
+
+app.put('/v1/me', (req, res) => {
+	const {
+		username,
+		password,
+		currentPassword,
+		fullName,
+		email,
+		phoneNumber,
+		address,
+		preferredLanguage,
+		settings,
+	} = req.body
+
+	const isChangingPassword = password !== undefined && password.trim() !== ''
+	const isChangingEmail =
+		email !== undefined &&
+		email.trim() !== '' &&
+		email.trim().toLowerCase() !== mockUser.email.toLowerCase()
+
+	if (isChangingPassword || isChangingEmail) {
+		if (!currentPassword || currentPassword.trim() === '') {
+			console.log(
+				'Validation failed: Current password missing for credential change',
+			)
+			return res
+				.status(400)
+				.json(
+					apiResponse(
+						400,
+						'Current password must be provided to update credentials.',
+						null,
+						'Bad Request',
+					),
+				)
+		}
+
+		if (currentPassword !== mockUser.password) {
+			console.log('Validation failed: Invalid credentials')
+			return res
+				.status(401)
+				.json(apiResponse(401, 'Invalid credentials', null, 'Unauthorized'))
+		}
+
+		if (isChangingPassword) {
+			mockUser.password = password
+			console.log('Password updated in mock')
+		}
+
+		if (isChangingEmail) {
+			const cleanEmail = email.trim().toLowerCase()
+
+			if (cleanEmail === 'taken@email.com') {
+				console.log('Validation failed: Email already in use')
+				return res
+					.status(400)
+					.json(
+						apiResponse(
+							400,
+							'Email address is already in use by another account.',
+							null,
+							'Bad Request',
+						),
+					)
+			}
+
+			mockUser.email = cleanEmail
+			console.log('Email updated in mock')
+		}
+	}
+
+	if (username && username.trim() !== '') mockUser.username = username
+	if (fullName && fullName.trim() !== '') mockUser.fullName = fullName
+	if (phoneNumber !== undefined) mockUser.phoneNumber = phoneNumber
+	if (address !== undefined) mockUser.address = address
+	if (preferredLanguage && preferredLanguage.trim() !== '')
+		mockUser.preferredLanguage = preferredLanguage
+	if (settings !== undefined) mockUser.settings = settings
+
+	console.log('User profile updated successfully')
+
+	return res.status(200).json(
+		apiResponse(200, 'User profile updated successfully', {
+			id: mockUser.id,
+			username: mockUser.username,
+			fullName: mockUser.fullName,
+			email: mockUser.email,
+			phoneNumber: mockUser.phoneNumber,
+			address: mockUser.address,
+			preferredLanguage: mockUser.preferredLanguage,
+			settings: mockUser.settings,
+		}),
+	)
 })
 
 app.post('/v1/me/devices/link', (req, res) => {

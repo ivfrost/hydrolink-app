@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { useRef } from 'react'
 import { View, StyleSheet, Text, ScrollView } from 'react-native'
 import QrCodeIllustration from '@/assets/images/onboarding/undraw_qr-code-scan_bewe.svg'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 export default function Link() {
 	const [permission, requestPermission] = useCameraPermissions()
 	const scannedRef = useRef(false)
@@ -30,16 +30,16 @@ export default function Link() {
 			paddingHorizontal: 20,
 		},
 		textTitle: {
-			fontSize: theme.fontLarge,
+			fontSize: theme.font.lg,
 			fontWeight: '500',
 			textAlign: 'center',
-			color: theme.textPrimary,
+			color: theme.colors.textPrimary,
 		},
 		textSubtitle: {
-			fontSize: theme.fontBase,
+			fontSize: theme.font.base,
 			fontWeight: '400',
 			textAlign: 'center',
-			color: theme.textSecondary,
+			color: theme.colors.textSecondary,
 			paddingHorizontal: 20,
 			lineHeight: 24,
 		},

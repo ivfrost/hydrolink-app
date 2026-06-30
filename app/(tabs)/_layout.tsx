@@ -1,48 +1,59 @@
-import { Tabs } from 'expo-router'
+import { Tabs, usePathname } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { Animated, StyleSheet } from 'react-native'
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
 import { MaterialIcons } from '@expo/vector-icons'
-import { useScrollY } from '@/context/ScrollContext'
+import FadeHeaderBackground from '@/components/FadeHeaderBackground'
+import { useEffect, useState } from 'react'
+
+export const tabScrollValues: Record<string, Animated.Value> = {}
 
 export default function TabsLayout() {
 	useQuery(profileQuery)
 	useQuery(areasQuery)
-	const scrollY = useScrollY()
-	const headerOpacity = scrollY.interpolate({
-		inputRange: [0, 60],
-		outputRange: [0, 1],
-		extrapolate: 'clamp',
-	})
+
+	const pathname = usePathname()
 	const theme = useTheme()
+
+	// Ensure an animated value exists for the current tab path
+	if (!tabScrollValues[pathname]) {
+		tabScrollValues[pathname] = new Animated.Value(0)
+	}
+
+	const [headerOpacity, setHeaderOpacity] = useState(0)
+
+	useEffect(() => {
+		const listenerId = tabScrollValues[pathname].addListener(({ value }) => {
+			setHeaderOpacity(Math.min(value / 60, 1)) // clamp 0 → 1
+		})
+
+		return () => {
+			tabScrollValues[pathname].removeListener(listenerId)
+		}
+	}, [pathname])
 
 	return (
 		<Tabs
 			screenOptions={{
 				headerTransparent: true,
+				sceneStyle: {
+					backgroundColor: theme.colors.background,
+				},
 				headerBackground: () => (
-					<Animated.View
-						style={[
-							StyleSheet.absoluteFill,
-							{
-								backgroundColor: theme.headerBackground,
-								opacity: headerOpacity,
-							},
-						]}
-					/>
+					<FadeHeaderBackground opacity={headerOpacity} theme={theme} />
 				),
 				tabBarStyle: {
-					backgroundColor: theme.card,
-					borderTopColor: theme.border,
+					backgroundColor: theme.colors.modal,
+					borderTopColor: theme.colors.border,
 					paddingTop: 8,
 					paddingBottom: 12,
 					height: 90,
 				},
-				tabBarActiveTintColor: theme.accent,
-				tabBarInactiveTintColor: theme.textMuted,
+				tabBarActiveTintColor: theme.colors.accentBlue,
+				tabBarInactiveTintColor: theme.colors.textMuted,
 			}}
 		>
 			<Tabs.Screen

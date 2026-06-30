@@ -1,20 +1,23 @@
-import { useTheme } from '@/theme'
+import { useTheme } from '@/context/ThemeContext'
 import {
 	ActivityIndicator,
+	StyleProp,
 	StyleSheet,
 	Text,
 	TouchableOpacity,
+	ViewStyle,
 } from 'react-native'
 import * as Haptics from 'expo-haptics'
 
 export interface HydroButtonProps {
 	label: string
-	variant?: 'primary' | 'secondary' | 'tertiary'
-	modifier?: ('tall' | 'full')[]
+	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
+	modifier?: ('tall' | 'full' | 'fab')[]
 	loading?: boolean
 	disabled?: boolean
 	icon?: React.ReactNode
 	iconPosition?: 'left' | 'right'
+	extraStyles?: StyleProp<ViewStyle>
 	onPress?: () => any
 }
 
@@ -26,62 +29,95 @@ export default function HydroButton({
 	icon,
 	disabled = false,
 	iconPosition = 'left',
+	extraStyles,
 	onPress,
 }: HydroButtonProps) {
 	const isTall = modifier?.includes('tall') ?? false
 	const isFull = modifier?.includes('full') ?? false
+	const isFab = modifier?.includes('fab') ?? false
 	const theme = useTheme()
 	const handlePress = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 		if (onPress) onPress()
 	}
-
 	const styles = StyleSheet.create({
 		button: {
-			borderRadius: theme.buttonBorderRadius,
-			paddingVertical: isTall ? 22 : 14,
-			paddingHorizontal: 20,
+			borderRadius: isFab ? theme.radius.fab : theme.radius.button,
+			paddingVertical: isFab ? 0 : isTall ? theme.space.xl : theme.space.lg,
+			paddingHorizontal: isFab ? 0 : theme.space.xl,
 			alignItems: 'center',
 			justifyContent: 'center',
-			width: isFull ? '100%' : undefined,
+			width: isFab ? 60 : isFull ? '100%' : 'auto',
+			height: isFab ? 60 : undefined,
 			backgroundColor:
 				variant === 'primary'
-					? theme.buttonPrimaryBg
+					? theme.colors.buttonPrimaryBg
 					: variant === 'secondary'
-						? theme.buttonSecondaryBg
-						: 'transparent',
+						? theme.colors.buttonSecondaryBg
+						: variant === 'tertiary'
+							? 'transparent'
+							: variant === 'destructive'
+								? theme.colors.buttonDestructiveBg
+								: theme.colors.buttonPrimaryBg,
+			...(isFab && {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.25,
+				shadowRadius: 4,
+				elevation: 6,
+			}),
 		},
 		buttonWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 		buttonText: {
-			fontSize: theme.fontBase,
+			fontSize: theme.font.base,
 			fontWeight: '500',
 			textAlign: 'center',
 			color:
-				variant === 'primary'
-					? theme.buttonPrimaryText
-					: variant === 'secondary'
-						? theme.buttonSecondaryText
-						: theme.buttonTertiaryText,
+				disabled || loading
+					? theme.colors.buttonDisabledText
+					: variant === 'primary'
+						? theme.colors.buttonPrimaryText
+						: variant === 'secondary'
+							? theme.colors.buttonSecondaryText
+							: variant === 'tertiary'
+								? theme.colors.textMuted
+								: variant === 'destructive'
+									? theme.colors.buttonPrimaryText
+									: theme.colors.buttonPrimaryText,
 		},
 	})
 	return (
 		<TouchableOpacity
-			style={[styles.button, icon ? styles.buttonWithIcon : null]}
+			style={[styles.button, icon ? styles.buttonWithIcon : null, extraStyles]}
 			onPress={handlePress}
 			disabled={disabled}
 			activeOpacity={0.9}
 		>
 			{iconPosition === 'left' && icon ? (
 				loading ? (
-					<ActivityIndicator color={theme.buttonPrimaryText} size="small" />
+					<ActivityIndicator
+						color={
+							variant === 'primary' || variant === 'destructive'
+								? theme.colors.buttonDisabledText
+								: theme.colors.buttonSecondaryText
+						}
+						size="small"
+					/>
 				) : (
 					icon
 				)
 			) : null}
-			<Text style={styles.buttonText}>{label}</Text>
+			{label ? <Text style={styles.buttonText}>{label}</Text> : null}
 			{iconPosition === 'right' && icon ? (
 				loading ? (
-					<ActivityIndicator color={theme.buttonPrimaryText} size="small" />
+					<ActivityIndicator
+						color={
+							variant === 'primary' || variant === 'destructive'
+								? theme.colors.buttonDisabledText
+								: theme.colors.buttonSecondaryText
+						}
+						size="small"
+					/>
 				) : (
 					icon
 				)
