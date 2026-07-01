@@ -1,13 +1,11 @@
 import { Tabs, usePathname } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { Animated, StyleSheet } from 'react-native'
+import { Animated, StyleSheet, View } from 'react-native'
 import { useTheme } from '@/context/ThemeContext'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
-import { MaterialIcons } from '@expo/vector-icons'
 import { useEffect, useState } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 
@@ -17,18 +15,16 @@ export default function TabsLayout() {
 
 	const pathname = usePathname()
 	const theme = useTheme()
-	const insets = useSafeAreaInsets()
 
-	// Ensure an animated value exists for the current tab path
 	if (!tabScrollValues[pathname]) {
 		tabScrollValues[pathname] = new Animated.Value(0)
 	}
 
-	const [headerOpacity, setHeaderOpacity] = useState(0)
+	const [headerElevation, setHeaderElevation] = useState(0)
 
 	useEffect(() => {
 		const listenerId = tabScrollValues[pathname].addListener(({ value }) => {
-			setHeaderOpacity(Math.min(value / 60, 1)) // clamp 0 → 1
+			setHeaderElevation(Math.min(Math.max(value, 0), 4))
 		})
 
 		return () => {
@@ -49,7 +45,7 @@ export default function TabsLayout() {
 							StyleSheet.absoluteFill,
 							{
 								backgroundColor: theme.colors.background,
-								opacity: headerOpacity,
+								elevation: headerElevation,
 							},
 						]}
 					/>
@@ -59,75 +55,77 @@ export default function TabsLayout() {
 					borderTopColor: theme.colors.border,
 					paddingTop: theme.space.sm,
 					paddingHorizontal: theme.space.xs,
-					height: theme.space.x2l * 3,
+					height: 90,
 				},
 				tabBarActiveTintColor: theme.colors.accentBlue,
 				tabBarInactiveTintColor: theme.colors.textMuted,
+				tabBarLabelStyle: {
+					fontSize: theme.font.xs,
+				},
 			}}
 		>
 			<Tabs.Screen
 				name="index"
 				options={{
-					tabBarIcon: ({ color, size }) => (
-						<MaterialCommunityIcons
-							name="view-dashboard-outline"
-							size={size}
-							color={color}
-						/>
-					),
 					title: 'Dashboard',
-					tabBarLabel: 'Dashboard',
-					tabBarLabelStyle: styles.label,
+					tabBarIcon: ({ color, focused }) => (
+						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
+							<MaterialCommunityIcons
+								name={focused ? 'view-dashboard' : 'view-dashboard-outline'}
+								size={22}
+								color={color}
+							/>
+						</View>
+					),
 				}}
 			/>
 			<Tabs.Screen
 				name="schedules"
 				options={{
-					tabBarIcon: ({ color, size }) => (
-						<MaterialCommunityIcons
-							name="calendar-blank-outline"
-							size={size}
-							color={color}
-						/>
-					),
 					title: 'Schedules',
-					tabBarLabel: 'Schedules',
-					tabBarLabelStyle: styles.label,
+					tabBarIcon: ({ color, focused }) => (
+						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
+							<MaterialCommunityIcons
+								name={focused ? 'calendar-blank' : 'calendar-blank-outline'}
+								size={22}
+								color={color}
+							/>
+						</View>
+					),
 				}}
 			/>
 			<Tabs.Screen
 				name="areas"
 				options={{
-					tabBarIcon: ({ color, size }) => (
-						<MaterialIcons name="sensors" size={size} color={color} />
-					),
 					title: 'Areas',
-					tabBarLabel: 'Areas',
-					tabBarLabelStyle: styles.label,
+					tabBarIcon: ({ color, focused }) => (
+						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
+							<MaterialCommunityIcons
+								name={
+									focused ? 'map-marker-radius' : 'map-marker-radius-outline'
+								}
+								size={22}
+								color={color}
+							/>
+						</View>
+					),
 				}}
 			/>
 			<Tabs.Screen
 				name="settings"
 				options={{
-					tabBarIcon: ({ color, size }) => (
-						<MaterialCommunityIcons
-							name="cog-outline"
-							size={size}
-							color={color}
-						/>
-					),
 					title: 'Settings',
-					tabBarLabel: 'Settings',
-					tabBarLabelStyle: styles.label,
+					tabBarIcon: ({ color, focused }) => (
+						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
+							<MaterialCommunityIcons
+								name={focused ? 'cog' : 'cog-outline'}
+								size={22}
+								color={color}
+							/>
+						</View>
+					),
 				}}
 			/>
 		</Tabs>
 	)
 }
-
-const styles = StyleSheet.create({
-	label: {
-		fontSize: 12,
-		fontWeight: 'semibold',
-	},
-})

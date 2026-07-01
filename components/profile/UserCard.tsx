@@ -36,6 +36,7 @@ export function UserCard({
 			borderRadius: theme.radius.card,
 			padding: 16,
 			gap: 14,
+			elevation: 0,
 		},
 		info: {
 			flex: 1,

@@ -36,6 +36,7 @@ export function EditableProfileInfoCard({
 				overflow: 'hidden',
 				backgroundColor: theme.colors.card,
 				width: '100%',
+				elevation: 0,
 			}}
 		>
 			{name !== undefined && (
@@ -59,6 +60,7 @@ export function EditableProfileInfoCard({
 					label="Username"
 					text={username}
 					onChangeText={(value) => onInfoChange('username', value)}
+					autoCapitalize="none"
 					editable
 					icon={
 						<MaterialCommunityIcons
@@ -76,6 +78,7 @@ export function EditableProfileInfoCard({
 					text={email}
 					onChangeText={(value) => onInfoChange('email', value)}
 					textContentType="emailAddress"
+					autoCapitalize="none"
 					editable
 					icon={
 						<MaterialCommunityIcons
@@ -94,6 +97,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('password', value)}
 					secureTextEntry
 					editable
+					autoCapitalize="none"
 					autoComplete="current-password"
 					textContentType="password"
 					icon={
@@ -113,6 +117,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('currentPassword', value)}
 					secureTextEntry
 					editable
+					autoCapitalize="none"
 					autoComplete="current-password"
 					textContentType="password"
 					icon={

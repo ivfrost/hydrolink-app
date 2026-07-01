@@ -18,6 +18,7 @@ export function AccountActionsCard({
 			backgroundColor: theme.colors.card,
 			borderRadius: theme.radius.card,
 			overflow: 'hidden',
+			elevation: 0,
 		},
 		row: {
 			flexDirection: 'row',

@@ -49,9 +49,6 @@ export default function DevicesScreen() {
 			position: 'absolute',
 			right: 20,
 			bottom: 28,
-			width: 58,
-			height: 58,
-			elevation: 6,
 		},
 	})
 
@@ -131,7 +128,11 @@ export default function DevicesScreen() {
 								<MaterialIcons
 									name="arrow-forward"
 									size={24}
-									color={theme.colors.buttonSecondaryText}
+									color={
+										linkCode.length !== 32 || linkPending
+											? theme.colors.textMuted
+											: theme.colors.buttonSecondaryText
+									}
 								/>
 							}
 						/>

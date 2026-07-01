@@ -25,7 +25,7 @@ export function StickyActionButtons({
 	const saveColor = hasChanges
 		? theme.colors.buttonPrimaryText
 		: theme.colors.textMuted
-	const STICKY_BAR_HEIGHT = theme.space.x2l * 3
+	const STICKY_BAR_HEIGHT = 90
 
 	return (
 		<View
@@ -38,7 +38,7 @@ export function StickyActionButtons({
 				paddingBottom: bottomInset + theme.space.sm,
 				borderTopWidth: 1,
 				borderTopColor: theme.colors.border,
-				shadowColor: '#000',
+				shadowColor: theme.colors.textPrimary,
 				shadowOffset: { width: 0, height: -2 },
 				shadowOpacity: 0.1,
 				shadowRadius: 8,
@@ -63,7 +63,7 @@ export function StickyActionButtons({
 					alignItems: 'center',
 					backgroundColor: hasChanges
 						? theme.colors.buttonSecondaryBg
-						: theme.colors.modal,
+						: theme.colors.buttonDisabledBg,
 					opacity: hasChanges ? 1 : 0.4,
 				}}
 				disabled={!hasChanges || isLoading}
@@ -85,7 +85,7 @@ export function StickyActionButtons({
 					height: 54,
 					backgroundColor: hasChanges
 						? theme.colors.buttonPrimaryBg
-						: theme.colors.modal,
+						: theme.colors.buttonDisabledBg,
 					opacity: hasChanges ? 1 : 0.4,
 				}}
 				disabled={!hasChanges || isLoading}

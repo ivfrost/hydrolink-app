@@ -3,17 +3,17 @@ import { useTheme } from '@/context/ThemeContext'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 
-interface SimpleRowCardProps {
+interface SimpleRowCardItemProps {
 	label: string
 	icon: keyof typeof MaterialIcons.glyphMap
 	onPress?: () => void
 }
 
-export default function SimpleRowCard({
+export default function SimpleRowCardItem({
 	label,
 	icon,
 	onPress,
-}: SimpleRowCardProps) {
+}: SimpleRowCardItemProps) {
 	const theme = useTheme()
 
 	const styles = StyleSheet.create({
@@ -23,6 +23,7 @@ export default function SimpleRowCard({
 			gap: theme.space.lg,
 			paddingVertical: theme.space.lg,
 			paddingHorizontal: theme.space.lg,
+			elevation: 0,
 		},
 		iconWrapper: {
 			width: theme.space.x3l,

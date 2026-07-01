@@ -64,7 +64,6 @@ export default function Onboarding3() {
 		}
 		bottomSheetRef.current?.close()
 		mutate(linkCode)
-		// Handle link code submission
 		console.log('Link code submitted:', linkCode)
 	}
 

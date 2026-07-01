@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react'
-
 const themeTokens = {
 	colors: {
 		light: {
@@ -23,32 +22,35 @@ const themeTokens = {
 			buttonDisabledBg: '#edf1f5',
 			buttonDisabledText: '#8a97a8',
 
-			// status
-			online: '#3a8f55',
-			success: '#3a8f55',
-			warning: '#c58a2a',
-			fault: '#c44f3f',
-			offline: '#8a97a8',
+			online: '#1e6b35',
+			success: '#1e6b35',
+			warning: '#a16a1c',
+			fault: '#ad3b2c',
+			offline: '#5d6b7c',
 			scheduled: '#1b2a3b',
 
-			// status backgrounds
 			onlineBg: '#eaf6ef',
 			warningBg: '#faf3e6',
 			faultBg: '#f8eceb',
 			scheduledBg: '#e9edf3',
+
+			onlineBorder: '#ccebd8',
+			warningBorder: '#f3e3ca',
+			faultBorder: '#f0d6d3',
+			scheduledBorder: '#d7dee5',
 		},
 		dark: {
-			background: '#121212',
-			card: '#1e1e1e',
-			modal: '#1e1e1e',
-			textPrimary: '#ffffff',
-			textSecondary: '#a0a0a0',
-			textMuted: '#666666',
-			border: '#333333',
-			accentBlue: '#4a6a8a',
-			accentBlueLight: '#1a2430',
-			gradientStart: '#1e1e1e',
-			gradientEnd: '#121212',
+			background: '#0f1115',
+			card: '#1a1e26',
+			modal: '#1a1e26',
+			textPrimary: '#f8fafc',
+			textSecondary: '#94a3b8',
+			textMuted: '#64748b',
+			border: '#2a3342',
+			accentBlue: '#60a5fa',
+			accentBlueLight: '#1e293b',
+			gradientStart: '#1a1e26',
+			gradientEnd: '#0f1115',
 			buttonPrimaryBg: '#ffffff',
 			buttonPrimaryText: '#1b2a3b',
 			buttonSecondaryBg: '#2c323f',
@@ -59,45 +61,53 @@ const themeTokens = {
 			buttonDisabledText: '#64748b',
 			modalBackground: 'rgba(0,0,0,0.7)',
 
-			// status
-			online: '#3a8f55',
-			success: '#3a8f55',
-			warning: '#c58a2a',
-			fault: '#c44f3f',
-			offline: '#8a97a8',
-			scheduled: '#1b2a3b',
+			online: '#4ade80',
+			success: '#4ade80',
+			warning: '#fbbf24',
+			fault: '#f87171',
+			offline: '#94a3b8',
+			scheduled: '#38bdf8',
 
-			// status backgrounds
-			onlineBg: '#eaf6ef',
-			warningBg: '#faf3e6',
-			faultBg: '#f8eceb',
-			scheduledBg: '#e9edf3',
+			onlineBg: 'rgba(74, 222, 128, 0.15)',
+			warningBg: 'rgba(251, 191, 36, 0.15)',
+			faultBg: 'rgba(248, 113, 113, 0.15)',
+			scheduledBg: 'rgba(56, 189, 248, 0.15)',
+
+			onlineBorder: 'rgba(74, 222, 128, 0.3)',
+			warningBorder: 'rgba(251, 191, 36, 0.3)',
+			faultBorder: 'rgba(248, 113, 113, 0.3)',
+			scheduledBorder: 'rgba(56, 189, 248, 0.3)',
 		},
 	},
 
 	space: {
+		x3s: 2,
+		x2s: 4,
 		xs: 6,
 		sm: 8,
 		md: 12,
 		lg: 14,
-		xl: 20,
-		x2l: 30,
+		xl: 16,
+		xxl: 20,
+		x2l: 24,
 		x3l: 32,
+		xxxl: 40,
 	},
 
 	radius: {
-		card: 14,
-		button: 6,
-		fab: 10,
-		input: 6,
+		card: 16,
+		fab: 12,
+		pill: 9999,
+		input: 8,
 	},
 
 	font: {
-		xs: 13,
-		sm: 16,
-		base: 18,
-		lg: 30,
-		xl: 42,
+		xs: 12,
+		sm: 14,
+		base: 16,
+		md: 20,
+		lg: 24,
+		xl: 32,
 	},
 
 	lineHeight: {

@@ -10,9 +10,10 @@ import { tabScrollValues } from './_layout'
 import { useTheme } from '@/context/ThemeContext'
 import CardWrapper from '@/components/layout/CardWrapper'
 import React from 'react'
-import SimpleRowCard from '@/components/ui/SimpleRowCard'
+import SimpleRowCardItem from '@/components/ui/SimpleRowCard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import SectionTitle from '@/components/ui/SectionTitle'
+import { AreaCardProps } from '@/components/dashboard/AreaCard'
 
 interface SettingsRow {
 	label: string
@@ -143,9 +144,9 @@ export default function SettingsScreen() {
 			{sections.map((section) => (
 				<View key={section.title}>
 					<SectionTitle text={section.title} />
-					<CardWrapper>
+					<CardWrapper elevation={0} paddingDisabled={true}>
 						{section.rows.map((row) => (
-							<SimpleRowCard
+							<SimpleRowCardItem
 								key={row.label}
 								label={row.label}
 								icon={row.icon}

@@ -62,7 +62,6 @@ export default function ChangeEmailScreen() {
 				queryKey: ['profile'],
 				refetchType: 'active',
 			})
-			// Navigate back
 			router.back()
 		},
 	})
@@ -84,7 +83,6 @@ export default function ChangeEmailScreen() {
 			return
 		}
 
-		// Basic email validation
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 		if (!emailRegex.test(email.trim())) {
 			Burnt.toast({
