@@ -8,10 +8,13 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalProvider } from '@gorhom/portal'
 import { ThemeProvider, useTheme } from '@/context/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 
 export const unstable_settings = {
 	initialRouteName: 'index',
 }
+
+export const STICKY_BAR_HEIGHT = 90
 
 const queryClient = new QueryClient()
 
@@ -32,77 +35,79 @@ function AppContent() {
 			<QueryClientProvider client={queryClient}>
 				<BottomSheetModalProvider>
 					<PortalProvider>
-						<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-						<Stack
-							screenOptions={{
-								contentStyle: {
-									backgroundColor: theme.colors.background,
-								},
-								headerStyle: { backgroundColor: theme.colors.card },
-								headerTintColor: theme.colors.textPrimary,
-								headerShown: false,
-							}}
-						>
-							<Stack.Screen
-								name="(tabs)"
-								options={{ headerShown: false, animation: 'fade' }}
-							/>
-							<Stack.Screen
-								name="onboarding"
-								options={{ headerShown: false }}
-							/>
-							<Stack.Screen
-								name="(auth)/signin"
-								options={{
-									headerBackVisible: false,
+						<KeyboardProvider>
+							<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
+							<Stack
+								screenOptions={{
 									contentStyle: {
-										backgroundColor: theme.colors.card,
+										backgroundColor: theme.colors.background,
 									},
-									headerShown: true,
-									headerShadowVisible: false,
-									animation: 'slide_from_bottom',
-									headerTitle: '',
-									headerRight: () => (
-										<TouchableOpacity
-											hitSlop={40}
-											onPress={() => router.back()}
-										>
-											<Ionicons
-												name="close"
-												size={26}
-												color={theme.colors.textPrimary}
-											/>
-										</TouchableOpacity>
-									),
+									headerStyle: { backgroundColor: theme.colors.card },
+									headerTintColor: theme.colors.textPrimary,
+									headerShown: false,
 								}}
-							/>
-							<Stack.Screen
-								name="(auth)/register"
-								options={{
-									headerBackVisible: false,
-									contentStyle: {
-										backgroundColor: theme.colors.card,
-									},
-									headerShown: true,
-									headerShadowVisible: false,
-									animation: 'slide_from_bottom',
-									headerTitle: '',
-									headerRight: () => (
-										<TouchableOpacity
-											hitSlop={40}
-											onPress={() => router.back()}
-										>
-											<Ionicons
-												name="close"
-												size={26}
-												color={theme.colors.textPrimary}
-											/>
-										</TouchableOpacity>
-									),
-								}}
-							/>
-						</Stack>
-						<Toast />
+							>
+								<Stack.Screen
+									name="(tabs)"
+									options={{ headerShown: false, animation: 'fade' }}
+								/>
+								<Stack.Screen
+									name="onboarding"
+									options={{ headerShown: false }}
+								/>
+								<Stack.Screen
+									name="(auth)/signin"
+									options={{
+										headerBackVisible: false,
+										contentStyle: {
+											backgroundColor: theme.colors.card,
+										},
+										headerShown: true,
+										headerShadowVisible: false,
+										animation: 'slide_from_bottom',
+										headerTitle: '',
+										headerRight: () => (
+											<TouchableOpacity
+												hitSlop={40}
+												onPress={() => router.back()}
+											>
+												<Ionicons
+													name="close"
+													size={26}
+													color={theme.colors.textPrimary}
+												/>
+											</TouchableOpacity>
+										),
+									}}
+								/>
+								<Stack.Screen
+									name="(auth)/register"
+									options={{
+										headerBackVisible: false,
+										contentStyle: {
+											backgroundColor: theme.colors.card,
+										},
+										headerShown: true,
+										headerShadowVisible: false,
+										animation: 'slide_from_bottom',
+										headerTitle: '',
+										headerRight: () => (
+											<TouchableOpacity
+												hitSlop={40}
+												onPress={() => router.back()}
+											>
+												<Ionicons
+													name="close"
+													size={26}
+													color={theme.colors.textPrimary}
+												/>
+											</TouchableOpacity>
+										),
+									}}
+								/>
+							</Stack>
+							<Toast />
+						</KeyboardProvider>
 					</PortalProvider>
 				</BottomSheetModalProvider>
 			</QueryClientProvider>

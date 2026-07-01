@@ -1,7 +1,6 @@
-import { View, StyleSheet } from 'react-native'
+import { View } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useTheme } from '@/context/ThemeContext'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Button from '../ui/Button'
 
 interface StickyActionButtonsProps {
@@ -9,6 +8,7 @@ interface StickyActionButtonsProps {
 	onSave: () => void
 	onDiscard: () => void
 	isLoading?: boolean
+	bottomInset?: number
 }
 
 export function StickyActionButtons({
@@ -16,36 +16,36 @@ export function StickyActionButtons({
 	onSave,
 	onDiscard,
 	isLoading = false,
+	bottomInset = 0,
 }: StickyActionButtonsProps) {
 	const theme = useTheme()
-	const insets = useSafeAreaInsets()
 	const discardColor = hasChanges
 		? theme.colors.buttonSecondaryText
 		: theme.colors.textMuted
 	const saveColor = hasChanges
 		? theme.colors.buttonPrimaryText
 		: theme.colors.textMuted
-
-	const styles = StyleSheet.create({
-		buttonGroup: {
-			flexDirection: 'row',
-			gap: 10,
-			paddingTop: 10,
-			paddingBottom: insets.bottom + 1,
-			paddingHorizontal: 14,
-			backgroundColor: theme.colors.modal,
-			borderTopWidth: 1,
-			borderTopColor: theme.colors.border,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: -2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 8,
-			elevation: 8,
-		},
-	})
+	const STICKY_BAR_HEIGHT = theme.space.x2l * 3
 
 	return (
-		<View style={styles.buttonGroup}>
+		<View
+			style={{
+				flexDirection: 'row',
+				gap: theme.space.md,
+				paddingHorizontal: theme.space.lg,
+				backgroundColor: theme.colors.modal,
+				paddingTop: theme.space.sm,
+				paddingBottom: bottomInset + theme.space.sm,
+				borderTopWidth: 1,
+				borderTopColor: theme.colors.border,
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: -2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8,
+				height: STICKY_BAR_HEIGHT,
+				elevation: 6,
+			}}
+		>
 			<Button
 				variant="secondary"
 				onPress={onDiscard}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ScrollView, View, KeyboardAvoidingView } from 'react-native'
+import { View } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
@@ -7,11 +7,13 @@ import { useTheme } from '@/context/ThemeContext'
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { ProfileInfo } from './profile'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHeader'
 import SectionTitle from '@/components/ui/SectionTitle'
 import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
+import ChangeEmailIllustration from '@/assets/images/profile/undraw_message-sent_iyz6.svg'
+import { STICKY_BAR_HEIGHT } from '@/app/_layout'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 export default function ChangeEmailScreen() {
 	const theme = useTheme()
@@ -21,7 +23,6 @@ export default function ChangeEmailScreen() {
 
 	const [email, setEmail] = useState('')
 	const [currentPassword, setCurrentPassword] = useState('')
-	const insets = useSafeAreaInsets()
 
 	const { mutate, isPending: isUpdating } = useMutation({
 		...profileUpdateFn,
@@ -123,17 +124,24 @@ export default function ChangeEmailScreen() {
 	}
 
 	return (
-		<KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-			<ScrollView
-				style={{ flex: 1 }}
+		<View style={{ flex: 1 }}>
+			<KeyboardAwareScrollView
+				bottomOffset={STICKY_BAR_HEIGHT}
+				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
+					flexGrow: 1,
 					paddingHorizontal: theme.space.lg,
-					paddingTop: theme.space.x2l,
-					paddingBottom: insets.bottom + theme.space.lg,
+					paddingBottom: theme.space.lg,
 					gap: theme.space.x2l,
 				}}
-				keyboardShouldPersistTaps="handled"
 			>
+				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+					<ChangeEmailIllustration
+						height={180}
+						color={theme.colors.accentBlue}
+					/>
+				</View>
+
 				<CredentialChangeHeader
 					title="Change Email"
 					description="Enter your new email address. Your current password is required for security verification."
@@ -149,7 +157,7 @@ export default function ChangeEmailScreen() {
 						isCredentialChanging={true}
 					/>
 				</View>
-			</ScrollView>
+			</KeyboardAwareScrollView>
 
 			<StickyActionButtons
 				hasChanges={email.trim() !== '' || currentPassword.trim() !== ''}
@@ -157,6 +165,6 @@ export default function ChangeEmailScreen() {
 				onDiscard={() => router.back()}
 				isLoading={isUpdating}
 			/>
-		</KeyboardAvoidingView>
+		</View>
 	)
 }

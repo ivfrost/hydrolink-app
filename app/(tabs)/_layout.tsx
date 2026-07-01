@@ -7,6 +7,7 @@ import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useEffect, useState } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 
@@ -16,6 +17,7 @@ export default function TabsLayout() {
 
 	const pathname = usePathname()
 	const theme = useTheme()
+	const insets = useSafeAreaInsets()
 
 	// Ensure an animated value exists for the current tab path
 	if (!tabScrollValues[pathname]) {
@@ -55,9 +57,9 @@ export default function TabsLayout() {
 				tabBarStyle: {
 					backgroundColor: theme.colors.modal,
 					borderTopColor: theme.colors.border,
-					paddingTop: 8,
-					paddingBottom: 12,
-					height: 90,
+					paddingTop: theme.space.sm,
+					paddingHorizontal: theme.space.xs,
+					height: theme.space.x2l * 3,
 				},
 				tabBarActiveTintColor: theme.colors.accentBlue,
 				tabBarInactiveTintColor: theme.colors.textMuted,

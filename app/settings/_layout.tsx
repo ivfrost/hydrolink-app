@@ -30,7 +30,7 @@ export default function SettingsLayout() {
 				),
 			}}
 		>
-			<Stack.Screen name="profile" options={{ headerTitle: 'Profile' }} />
+			<Stack.Screen name="profile" options={{ headerTitle: '' }} />
 			<Stack.Screen
 				name="change-email"
 				options={{

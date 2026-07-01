@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-	ScrollView,
-	View,
-	Text,
-	ActivityIndicator,
-	StyleSheet,
-	KeyboardAvoidingView,
-	Platform,
-} from 'react-native'
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
@@ -20,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import SectionTitle from '@/components/ui/SectionTitle'
 import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
+import { STICKY_BAR_HEIGHT } from '@/app/_layout'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 export interface ProfileInfo {
 	fullName: string
@@ -35,8 +29,8 @@ export default function ProfileScreen() {
 	const theme = useTheme()
 	const router = useRouter()
 	const queryClient = useQueryClient()
-	const insets = useSafeAreaInsets()
 	const { data: profile, isPending, error } = useQuery(profileQuery)
+	const insets = useSafeAreaInsets()
 
 	const [profileState, setProfileState] = useState<ProfileInfo>({
 		fullName: '',
@@ -168,19 +162,16 @@ export default function ProfileScreen() {
 	}
 
 	return (
-		<KeyboardAvoidingView
-			style={{ flex: 1, backgroundColor: theme.colors.background }}
-			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-		>
-			<ScrollView
-				style={{ flex: 1 }}
-				contentContainerStyle={{
-					paddingHorizontal: theme.space.lg,
-					paddingTop: theme.space.x2l,
-					paddingBottom: insets.bottom + theme.space.lg,
-					gap: theme.space.lg,
-				}}
+		<View style={{ flex: 1 }}>
+			<KeyboardAwareScrollView
+				bottomOffset={STICKY_BAR_HEIGHT}
 				keyboardShouldPersistTaps="handled"
+				contentContainerStyle={{
+					flexGrow: 1,
+					paddingHorizontal: theme.space.lg,
+					paddingBottom: theme.space.lg,
+					gap: theme.space.x2l,
+				}}
 			>
 				<ProfileHeader email={profile.details.email} />
 
@@ -204,14 +195,15 @@ export default function ProfileScreen() {
 						/>
 					</View>
 				</View>
-			</ScrollView>
+			</KeyboardAwareScrollView>
 
 			<StickyActionButtons
 				hasChanges={!!hasChanges}
 				onSave={handleSave}
 				onDiscard={handleDiscard}
 				isLoading={isProfileUpdating}
+				bottomInset={insets.bottom}
 			/>
-		</KeyboardAvoidingView>
+		</View>
 	)
 }

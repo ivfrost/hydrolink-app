@@ -1,13 +1,4 @@
 import { useState } from 'react'
-import {
-	ScrollView,
-	View,
-	Text,
-	StyleSheet,
-	StatusBar,
-	KeyboardAvoidingView,
-	Platform,
-} from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
@@ -16,18 +7,20 @@ import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHea
 import { profileUpdateFn } from '@/mutations/profile'
 import * as Burnt from 'burnt'
 import { ProfileInfo } from './profile'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import SectionTitle from '@/components/ui/SectionTitle'
 import HydroHint from '@/components/ui/HintContainer'
 import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
+import ChangePasswordIllustration from '@/assets/images/profile/undraw_enter-password_1kl4.svg'
+import { STICKY_BAR_HEIGHT } from '@/app/_layout'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { View } from 'react-native'
 
 export default function ChangePasswordScreen() {
 	const theme = useTheme()
 	const router = useRouter()
 	const queryClient = useQueryClient()
 	const { data: profile } = useQuery(profileQuery)
-	const insets = useSafeAreaInsets()
 
 	const [password, setPassword] = useState('')
 	const [currentPassword, setCurrentPassword] = useState('')
@@ -107,17 +100,28 @@ export default function ChangePasswordScreen() {
 	}
 
 	return (
-		<KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-			<ScrollView
-				style={{ flex: 1 }}
+		<View style={{ flex: 1 }}>
+			<KeyboardAwareScrollView
+				bottomOffset={STICKY_BAR_HEIGHT}
+				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
+					flexGrow: 1,
 					paddingHorizontal: theme.space.lg,
-					paddingTop: theme.space.x2l,
-					paddingBottom: insets.bottom + theme.space.lg,
+					paddingBottom: theme.space.lg,
 					gap: theme.space.x2l,
 				}}
-				keyboardShouldPersistTaps="handled"
 			>
+				<View
+					style={{
+						justifyContent: 'center',
+						alignItems: 'center',
+					}}
+				>
+					<ChangePasswordIllustration
+						height={160}
+						color={theme.colors.accentBlue}
+					/>
+				</View>
 				<CredentialChangeHeader
 					title="Change Password"
 					description="Enter your new password. Your current password is required for security verification."
@@ -143,7 +147,7 @@ export default function ChangePasswordScreen() {
 						/>
 					)}
 				</View>
-			</ScrollView>
+			</KeyboardAwareScrollView>
 
 			<StickyActionButtons
 				hasChanges={
@@ -155,6 +159,6 @@ export default function ChangePasswordScreen() {
 				onDiscard={() => router.back()}
 				isLoading={isUpdating}
 			/>
-		</KeyboardAvoidingView>
+		</View>
 	)
 }

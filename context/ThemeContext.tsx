@@ -81,7 +81,7 @@ const themeTokens = {
 		md: 12,
 		lg: 14,
 		xl: 20,
-		x2l: 28,
+		x2l: 30,
 		x3l: 32,
 	},
 

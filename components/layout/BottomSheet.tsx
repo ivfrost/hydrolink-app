@@ -53,6 +53,8 @@ export default function BottomSheet({
 			backdropComponent={renderBackdrop}
 			backgroundStyle={{ backgroundColor: theme.colors.card }}
 			animationConfigs={animConfigs}
+			animateOnMount={false}
+			index={-1}
 		>
 			<BottomSheetView
 				style={[

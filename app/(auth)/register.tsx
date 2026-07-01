@@ -2,7 +2,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/context/ThemeContext'
 import { useState } from 'react'
-import { View, Text, ScrollView, KeyboardAvoidingView } from 'react-native'
+import { View, Text } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -14,6 +14,7 @@ import { RegisterPayload, RegisterResponse } from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
 import { useAuth } from '@/stores/authStore'
 import { areasQuery } from '@/queries/areas'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
@@ -142,17 +143,15 @@ export default function Register() {
 		) : null
 
 	return (
-		<KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-			<ScrollView
-				style={{ flex: 1 }}
+		<View style={{ flex: 1 }}>
+			<KeyboardAwareScrollView
+				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
 					flexGrow: 1,
-					justifyContent: 'center',
-					paddingTop: theme.space.md,
-					paddingHorizontal: theme.space.x2l,
-					paddingBottom: 80,
+					paddingHorizontal: theme.space.lg,
+					paddingBottom: theme.space.lg,
+					gap: theme.space.x2l,
 				}}
-				keyboardShouldPersistTaps="handled"
 			>
 				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
 					<View
@@ -251,7 +250,7 @@ export default function Register() {
 						}
 					/>
 				</View>
-			</ScrollView>
-		</KeyboardAvoidingView>
+			</KeyboardAwareScrollView>
+		</View>
 	)
 }

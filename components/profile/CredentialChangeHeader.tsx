@@ -17,12 +17,13 @@ export function CredentialChangeHeader({
 	const theme = useTheme()
 
 	return (
-		<View style={{ gap: theme.space.md }}>
+		<View style={{ gap: theme.space.md, alignItems: 'center' }}>
 			<Text
 				style={{
 					fontSize: theme.font.lg,
 					fontWeight: '600',
 					color: theme.colors.textPrimary,
+					textAlign: 'center',
 				}}
 			>
 				{title}
@@ -32,6 +33,7 @@ export function CredentialChangeHeader({
 					fontSize: theme.font.sm,
 					color: theme.colors.textSecondary,
 					lineHeight: theme.lineHeight.paragraph,
+					textAlign: 'center',
 				}}
 			>
 				{description}

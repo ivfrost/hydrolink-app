@@ -2,7 +2,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/context/ThemeContext'
 import { useEffect, useState } from 'react'
-import { View, Text, KeyboardAvoidingView, ScrollView } from 'react-native'
+import { View, Text } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -14,6 +14,7 @@ import { LoginResponse } from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
 import { useOnboarding } from '@/stores/onboardingStore'
 import { areasQuery } from '@/queries/areas'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
@@ -126,17 +127,15 @@ export default function SignIn() {
 	}, [router, accessToken, areas, hasOnboarded, setHasOnboarded])
 
 	return (
-		<KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-			<ScrollView
-				style={{ flex: 1 }}
+		<View style={{ flex: 1 }}>
+			<KeyboardAwareScrollView
+				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
 					flexGrow: 1,
-					justifyContent: 'center',
-					paddingTop: theme.space.md,
-					paddingHorizontal: theme.space.x2l,
-					paddingBottom: 80,
+					paddingHorizontal: theme.space.lg,
+					paddingBottom: theme.space.lg,
+					gap: theme.space.x2l,
 				}}
-				keyboardShouldPersistTaps="handled"
 			>
 				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
 					<View
@@ -244,7 +243,7 @@ export default function SignIn() {
 						}
 					/>
 				</View>
-			</ScrollView>
-		</KeyboardAvoidingView>
+			</KeyboardAwareScrollView>
+		</View>
 	)
 }
