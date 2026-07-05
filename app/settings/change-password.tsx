@@ -15,6 +15,7 @@ import ChangePasswordIllustration from '@/assets/images/profile/undraw_enter-pas
 import { STICKY_BAR_HEIGHT } from '@/app/_layout'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { View } from 'react-native'
+import { UserResponse } from '@/types/auth'
 
 export default function ChangePasswordScreen() {
 	const theme = useTheme()
@@ -27,38 +28,25 @@ export default function ChangePasswordScreen() {
 
 	const isLengthValid = password.length >= 8 && password.length <= 42
 
-	const { mutate, isPending: isUpdating } = useMutation({
+	const { mutate, isPending: isProfileUpdating } = useMutation({
 		...profileUpdateFn,
 		mutationKey: ['passwordUpdate'],
 		onError: (error) => {
-			const errorMessage = error.message || 'UNKNOWN_ERROR'
-
-			if (errorMessage.includes('Current password must be provided')) {
-				Burnt.toast({
-					title: 'Current password is required',
-					preset: 'error',
-				})
-			} else if (errorMessage.includes('Invalid credentials')) {
-				Burnt.toast({
-					title: 'Current password is incorrect',
-					preset: 'error',
-				})
-			} else {
-				Burnt.toast({
-					title: 'Failed to update password. Please try again',
-					preset: 'error',
-				})
-			}
+			console.error('Profile update error:', error)
+			Burnt.toast({
+				title:
+					error.message === 'UPDATE_FAILED'
+						? 'Failed to update password. Please try again'
+						: 'An unexpected error occurred. Please try again.',
+				preset: 'error',
+			})
 		},
-		onSuccess: async () => {
+		onSuccess: async (updatedUser: UserResponse) => {
 			Burnt.toast({
 				title: 'Password updated successfully',
 				preset: 'done',
 			})
-			await queryClient.invalidateQueries({
-				queryKey: ['profile'],
-				refetchType: 'active',
-			})
+			queryClient.setQueryData(['profile'], updatedUser)
 			router.back()
 		},
 	})
@@ -92,10 +80,10 @@ export default function ChangePasswordScreen() {
 		mutate({
 			password: password.trim(),
 			currentPassword: currentPassword.trim(),
-			fullName: profile?.details?.fullName || '',
-			username: profile?.details?.username || '',
-			phoneNumber: profile?.details?.phoneNumber || '',
-			address: profile?.details?.address || '',
+			fullName: profile?.fullName || '',
+			username: profile?.username || '',
+			phoneNumber: profile?.phoneNumber || '',
+			address: profile?.address || '',
 		})
 	}
 
@@ -107,8 +95,9 @@ export default function ChangePasswordScreen() {
 				contentContainerStyle={{
 					flexGrow: 1,
 					paddingHorizontal: theme.space.lg,
-					paddingBottom: theme.space.lg,
-					gap: theme.space.x2l,
+					paddingBottom: theme.space.x3l,
+					justifyContent: 'center',
+					gap: theme.space.x3l,
 				}}
 			>
 				<View
@@ -126,7 +115,6 @@ export default function ChangePasswordScreen() {
 					title="Change Password"
 					description="Enter your new password. Your current password is required for security verification."
 				/>
-
 				<View>
 					<SectionTitle text="Password Details" />
 					<EditableProfileInfoCard
@@ -157,7 +145,7 @@ export default function ChangePasswordScreen() {
 				}
 				onSave={handleSave}
 				onDiscard={() => router.back()}
-				isLoading={isUpdating}
+				isLoading={isProfileUpdating}
 			/>
 		</View>
 	)

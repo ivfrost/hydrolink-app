@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, Text, ActivityIndicator } from 'react-native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import { profileQuery } from '@/queries/profile'
@@ -14,6 +14,11 @@ import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInf
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 import { STICKY_BAR_HEIGHT } from '@/app/_layout'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { UserResponse } from '@/types/auth'
+import { RefreshControl } from 'react-native-gesture-handler'
+import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
+import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
+import StatusScreen from '@/components/status/StatusScreen'
 
 export interface ProfileInfo {
 	fullName: string
@@ -26,11 +31,16 @@ export interface ProfileInfo {
 }
 
 export default function ProfileScreen() {
+	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const router = useRouter()
-	const queryClient = useQueryClient()
-	const { data: profile, isPending, error } = useQuery(profileQuery)
+	const {
+		data: profile,
+		isPending,
+		error: profileLoadError,
+	} = useQuery(profileQuery)
 	const insets = useSafeAreaInsets()
+	const [isRefreshing, setIsRefreshing] = useState(false)
 
 	const [profileState, setProfileState] = useState<ProfileInfo>({
 		fullName: '',
@@ -43,53 +53,46 @@ export default function ProfileScreen() {
 		...profileUpdateFn,
 		mutationKey: ['profileUpdate'],
 		onError: (error) => {
+			console.error('Password update error:', error)
 			Burnt.toast({
 				title:
-					error.message === 'UPDATE_FAILED'
-						? 'Failed to update profile. Please try again'
-						: 'An unexpected error occurred. Please try again.',
+					error.message ??
+					'An error occurred while updating your profile. Please try again.',
 				preset: 'error',
 			})
 		},
-		onSuccess: async () => {
+		onSuccess: async (updatedUser: UserResponse) => {
 			Burnt.toast({
 				title: 'Profile updated successfully',
 				preset: 'done',
 			})
-
-			// Instantly overwrite the local query data cache to turn off "hasChanges" state immediately
-			queryClient.setQueryData(['profile'], (oldData: any) => {
-				if (!oldData) return oldData
-				return {
-					...oldData,
-					details: {
-						...oldData.details,
-						fullName: profileState.fullName,
-						username: profileState.username,
-						phoneNumber: profileState.phoneNumber,
-						address: profileState.address,
-					},
-				}
-			})
-
-			// Refresh from server silently in the background
-			queryClient.invalidateQueries({
-				queryKey: ['profile'],
-				refetchType: 'active',
-			})
+			queryClient.setQueryData(['profile'], updatedUser)
+			router.back()
 		},
 	})
 
+	const onRefresh = async () => {
+		setIsRefreshing(true)
+		console.log('Refreshing profile data...')
+		try {
+			await queryClient.invalidateQueries({ queryKey: ['profile'] })
+		} catch (error) {
+			console.error('Error refreshing profile:', error)
+		} finally {
+			setIsRefreshing(false)
+		}
+	}
+
 	useEffect(() => {
-		if (isPending || error || !profile) return
+		if (isPending || profileLoadError || !profile) return
 
 		setProfileState({
-			fullName: profile.details.fullName,
-			username: profile.details.username,
-			phoneNumber: profile.details.phoneNumber ?? '',
-			address: profile.details.address ?? '',
+			fullName: profile.fullName,
+			username: profile.username,
+			phoneNumber: profile.phoneNumber ?? '',
+			address: profile.address ?? '',
 		})
-	}, [isPending, error, profile])
+	}, [isPending, profileLoadError, profile])
 
 	const handleInfoChange = (field: keyof ProfileInfo, value: string) => {
 		setProfileState((prev) => ({ ...prev, [field]: value }))
@@ -97,67 +100,83 @@ export default function ProfileScreen() {
 
 	const hasChanges =
 		profile &&
-		(profileState.fullName !== profile.details.fullName ||
-			profileState.username !== profile.details.username ||
-			profileState.phoneNumber !== (profile.details.phoneNumber ?? '') ||
-			profileState.address !== (profile.details.address ?? ''))
+		(profileState.fullName !== profile.fullName ||
+			profileState.username !== profile.username ||
+			profileState.phoneNumber !== (profile.phoneNumber ?? '') ||
+			profileState.address !== (profile.address ?? ''))
 
 	const handleDiscard = () => {
 		if (!profile) return
 		setProfileState({
-			fullName: profile.details.fullName,
-			username: profile.details.username,
-			phoneNumber: profile.details.phoneNumber ?? '',
-			address: profile.details.address ?? '',
+			fullName: profile.fullName,
+			username: profile.username,
+			phoneNumber: profile.phoneNumber ?? '',
+			address: profile.address ?? '',
 		})
 	}
 
 	const handleSave = () => {
 		Burnt.dismissAllAlerts()
+		console.log('Saving profile changes:', profileState)
 		mutate(profileState)
 	}
 
-	const styles = StyleSheet.create({
-		centered: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 12,
-			paddingHorizontal: 20,
-			backgroundColor: theme.colors.background,
-		},
-	})
-
+	// --- Loading state ---
 	if (isPending) {
 		return (
-			<View style={styles.centered}>
+			<View
+				style={{
+					flex: 1,
+					justifyContent: 'center',
+					alignItems: 'center',
+					gap: theme.space.md,
+				}}
+			>
 				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
 				<Text style={{ color: theme.colors.textSecondary }}>
-					Loading profile...
+					Loading profile…
 				</Text>
 			</View>
 		)
 	}
 
-	if (error) {
+	// --- Profile load error (connection/server issue) ---
+	if (profileLoadError) {
 		return (
-			<View style={styles.centered}>
-				<Text
-					style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
-				>
-					Couldn't load your profile. Pull to retry or check your connection.
-				</Text>
-			</View>
+			<StatusScreen
+				image={
+					<ServerFailureIllustration
+						width={200}
+						height={220}
+						color={theme.colors.accentBlue}
+					/>
+				}
+				title="Profile Unavailable"
+				subtitle="Your profile couldn’t be loaded."
+				hint="Local features are still available, but some cloud functionality may be limited."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
 		)
 	}
 
+	// --- Missing or unavailable profile data ---
 	if (!profile) {
 		return (
-			<View style={styles.centered}>
-				<Text style={{ color: theme.colors.textSecondary }}>
-					No profile data found.
-				</Text>
-			</View>
+			<StatusScreen
+				image={
+					<FilesMissingIllustration
+						width={200}
+						height={220}
+						color={theme.colors.accentBlue}
+					/>
+				}
+				title="Profile Data Unavailable"
+				subtitle="Some profile data couldn’t be loaded."
+				hint="Local features are still available, but some cloud functionality may be limited."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
 		)
 	}
 
@@ -166,6 +185,9 @@ export default function ProfileScreen() {
 			<KeyboardAwareScrollView
 				bottomOffset={STICKY_BAR_HEIGHT}
 				keyboardShouldPersistTaps="handled"
+				refreshControl={
+					<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+				}
 				contentContainerStyle={{
 					flexGrow: 1,
 					paddingHorizontal: theme.space.lg,
@@ -173,7 +195,7 @@ export default function ProfileScreen() {
 					gap: theme.space.x2l,
 				}}
 			>
-				<ProfileHeader email={profile.details.email} />
+				<ProfileHeader email={profile.email} />
 
 				<View style={{ gap: theme.space.x2l }}>
 					<View>

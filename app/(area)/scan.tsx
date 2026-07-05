@@ -45,6 +45,13 @@ export default function Link() {
 		},
 	})
 
+	const handleScan = (code: string) => {
+		router.dismissTo({
+			pathname: '/(tabs)/areas',
+			params: { scanned: code },
+		})
+	}
+
 	if (!permission?.granted) {
 		return (
 			<View style={styles.container}>
@@ -75,7 +82,7 @@ export default function Link() {
 				scannedRef.current = true
 				// validate data and navigate
 				console.log('Scanned:', data)
-				router.replace('/(tabs)')
+				handleScan(data)
 			}}
 		/>
 	)

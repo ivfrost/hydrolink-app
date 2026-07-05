@@ -1,5 +1,7 @@
 import { View, Text } from 'react-native'
 import { useTheme } from '@/context/ThemeContext'
+import Title from '../ui/Title'
+import Subtitle from '../ui/Subtitle'
 
 interface CredentialChangeHeaderProps {
 	title: string
@@ -18,32 +20,22 @@ export function CredentialChangeHeader({
 
 	return (
 		<View style={{ gap: theme.space.md, alignItems: 'center' }}>
-			<Text
-				style={{
-					fontSize: theme.font.lg,
-					fontWeight: '600',
-					color: theme.colors.textPrimary,
-					textAlign: 'center',
-				}}
-			>
-				{title}
-			</Text>
+			<Title text={title} />
+			<Subtitle text={description} />
 			<Text
 				style={{
 					fontSize: theme.font.sm,
 					color: theme.colors.textSecondary,
-					lineHeight: theme.lineHeight.paragraph,
 					textAlign: 'center',
 				}}
 			>
-				{description}
 				{currentValue && (
 					<View>
 						<Text
 							style={{
 								fontSize: theme.font.sm,
 								color: theme.colors.textMuted,
-								marginTop: theme.space.sm,
+								marginTop: theme.space.x3s,
 							}}
 						>
 							{currentLabel}: {currentValue}

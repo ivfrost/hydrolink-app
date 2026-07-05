@@ -1,19 +1,25 @@
 import { useOnboarding } from '@/stores/onboardingStore'
-import { usePathname, useRouter } from 'expo-router'
-import { View, Text, ActivityIndicator, Animated } from 'react-native'
-import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'expo-router'
+import {
+	View,
+	Text,
+	ActivityIndicator,
+	RefreshControl,
+	ScrollView,
+} from 'react-native'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { UserCard } from '@/components/profile/UserCard'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useHeaderHeight } from '@react-navigation/elements'
-import { tabScrollValues } from './_layout'
 import { useTheme } from '@/context/ThemeContext'
 import CardWrapper from '@/components/layout/CardWrapper'
-import React from 'react'
+import React, { useState } from 'react'
 import SimpleRowCardItem from '@/components/ui/SimpleRowCard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import SectionTitle from '@/components/ui/SectionTitle'
-import { AreaCardProps } from '@/components/dashboard/AreaCard'
+import { useAuth } from '@/stores/authStore'
+import * as SecureStore from 'expo-secure-store'
 
 interface SettingsRow {
 	label: string
@@ -27,17 +33,35 @@ interface SettingsSection {
 }
 
 export default function SettingsScreen() {
+	const queryClient = useQueryClient()
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const router = useRouter()
 	const theme = useTheme()
-	const pathname = usePathname()
-	const currentScrollY = tabScrollValues[pathname] || new Animated.Value(0)
 	const insets = useSafeAreaInsets()
+	const [isRefreshing, setIsRefreshing] = useState(false)
 
-	const resetOnboarding = () => {
+	const logout = async () => {
+		useAuth.getState().removeAccessToken()
+		await SecureStore.deleteItemAsync('refreshToken')
+	}
+
+	const resetOnboarding = async () => {
+		logout()
 		setHasOnboarded(false)
 		router.replace('/onboarding/onboarding1')
 	}
+
+	const onRefresh = async () => {
+		setIsRefreshing(true)
+		try {
+			await queryClient.invalidateQueries({ queryKey: ['profile'] })
+		} catch (error) {
+			console.error('Error refreshing profile:', error)
+		} finally {
+			setIsRefreshing(false)
+		}
+	}
+
 	const headerHeight = useHeaderHeight()
 
 	const { data: profile, isPending, error } = useQuery(profileQuery)
@@ -70,6 +94,8 @@ export default function SettingsScreen() {
 					paddingHorizontal: 20,
 				}}
 			>
+				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+
 				<Text
 					style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
 				>
@@ -82,6 +108,7 @@ export default function SettingsScreen() {
 	if (!profile) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 				<Text style={{ color: theme.colors.textSecondary }}>
 					No profile data found.
 				</Text>
@@ -116,18 +143,19 @@ export default function SettingsScreen() {
 					icon: 'restart-alt',
 					onPress: resetOnboarding,
 				},
-				{ label: 'Log out', icon: 'logout', onPress: () => {} },
+				{
+					label: 'Log out',
+					icon: 'logout',
+					onPress: async () => {
+						await logout().then(() => router.replace('/onboarding/onboarding2'))
+					},
+				},
 			],
 		},
 	]
 
 	return (
-		<Animated.ScrollView
-			onScroll={Animated.event(
-				[{ nativeEvent: { contentOffset: { y: currentScrollY } } }],
-				{ useNativeDriver: true },
-			)}
-			scrollEventThrottle={16}
+		<ScrollView
 			contentContainerStyle={{
 				paddingHorizontal: theme.space.lg,
 				paddingTop: headerHeight + theme.space.sm,
@@ -135,9 +163,10 @@ export default function SettingsScreen() {
 				gap: theme.space.x2l,
 			}}
 		>
+			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 			<UserCard
-				name={profile.details.fullName}
-				email={profile.details.email}
+				name={profile.fullName}
+				email={profile.email}
 				onPress={() => router.push('/settings/profile')}
 			/>
 
@@ -156,6 +185,6 @@ export default function SettingsScreen() {
 					</CardWrapper>
 				</View>
 			))}
-		</Animated.ScrollView>
+		</ScrollView>
 	)
 }

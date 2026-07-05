@@ -19,15 +19,6 @@ export default function SettingsLayout() {
 				headerStyle: {
 					backgroundColor: theme.colors.background,
 				},
-				headerLeft: () => (
-					<TouchableOpacity
-						hitSlop={40}
-						onPress={() => router.back()}
-						style={{ marginRight: 16 }}
-					>
-						<Ionicons name="arrow-back" size={24} color="black" />
-					</TouchableOpacity>
-				),
 			}}
 		>
 			<Stack.Screen name="profile" options={{ headerTitle: '' }} />
@@ -37,15 +28,6 @@ export default function SettingsLayout() {
 					headerTitle: '',
 					presentation: 'modal',
 					animation: 'slide_from_right',
-					headerLeft: () => (
-						<TouchableOpacity
-							hitSlop={40}
-							onPress={() => router.back()}
-							style={{ marginRight: 16 }}
-						>
-							<Ionicons name="arrow-back" size={24} color="black" />
-						</TouchableOpacity>
-					),
 				}}
 			/>
 			<Stack.Screen
@@ -54,15 +36,6 @@ export default function SettingsLayout() {
 					headerTitle: '',
 					presentation: 'modal',
 					animation: 'slide_from_right',
-					headerLeft: () => (
-						<TouchableOpacity
-							hitSlop={40}
-							onPress={() => router.back()}
-							style={{ marginRight: 16 }}
-						>
-							<Ionicons name="arrow-back" size={24} color="black" />
-						</TouchableOpacity>
-					),
 				}}
 			/>
 		</Stack>

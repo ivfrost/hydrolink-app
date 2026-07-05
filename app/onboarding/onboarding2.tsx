@@ -17,8 +17,9 @@ export default function Onboarding2() {
 	const accessToken = useAuth().accessToken
 
 	useEffect(() => {
+		// TODO: check whether the user already has linked areas and skip
 		if (accessToken) {
-			router.replace('/onboarding/onboarding3')
+			router.replace('/onboarding/onboarding4')
 		}
 	}, [router, accessToken])
 
@@ -45,7 +46,7 @@ export default function Onboarding2() {
 				<Button label="Sign In" onPress={() => router.push('/(auth)/signin')} />
 				<Button
 					label="Create Account"
-					variant="secondary"
+					variant="tertiary"
 					onPress={() => router.push('/(auth)/register')}
 				/>
 			</ButtonColumnWrapper>

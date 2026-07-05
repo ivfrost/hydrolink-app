@@ -1,19 +1,16 @@
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/context/ThemeContext'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { View, Text } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
-import { MaterialIcons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import * as Burnt from 'burnt'
 import { useAuth } from '@/stores/authStore'
 import { LoginResponse } from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
-import { useOnboarding } from '@/stores/onboardingStore'
-import { areasQuery } from '@/queries/areas'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
@@ -33,31 +30,38 @@ export default function SignIn() {
 		password: '',
 	})
 	const [errorState, setErrorState] = useState<ErrorState>({})
-	const router = useRouter()
 	const setAccessToken = useAuth().setAccessToken
-	const accessToken = useAuth().accessToken
-	const setHasOnboarded = useOnboarding().setHasOnboarded
-	const hasOnboarded = useOnboarding().hasOnboarded
-	const { data: areas, isPending: isPendingAreas } = useQuery(areasQuery)
 	const signinFn = async (input: SignInInput): Promise<LoginResponse> => {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users/auth`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					'x-client-platform': 'react-native',
+				},
 				body: JSON.stringify(input),
 			})
+
+			const data = await response.json()
+			console.log('data:', data)
+			console.log('response.ok:', response.ok)
+
 			if (!response.ok) {
-				throw new Error('INVALID_CREDENTIALS')
+				if (data.message?.includes('Invalid credentials')) {
+					throw new Error('INVALID_CREDENTIALS')
+				}
+				throw new Error('UNKNOWN_ERROR')
 			}
-			return await response.json()
+
+			return data as LoginResponse
 		} catch (e) {
 			if (e instanceof TypeError) {
-				// fetch throws TypeError on network failure
 				throw new Error('NETWORK_ERROR')
 			}
 			throw e
 		}
 	}
+
 	const { mutate, isPending } = useMutation({
 		mutationKey: ['signin'],
 		mutationFn: signinFn,
@@ -71,25 +75,18 @@ export default function SignIn() {
 			})
 		},
 		onSuccess: async (data: LoginResponse) => {
-			const accessToken = data.details.find(
-				(t) => t.type === 'AUTH_ACCESS_TOKEN',
-			)
-			const refreshToken = data.details.find(
-				(t) => t.type === 'AUTH_REFRESH_TOKEN',
-			)
+			const tokens = data.details.tokens
+
+			const accessToken = tokens.find((t) => t.type === 'AUTH_ACCESS_TOKEN')
+			const refreshToken = tokens.find((t) => t.type === 'AUTH_REFRESH_TOKEN')
+
 			if (!accessToken || !refreshToken) {
 				Burnt.toast({ title: 'Authentication error', preset: 'error' })
 				return
 			}
+
 			setAccessToken(accessToken.value)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
-
-			if (areas && areas.details.length > 0) {
-				if (!hasOnboarded) setHasOnboarded(true)
-				router.replace('/(tabs)')
-			} else {
-				router.replace('/onboarding/onboarding3')
-			}
 		},
 	})
 
@@ -117,27 +114,25 @@ export default function SignIn() {
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
 
-	useEffect(() => {
-		if (accessToken && areas && areas.details.length > 0) {
-			if (!hasOnboarded) setHasOnboarded(true)
-			router.replace('/(tabs)')
-		} else if (accessToken && areas && areas.details.length === 0) {
-			router.replace('/onboarding/onboarding3')
-		}
-	}, [router, accessToken, areas, hasOnboarded, setHasOnboarded])
-
 	return (
 		<View style={{ flex: 1 }}>
 			<KeyboardAwareScrollView
 				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
-					flexGrow: 1,
-					paddingHorizontal: theme.space.lg,
-					paddingBottom: theme.space.lg,
-					gap: theme.space.x2l,
+					paddingHorizontal: theme.space.x2l,
+					paddingBottom: theme.space.x3l,
+					gap: theme.space.x3l,
+					flex: 1,
+					justifyContent: 'center',
 				}}
 			>
-				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
+				<View
+					style={{
+						width: '100%',
+						alignItems: 'center',
+						marginBottom: theme.space.lg,
+					}}
+				>
 					<View
 						style={{
 							backgroundColor: theme.colors.accentBlueLight,
@@ -146,12 +141,12 @@ export default function SignIn() {
 							height: 68,
 							alignItems: 'center',
 							justifyContent: 'center',
-							marginBottom: 14,
+							marginBottom: theme.space.md,
 						}}
 					>
-						<FontAwesome6
-							name="droplet"
-							size={30}
+						<MaterialCommunityIcons
+							name="sprinkler-variant"
+							size={40}
 							color={theme.colors.accentBlue}
 						/>
 					</View>
@@ -161,7 +156,6 @@ export default function SignIn() {
 							fontWeight: '600',
 							textAlign: 'center',
 							color: theme.colors.textPrimary,
-							letterSpacing: -0.5,
 						}}
 					>
 						Welcome back
@@ -172,7 +166,7 @@ export default function SignIn() {
 							textAlign: 'center',
 							fontWeight: '400',
 							color: theme.colors.textSecondary,
-							marginTop: 6,
+							marginTop: theme.space.x2s,
 						}}
 					>
 						Sign in to continue
@@ -180,7 +174,7 @@ export default function SignIn() {
 				</View>
 
 				{/* Inputs */}
-				<View style={{ width: '100%', gap: 26 }}>
+				<View style={{ width: '100%', gap: theme.space.x2l }}>
 					<View>
 						<Input
 							label="Email"
@@ -209,9 +203,11 @@ export default function SignIn() {
 							value={inputState.password}
 							autoCapitalize="none"
 							autoCorrect={false}
+							autoComplete="password"
 							onChangeText={(value) => handleInputChange('password', value)}
 							labelBackground={theme.colors.modal}
 							onSubmitEditing={signin}
+							textContentType="password"
 							secureTextEntry
 						/>
 						{errorState.password ? (
@@ -227,22 +223,20 @@ export default function SignIn() {
 						) : null}
 					</View>
 				</View>
-				<View style={{ marginTop: theme.space.x2l }}>
-					<Button
-						label="Sign In"
-						modifier={['full']}
-						onPress={signin}
-						iconPosition="right"
-						loading={isPending}
-						icon={
-							<MaterialIcons
-								name="arrow-forward"
-								size={24}
-								color={theme.colors.buttonPrimaryText}
-							/>
-						}
-					/>
-				</View>
+				<Button
+					label="Sign In"
+					modifier={['full']}
+					onPress={signin}
+					iconPosition="right"
+					loading={isPending}
+					icon={
+						<MaterialIcons
+							name="arrow-forward"
+							size={24}
+							color={theme.colors.buttonPrimaryText}
+						/>
+					}
+				/>
 			</KeyboardAwareScrollView>
 		</View>
 	)

@@ -1,19 +1,20 @@
 import AreaSummaryCard from '@/components/dashboard/AreaSummaryCard'
-import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
 import { useTheme } from '@/context/ThemeContext'
 import '@/global.css'
 import { areasQuery } from '@/queries/areas'
 import { profileQuery } from '@/queries/profile'
 import { useHeaderHeight } from '@react-navigation/elements'
-import { useQuery } from '@tanstack/react-query'
-import { Animated, Text, View } from 'react-native'
-import { tabScrollValues } from './_layout'
-import { usePathname } from 'expo-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import SectionTitle from '@/components/ui/SectionTitle'
 import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useState } from 'react'
+import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
+import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
+import StatusScreen from '@/components/status/StatusScreen'
+import { ScrollView } from 'react-native-gesture-handler'
 
 const mockActiveAreaData: AreaCardProps['areaData'] = [
 	{
@@ -64,36 +65,28 @@ const mockIncomingAreaData: AreaCardProps['areaData'] = [
 ]
 
 const mockActiveActions: AreaAction[] = [
-	{
-		label: 'Stop Now',
-		onPress: () => {
-			console.log('Stop Now pressed')
-		},
-	},
-	{
-		label: 'Pause',
-		onPress: () => {
-			console.log('Pause pressed')
-		},
-	},
+	{ label: 'Stop Now', onPress: () => console.log('Stop Now pressed') },
+	{ label: 'Pause', onPress: () => console.log('Pause pressed') },
 ]
+
+interface AreaAction {
+	label: string
+	onPress: () => void
+}
+interface ActivityEvent {
+	id: string
+	title: string
+	description: string
+	time: string
+	status: 'success' | 'warning' | 'info' | 'fault'
+	icon: string
+}
 
 const mockIncomingActions: AreaAction[] = [
-	{
-		label: 'Start Now',
-		onPress: () => {
-			console.log('Start Now pressed')
-		},
-	},
-	{
-		label: 'Schedule',
-		onPress: () => {
-			console.log('Schedule pressed')
-		},
-	},
+	{ label: 'Start Now', onPress: () => console.log('Start Now pressed') },
+	{ label: 'Schedule', onPress: () => console.log('Schedule pressed') },
 ]
 
-// Realistic recent events relative to "now" so times always read naturally
 function buildMockEvents(): ActivityEvent[] {
 	const now = Date.now()
 	const minutesAgo = (m: number) => new Date(now - m * 60000).toISOString()
@@ -143,36 +136,109 @@ function buildMockEvents(): ActivityEvent[] {
 }
 
 export default function Index() {
+	const queryClient = useQueryClient()
 	const theme = useTheme()
-	const pathname = usePathname()
-	const currentScrollY = tabScrollValues[pathname] || new Animated.Value(0)
 	const insets = useSafeAreaInsets()
+	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
 
-	const { data: areas, isPending, error } = useQuery(areasQuery)
-	const { data: profile } = useQuery(profileQuery)
-	const areaCount = areas?.details.length || 0
+	const {
+		data: areas,
+		isPending: areasPending,
+		error: areaLoadError,
+	} = useQuery(areasQuery)
+	const {
+		data: profile,
+		error: profileLoadError,
+		isPending: profilePending,
+	} = useQuery(profileQuery)
 
-	// Areas seen in the last 5 minutes are considered "active"
-	const activeAreaCount = 3
-
-	// areas?.details.filter((area) => {
-	// 	const timeFromLastSeenMs = Date.now() - new Date(area.lastSeen).getTime()
-	// 	return timeFromLastSeenMs < 5000 * 60
-	// }).length
-	// Areas which have at least one station active are considered "online"
-	const onlineAreaCount = 6
-
+	const areaCount = areas?.length || 0
+	// TODO: Send a command to linked devices to make them report their status
+	// and parse it to determine which areas are active
+	const activeAreaCount = 0
+	const onlineAreaCount =
+		areas?.filter(
+			// TODO: Replace this with online check over MQTT instead of DB flush timestamp
+			(area) => Date.now() - new Date(area.lastSeen).getTime() < 5 * 60 * 1000, // 5 minutes
+		).length || 0
 	const recentEvents = buildMockEvents()
-	const firstName = profile?.details.fullName?.split(' ')[0]
+	const firstName = profile?.fullName?.split(' ')[0]
+
+	const onRefresh = async () => {
+		setIsRefreshing(true)
+		try {
+			await queryClient.invalidateQueries({ queryKey: ['areas'] })
+			// Name of the user might have changed, so refresh profile as well
+			await queryClient.invalidateQueries({ queryKey: ['profile'] })
+		} catch (error) {
+			console.error('Error refreshing areas:', error)
+		} finally {
+			setIsRefreshing(false)
+		}
+	}
+
+	// --- Loading state ---
+	if (areasPending || profilePending) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: 'center',
+					alignItems: 'center',
+					gap: theme.space.md,
+				}}
+			>
+				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<Text style={{ color: theme.colors.textSecondary }}>
+					Loading dashboard…
+				</Text>
+			</View>
+		)
+	}
+
+	// --- Cloud/server/connection failure ---
+	if (profileLoadError || areaLoadError) {
+		return (
+			<StatusScreen
+				image={
+					<ServerFailureIllustration
+						width={200}
+						height={220}
+						color={theme.colors.accentBlue}
+					/>
+				}
+				title="Dashboard Unavailable"
+				subtitle="We couldn’t reach the server to load your dashboard data."
+				hint="Local device features are still available, but cloud functionality won’t work until the connection is restored."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
+		)
+	}
+
+	// --- Missing or unavailable dashboard data ---
+	if (!profile || !areas) {
+		return (
+			<StatusScreen
+				image={
+					<FilesMissingIllustration
+						width={200}
+						height={220}
+						color={theme.colors.accentBlue}
+					/>
+				}
+				title="Dashboard Data Unavailable"
+				subtitle="Some dashboard data couldn’t be loaded."
+				hint="Local device features are still available, but some cloud functionality may be limited."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
+		)
+	}
 
 	return (
-		<Animated.ScrollView
-			onScroll={Animated.event(
-				[{ nativeEvent: { contentOffset: { y: currentScrollY } } }],
-				{ useNativeDriver: true },
-			)}
-			scrollEventThrottle={16}
+		<ScrollView
 			contentContainerStyle={{
 				paddingHorizontal: theme.space.lg,
 				paddingTop: headerHeight + theme.space.sm,
@@ -180,64 +246,39 @@ export default function Index() {
 				gap: theme.space.x2l,
 			}}
 		>
-			{isPending ? (
-				<Text style={{ color: theme.colors.textSecondary }}>
-					Loading areas...
-				</Text>
-			) : areas?.details.length === 0 ? (
-				<Text style={{ color: theme.colors.textSecondary }}>
-					No areas linked. Please link an area to get started.
-				</Text>
-			) : (
-				<>
-					<AreaSummaryCard
-						firstName={firstName}
-						areaCount={areaCount}
-						activeAreaCount={activeAreaCount || 0}
-						onlineAreaCount={onlineAreaCount}
-						alertCount={5}
-					/>
-					<View>
-						<View
-							style={{ flexDirection: 'row', justifyContent: 'space-between' }}
-						>
-							<SectionTitle text="Active Now" />
-							{/* <MaterialCommunityIcons
-								name="drag"
-								size={24}
-								color={theme.colors.textMuted}
-							/> */}
-						</View>
-						<AreaCard
-							variant="active"
-							areaData={mockActiveAreaData}
-							actions={mockActiveActions}
-						/>
-					</View>
-					{/* Actions: start now -> stops currently running and starts selected */}
-					<View>
-						<View
-							style={{ flexDirection: 'row', justifyContent: 'space-between' }}
-						>
-							<SectionTitle text="Incoming" />
-							{/* <MaterialCommunityIcons
-								name="drag"
-								size={24}
-								color={theme.colors.textMuted}
-							/> */}
-						</View>
-						<AreaCard
-							variant="incoming"
-							areaData={mockIncomingAreaData}
-							actions={mockIncomingActions}
-						/>
-					</View>
-					<View>
-						<SectionTitle text="Recent" />
-						<RecentActivityCard events={recentEvents} />
-					</View>
-				</>
-			)}
-		</Animated.ScrollView>
+			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+			<AreaSummaryCard
+				firstName={firstName}
+				areaCount={areaCount}
+				activeAreaCount={activeAreaCount}
+				onlineAreaCount={onlineAreaCount}
+				// TODO: Replace this with actual alert count from status topics over MQTT
+				alertCount={5}
+			/>
+			<View>
+				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+					<SectionTitle text="Active Now" />
+				</View>
+				<AreaCard
+					variant="active"
+					areaData={mockActiveAreaData}
+					actions={mockActiveActions}
+				/>
+			</View>
+			<View>
+				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+					<SectionTitle text="Incoming" />
+				</View>
+				<AreaCard
+					variant="incoming"
+					areaData={mockIncomingAreaData}
+					actions={mockIncomingActions}
+				/>
+			</View>
+			<View>
+				<SectionTitle text="Recent" />
+				<RecentActivityCard events={recentEvents} />
+			</View>
+		</ScrollView>
 	)
 }

@@ -15,6 +15,7 @@ export default function Subtitle({
 				fontSize: theme.font.base,
 				color: theme.colors.textSecondary,
 				textAlign: 'center',
+				paddingHorizontal: theme.space.md,
 				lineHeight: theme.lineHeight.paragraph,
 			}}
 		>

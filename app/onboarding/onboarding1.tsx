@@ -15,8 +15,9 @@ export default function Onboarding1() {
 	const accessToken = useAuth().accessToken
 
 	const handleNextStep = () => {
+		// TODO: check whether the user already has linked areas and skip
 		if (accessToken) {
-			router.push('/onboarding/onboarding3')
+			router.push('/onboarding/onboarding4')
 		} else {
 			router.push('/onboarding/onboarding2')
 		}

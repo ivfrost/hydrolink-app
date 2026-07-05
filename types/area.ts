@@ -1,4 +1,4 @@
-export interface Area {
+export interface AreaResponse {
 	id: number
 	name: string
 	location: string
@@ -10,5 +10,5 @@ export interface Area {
 	linkedAt: string
 	lastSeen: string
 	userId: number
-	order: number
+	displayOrder: number
 }

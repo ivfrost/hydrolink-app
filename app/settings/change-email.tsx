@@ -14,6 +14,7 @@ import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 import ChangeEmailIllustration from '@/assets/images/profile/undraw_message-sent_iyz6.svg'
 import { STICKY_BAR_HEIGHT } from '@/app/_layout'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { UserResponse } from '@/types/auth'
 
 export default function ChangeEmailScreen() {
 	const theme = useTheme()
@@ -28,40 +29,21 @@ export default function ChangeEmailScreen() {
 		...profileUpdateFn,
 		mutationKey: ['emailUpdate'],
 		onError: (error) => {
-			const errorMessage = error.message || 'UNKNOWN_ERROR'
-
-			if (errorMessage.includes('Current password must be provided')) {
-				Burnt.toast({
-					title: 'Current password is required',
-					preset: 'error',
-				})
-			} else if (errorMessage.includes('Invalid credentials')) {
-				Burnt.toast({
-					title: 'Current password is incorrect',
-					preset: 'error',
-				})
-			} else if (errorMessage.includes('already in use')) {
-				Burnt.toast({
-					title: 'Email address is already in use',
-					preset: 'error',
-				})
-			} else {
-				Burnt.toast({
-					title: 'Failed to update email. Please try again',
-					preset: 'error',
-				})
-			}
+			console.error('Email update error:', error)
+			Burnt.toast({
+				title:
+					error.message === 'UPDATE_FAILED'
+						? 'Failed to update email. Please try again'
+						: 'An unexpected error occurred. Please try again.',
+				preset: 'error',
+			})
 		},
-		onSuccess: async () => {
+		onSuccess: async (updatedUser: UserResponse) => {
 			Burnt.toast({
 				title: 'Email updated successfully',
 				preset: 'done',
 			})
-			// Invalidate query cache
-			await queryClient.invalidateQueries({
-				queryKey: ['profile'],
-				refetchType: 'active',
-			})
+			queryClient.setQueryData(['profile'], updatedUser)
 			router.back()
 		},
 	})
@@ -93,7 +75,7 @@ export default function ChangeEmailScreen() {
 		}
 
 		// Check if email is same as current
-		if (email.trim().toLowerCase() === profile?.details?.email?.toLowerCase()) {
+		if (email.trim().toLowerCase() === profile?.email?.toLowerCase()) {
 			Burnt.toast({
 				title: 'New email is the same as current email',
 				preset: 'error',
@@ -114,10 +96,10 @@ export default function ChangeEmailScreen() {
 			email: email.trim(),
 			currentPassword: currentPassword.trim(),
 			// Keep other fields to avoid clearing them
-			fullName: profile?.details?.fullName || '',
-			username: profile?.details?.username || '',
-			phoneNumber: profile?.details?.phoneNumber || '',
-			address: profile?.details?.address || '',
+			fullName: profile?.fullName || '',
+			username: profile?.username || '',
+			phoneNumber: profile?.phoneNumber || '',
+			address: profile?.address || '',
 		})
 	}
 
@@ -129,8 +111,9 @@ export default function ChangeEmailScreen() {
 				contentContainerStyle={{
 					flexGrow: 1,
 					paddingHorizontal: theme.space.lg,
-					paddingBottom: theme.space.lg,
-					gap: theme.space.x2l,
+					paddingBottom: theme.space.x3l,
+					justifyContent: 'center',
+					gap: theme.space.x3l,
 				}}
 			>
 				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -139,13 +122,11 @@ export default function ChangeEmailScreen() {
 						color={theme.colors.accentBlue}
 					/>
 				</View>
-
 				<CredentialChangeHeader
 					title="Change Email"
 					description="Enter your new email address. Your current password is required for security verification."
-					currentValue={profile?.details?.email}
+					currentValue={profile?.email}
 				/>
-
 				<View>
 					<SectionTitle text="Email Details" />
 					<EditableProfileInfoCard

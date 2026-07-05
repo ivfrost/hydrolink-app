@@ -12,7 +12,7 @@ export default function ButtonColumnWrapper({
 			style={{
 				justifyContent: 'center',
 				alignItems: 'center',
-				gap: theme.space.md,
+				gap: theme.space.xl,
 			}}
 		>
 			{children}

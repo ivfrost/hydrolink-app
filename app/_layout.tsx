@@ -9,8 +9,6 @@ import { PortalProvider } from '@gorhom/portal'
 import { ThemeProvider, useTheme } from '@/context/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
-import { useEffect } from 'react'
-import { Client } from 'paho-mqtt'
 
 export const unstable_settings = {
 	initialRouteName: 'index',
@@ -18,7 +16,16 @@ export const unstable_settings = {
 
 export const STICKY_BAR_HEIGHT = 90
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			refetchOnMount: false,
+			refetchOnWindowFocus: false,
+			refetchOnReconnect: false,
+			retry: false,
+		},
+	},
+})
 
 export default function RootLayout() {
 	return (
@@ -31,19 +38,6 @@ export default function RootLayout() {
 function AppContent() {
 	const theme = useTheme()
 	const router = useRouter()
-	useEffect(() => {
-		const client = new Client('ws://10.0.2.2:8083', 'expo-client-' + Date.now())
-
-		client.connect({
-			onSuccess: () => {
-				console.log('MQTT connected')
-				client.subscribe('hydro/1/HYDRO-AE70F/status')
-			},
-			onFailure: (err) => {
-				console.log('MQTT connect failed', err)
-			},
-		})
-	}, [])
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>

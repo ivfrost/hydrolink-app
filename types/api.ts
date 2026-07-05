@@ -2,6 +2,7 @@ export interface TokenResponse {
 	type: 'AUTH_ACCESS_TOKEN' | 'AUTH_REFRESH_TOKEN'
 	value: string
 	expiryDate: string
+	userId: number
 }
 
 export interface ApiResponse<T> {

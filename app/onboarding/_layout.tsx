@@ -11,15 +11,6 @@ export default function Layout() {
 				animation: 'slide_from_right',
 				headerTransparent: true,
 				headerShadowVisible: false,
-				headerLeft: () => (
-					<TouchableOpacity
-						hitSlop={40}
-						onPress={() => router.back()}
-						style={{ marginRight: 16 }}
-					>
-						<Ionicons name="arrow-back" size={24} color="black" />
-					</TouchableOpacity>
-				),
 			}}
 		>
 			<Stack.Screen
@@ -38,7 +29,16 @@ export default function Layout() {
 			<Stack.Screen
 				name="onboarding3"
 				options={{
+					presentation: 'modal',
+					title: 'Recovery Codes',
+					headerLeft: () => null,
+				}}
+			/>
+			<Stack.Screen
+				name="onboarding4"
+				options={{
 					title: 'Link Device',
+					headerLeft: () => null,
 				}}
 			/>
 		</Stack>

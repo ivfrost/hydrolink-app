@@ -1,32 +1,27 @@
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useTheme } from '@/context/ThemeContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text } from 'react-native'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
-import { z } from 'zod'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as Burnt from 'burnt'
-import { MaterialIcons } from '@expo/vector-icons'
-import { useOnboarding } from '@/stores/onboardingStore'
-import { RegisterPayload, RegisterResponse } from '@/types/auth'
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import {
+	RegisterInput,
+	RegisterPayload,
+	RegisterResponse,
+	registerSchema,
+	TokenResponse,
+} from '@/types/auth'
 import * as SecureStore from 'expo-secure-store'
 import { useAuth } from '@/stores/authStore'
-import { areasQuery } from '@/queries/areas'
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { checkAvailabilityQuery } from '@/queries/auth'
+import { useDebounce } from 'use-debounce'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 
-const registerSchema = z.object({
-	email: z.email(),
-	username: z.string().min(5).max(20),
-	fullName: z.string().min(6).max(40),
-	password: z.string().min(8).max(42),
-	preferredLanguage: z.string().length(2),
-})
-
-type RegisterInput = z.infer<typeof registerSchema>
 type ErrorState = Partial<Record<keyof RegisterInput, string>>
 
 export default function Register() {
@@ -35,15 +30,16 @@ export default function Register() {
 		username: '',
 		fullName: '',
 		password: '',
-		preferredLanguage: 'en',
 	})
 	const setAccessToken = useAuth().setAccessToken
 	const [errorState, setErrorState] = useState<ErrorState>({})
+	const [emailValue, setEmailValue] = useState('')
+	const [usernameValue, setUsernameValue] = useState('')
+	const [debouncedEmail] = useDebounce(emailValue, 400)
+	const [debouncedUsername] = useDebounce(usernameValue, 400)
+
 	const theme = useTheme()
 	const router = useRouter()
-	const hasOnboarded = useOnboarding().hasOnboarded
-	const setHasOnboarded = useOnboarding().setHasOnboarded
-	const { data: areas, isPending: isPendingAreas } = useQuery(areasQuery)
 
 	const registerFn = async (
 		input: RegisterInput,
@@ -51,14 +47,26 @@ export default function Register() {
 		try {
 			const response = await fetch(`${API_BASE_URL}/users`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {
+					'Content-Type': 'application/json',
+					'x-client-platform': 'react-native',
+				},
 				body: JSON.stringify(input),
 			})
-			console.log('Register response:', response)
-			if (!response.ok) {
-				throw new Error('REGISTER_FAILED')
+			console.log('response.status:', response.status)
+
+			let data: any = null
+			try {
+				data = await response.json()
+			} catch {
+				data = null
 			}
-			return (await response.json()) as RegisterResponse
+			console.log('data:', data)
+			if (!response.ok) {
+				throw new Error(data?.message || 'REGISTER_FAILED')
+			}
+
+			return data as RegisterResponse
 		} catch (e) {
 			if (e instanceof TypeError) {
 				throw new Error('NETWORK_ERROR')
@@ -66,7 +74,6 @@ export default function Register() {
 			throw e
 		}
 	}
-
 	const { mutate, isPending } = useMutation<
 		RegisterResponse,
 		Error,
@@ -79,38 +86,54 @@ export default function Register() {
 				title:
 					error.message === 'NETWORK_ERROR'
 						? 'Could not connect to server'
-						: 'Registration failed. Please try again.',
+						: error.message,
 				preset: 'error',
 			})
 		},
 		onSuccess: async (data: RegisterResponse) => {
-			const accessToken = data.details.find(
+			const accessToken = data.details.tokens.find(
 				(t) => t.type === 'AUTH_ACCESS_TOKEN',
 			)
-			const refreshToken = data.details.find(
+			const refreshToken = data.details.tokens.find(
 				(t) => t.type === 'AUTH_REFRESH_TOKEN',
 			)
-			if (!accessToken || !refreshToken) {
+			const recoveryCodes: TokenResponse[] = data.details.tokens.filter(
+				(t) => t.type === 'AUTH_RECOVERY_CODE',
+			)
+
+			if (!accessToken || !refreshToken || recoveryCodes.length === 0) {
 				Burnt.toast({ title: 'Authentication error', preset: 'error' })
 				return
 			}
+
 			setAccessToken(accessToken.value)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
 
-			if (areas && areas.details.length > 0) {
-				if (!hasOnboarded) setHasOnboarded(true)
-				router.replace('/(tabs)')
-			} else {
-				router.replace('/onboarding/onboarding3')
-			}
+			// Navigate to the recovery codes screen and pass the recovery codes as a parameter
+			router.replace({
+				pathname: '/onboarding/onboarding3',
+				params: {
+					recoveryCodes: JSON.stringify(
+						recoveryCodes.map((token) => token.value),
+					),
+				},
+			})
 		},
+	})
+	const isValidEmailFormat = (value: string) =>
+		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+	const { data: isEmailAvailable, isFetching: emailChecking } = useQuery({
+		...checkAvailabilityQuery(debouncedEmail),
+		enabled: isValidEmailFormat(debouncedEmail),
+	})
+	const { data: isUsernameAvailable, isFetching: usernameChecking } = useQuery({
+		...checkAvailabilityQuery(debouncedUsername),
+		enabled: debouncedUsername.length > 5,
 	})
 
 	const register = () => {
-		if (isPendingAreas) return
-
 		const { success, error, data } = registerSchema.safeParse(inputState)
-
 		if (!success) {
 			setErrorState(
 				Object.fromEntries(
@@ -119,7 +142,6 @@ export default function Register() {
 			)
 			return
 		}
-
 		setErrorState({})
 		mutate(data)
 	}
@@ -127,7 +149,42 @@ export default function Register() {
 	const handleInputChange = (field: string, value: string) => {
 		setInputState((prev) => ({ ...prev, [field]: value }))
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
+		if (field === 'email') setEmailValue(value)
+		if (field === 'username') setUsernameValue(value)
 	}
+
+	useEffect(() => {
+		if (!isValidEmailFormat(emailValue) || emailValue !== debouncedEmail) return
+		if (isEmailAvailable === false) {
+			setErrorState((prev) => ({ ...prev, email: 'Email is already taken' }))
+		} else if (isEmailAvailable === true) {
+			setErrorState((prev) => ({ ...prev, email: '' }))
+		}
+	}, [isEmailAvailable, emailValue, debouncedEmail])
+
+	useEffect(() => {
+		if (usernameValue !== debouncedUsername) return
+		if (isUsernameAvailable === false) {
+			setErrorState((prev) => ({
+				...prev,
+				username: 'Username is already taken',
+			}))
+		} else if (isUsernameAvailable === true) {
+			setErrorState((prev) => ({ ...prev, username: '' }))
+		}
+	}, [isUsernameAvailable, usernameValue, debouncedUsername])
+
+	const hasErrors = Object.values(errorState).some((message) => !!message)
+
+	const isButtonDisabled =
+		isPending ||
+		emailChecking ||
+		usernameChecking ||
+		hasErrors ||
+		!inputState.email ||
+		!inputState.username ||
+		!inputState.fullName ||
+		!inputState.password
 
 	const errorText = (field: keyof ErrorState) =>
 		errorState[field] ? (
@@ -147,13 +204,20 @@ export default function Register() {
 			<KeyboardAwareScrollView
 				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={{
-					flexGrow: 1,
-					paddingHorizontal: theme.space.lg,
-					paddingBottom: theme.space.lg,
-					gap: theme.space.x2l,
+					paddingHorizontal: theme.space.x2l,
+					paddingBottom: theme.space.x3l,
+					gap: theme.space.x3l,
+					flex: 1,
+					justifyContent: 'center',
 				}}
 			>
-				<View style={{ width: '100%', alignItems: 'center', marginBottom: 32 }}>
+				<View
+					style={{
+						width: '100%',
+						alignItems: 'center',
+						marginBottom: theme.space.lg,
+					}}
+				>
 					<View
 						style={{
 							backgroundColor: theme.colors.accentBlueLight,
@@ -162,12 +226,12 @@ export default function Register() {
 							height: 68,
 							alignItems: 'center',
 							justifyContent: 'center',
-							marginBottom: 14,
+							marginBottom: theme.space.md,
 						}}
 					>
-						<FontAwesome6
-							name="droplet"
-							size={30}
+						<MaterialCommunityIcons
+							name="sprinkler-variant"
+							size={40}
 							color={theme.colors.accentBlue}
 						/>
 					</View>
@@ -177,14 +241,14 @@ export default function Register() {
 							fontWeight: '600',
 							textAlign: 'center',
 							color: theme.colors.textPrimary,
-							letterSpacing: -0.5,
 						}}
 					>
 						Create your account
 					</Text>
 				</View>
 
-				<View style={{ width: '100%', gap: 26 }}>
+				{/* Inputs */}
+				<View style={{ width: '100%', gap: theme.space.x2l }}>
 					<View>
 						<Input
 							label="Full name"
@@ -204,7 +268,31 @@ export default function Register() {
 							onChangeText={(value) => handleInputChange('username', value)}
 							labelBackground={theme.colors.modal}
 						/>
-						{errorText('username')}
+						{usernameChecking && (
+							<Text
+								style={{
+									color: theme.colors.textSecondary,
+									fontSize: theme.font.sm,
+									marginTop: 4,
+								}}
+							>
+								Checking availability…
+							</Text>
+						)}
+						{!usernameChecking &&
+							usernameValue.length > 5 &&
+							isUsernameAvailable === true && (
+								<Text
+									style={{
+										color: theme.colors.success,
+										fontSize: theme.font.sm,
+										marginTop: 4,
+									}}
+								>
+									Username available
+								</Text>
+							)}
+						{!usernameChecking && errorText('username')}
 					</View>
 					<View>
 						<Input
@@ -216,7 +304,29 @@ export default function Register() {
 							onChangeText={(value) => handleInputChange('email', value)}
 							labelBackground={theme.colors.modal}
 						/>
-						{errorText('email')}
+						{emailChecking && (
+							<Text
+								style={{
+									color: theme.colors.textSecondary,
+									fontSize: theme.font.sm,
+									marginTop: 4,
+								}}
+							>
+								Checking availability…
+							</Text>
+						)}
+						{!emailChecking && isEmailAvailable === true && (
+							<Text
+								style={{
+									color: theme.colors.success,
+									fontSize: theme.font.sm,
+									marginTop: 4,
+								}}
+							>
+								Email available
+							</Text>
+						)}
+						{!emailChecking && errorText('email')}
 					</View>
 					<View>
 						<Input
@@ -232,24 +342,26 @@ export default function Register() {
 					</View>
 				</View>
 
-				<View style={{ marginTop: theme.space.x2l }}>
-					<Button
-						label="Create account"
-						variant="primary"
-						modifier={['full']}
-						loading={isPending}
-						onPress={register}
-						disabled={isPendingAreas || isPending}
-						iconPosition="right"
-						icon={
-							<MaterialIcons
-								name="arrow-forward"
-								size={24}
-								color={theme.colors.buttonPrimaryText}
-							/>
-						}
-					/>
-				</View>
+				<Button
+					label="Create account"
+					variant="primary"
+					modifier={['full']}
+					loading={isPending}
+					onPress={register}
+					disabled={isButtonDisabled}
+					iconPosition="right"
+					icon={
+						<MaterialIcons
+							name="arrow-forward"
+							size={24}
+							color={
+								isButtonDisabled
+									? theme.colors.buttonDisabledText
+									: theme.colors.buttonPrimaryText
+							}
+						/>
+					}
+				/>
 			</KeyboardAwareScrollView>
 		</View>
 	)

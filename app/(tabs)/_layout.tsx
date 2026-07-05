@@ -1,11 +1,10 @@
-import { Tabs, usePathname } from 'expo-router'
+import { Tabs } from 'expo-router'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { Animated, StyleSheet, View } from 'react-native'
 import { useTheme } from '@/context/ThemeContext'
 import { useQuery } from '@tanstack/react-query'
 import { profileQuery } from '@/queries/profile'
 import { areasQuery } from '@/queries/areas'
-import { useEffect, useState } from 'react'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 
@@ -13,24 +12,7 @@ export default function TabsLayout() {
 	useQuery(profileQuery)
 	useQuery(areasQuery)
 
-	const pathname = usePathname()
 	const theme = useTheme()
-
-	if (!tabScrollValues[pathname]) {
-		tabScrollValues[pathname] = new Animated.Value(0)
-	}
-
-	const [headerElevation, setHeaderElevation] = useState(0)
-
-	useEffect(() => {
-		const listenerId = tabScrollValues[pathname].addListener(({ value }) => {
-			setHeaderElevation(Math.min(Math.max(value, 0), 4))
-		})
-
-		return () => {
-			tabScrollValues[pathname].removeListener(listenerId)
-		}
-	}, [pathname])
 
 	return (
 		<Tabs
@@ -45,7 +27,6 @@ export default function TabsLayout() {
 							StyleSheet.absoluteFill,
 							{
 								backgroundColor: theme.colors.background,
-								elevation: headerElevation,
 							},
 						]}
 					/>

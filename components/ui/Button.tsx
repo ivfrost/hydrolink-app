@@ -50,15 +50,17 @@ export default function Button({
 			width: isFab ? 60 : isFull ? '100%' : 'auto',
 			height: isFab ? 60 : undefined,
 			backgroundColor:
-				variant === 'primary'
-					? theme.colors.buttonPrimaryBg
-					: variant === 'secondary'
-						? theme.colors.buttonSecondaryBg
-						: variant === 'tertiary'
-							? 'transparent'
-							: variant === 'destructive'
-								? theme.colors.buttonDestructiveBg
-								: theme.colors.buttonPrimaryBg,
+				disabled || loading
+					? theme.colors.buttonDisabledBg
+					: variant === 'primary'
+						? theme.colors.buttonPrimaryBg
+						: variant === 'secondary'
+							? theme.colors.buttonSecondaryBg
+							: variant === 'tertiary'
+								? 'transparent'
+								: variant === 'destructive'
+									? theme.colors.buttonDestructiveBg
+									: theme.colors.buttonPrimaryBg,
 			...(isFab && {
 				shadowColor: '#000',
 				shadowOffset: { width: 0, height: 2 },
@@ -80,7 +82,7 @@ export default function Button({
 						: variant === 'secondary'
 							? theme.colors.buttonSecondaryText
 							: variant === 'tertiary'
-								? theme.colors.textMuted
+								? theme.colors.textPrimary
 								: variant === 'destructive'
 									? theme.colors.buttonPrimaryText
 									: theme.colors.buttonPrimaryText,

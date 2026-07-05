@@ -8,6 +8,7 @@ export default function Title({ text }: { text: string }) {
 			style={{
 				fontSize: theme.font.lg,
 				fontWeight: '500',
+				paddingHorizontal: theme.space.md,
 				color: theme.colors.textPrimary,
 				textAlign: 'center',
 			}}
