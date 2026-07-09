@@ -1,5 +1,7 @@
-import { LinearGradient } from 'expo-linear-gradient'
 import { SafeAreaView } from 'react-native-safe-area-context'
+
+import { LinearGradient } from 'expo-linear-gradient'
+
 import { useTheme } from '@/context/ThemeContext'
 
 export default function OnboardContainer({

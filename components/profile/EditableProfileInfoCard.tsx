@@ -1,23 +1,27 @@
-import { useTheme } from '@/context/ThemeContext'
 import { View } from 'react-native'
+
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { ProfileInfo } from '@/app/settings/profile'
+
+import { useTheme } from '@/context/ThemeContext'
+import { ProfileUpdatePayload } from '@/types/user'
+
 import EditableInfoCardItem from '../ui/EditableInfoCardItem'
 
 interface EditableInfoCardProps {
-	name?: string
+	fullName?: string
 	username?: string
 	email?: string
 	password?: string
 	currentPassword?: string
 	phoneNumber?: string
 	address?: string
-	onInfoChange: (field: keyof ProfileInfo, value: string) => void
+	onInfoChange: (field: keyof ProfileUpdatePayload, value: string) => void
 	isCredentialChanging?: boolean
+	errorState?: Partial<Record<keyof ProfileUpdatePayload, string>>
 }
 
 export function EditableProfileInfoCard({
-	name,
+	fullName,
 	username,
 	email,
 	password,
@@ -26,6 +30,7 @@ export function EditableProfileInfoCard({
 	address,
 	onInfoChange,
 	isCredentialChanging = false,
+	errorState,
 }: EditableInfoCardProps) {
 	const theme = useTheme()
 
@@ -39,12 +44,13 @@ export function EditableProfileInfoCard({
 				elevation: 0,
 			}}
 		>
-			{name !== undefined && (
+			{fullName !== undefined && (
 				<EditableInfoCardItem
 					label="Full name"
-					text={name}
+					text={fullName}
 					onChangeText={(value) => onInfoChange('fullName', value)}
 					editable
+					error={errorState?.fullName}
 					icon={
 						<MaterialCommunityIcons
 							name="account-outline"
@@ -62,6 +68,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('username', value)}
 					autoCapitalize="none"
 					editable
+					error={errorState?.username}
 					icon={
 						<MaterialCommunityIcons
 							name="at"
@@ -80,6 +87,7 @@ export function EditableProfileInfoCard({
 					textContentType="emailAddress"
 					autoCapitalize="none"
 					editable
+					error={errorState?.email}
 					icon={
 						<MaterialCommunityIcons
 							name="email-outline"
@@ -100,6 +108,7 @@ export function EditableProfileInfoCard({
 					autoCapitalize="none"
 					autoComplete="current-password"
 					textContentType="password"
+					error={errorState?.password}
 					icon={
 						<MaterialCommunityIcons
 							name="lock-plus-outline"
@@ -120,6 +129,7 @@ export function EditableProfileInfoCard({
 					autoCapitalize="none"
 					autoComplete="current-password"
 					textContentType="password"
+					error={errorState?.currentPassword}
 					icon={
 						<MaterialCommunityIcons
 							name="shield-lock-outline"
@@ -137,6 +147,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('phoneNumber', value)}
 					keyboardType="phone-pad"
 					editable
+					error={errorState?.phoneNumber}
 					icon={
 						<MaterialCommunityIcons
 							name="phone-outline"
@@ -149,10 +160,11 @@ export function EditableProfileInfoCard({
 
 			{address !== undefined && (
 				<EditableInfoCardItem
-					label="Site address"
+					label="Address"
 					text={address}
 					onChangeText={(value) => onInfoChange('address', value)}
 					editable
+					error={errorState?.address}
 					icon={
 						<MaterialCommunityIcons
 							name="map-marker-outline"

@@ -1,6 +1,10 @@
-import { useTheme } from '@/context/ThemeContext'
-import { MaterialIcons } from '@expo/vector-icons'
 import { Text, Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native'
+
+import { MaterialIcons } from '@expo/vector-icons'
+
+import { useTheme } from '@/context/ThemeContext'
+
+import CardIcon from './CardIcon'
 
 interface CardItemProps {
 	label?: string
@@ -44,11 +48,7 @@ export default function CardItem({
 	return (
 		<Pressable style={[styles.container, extraStyles]} onPress={onPress}>
 			{leadingIcon && (
-				<MaterialIcons
-					name={leadingIcon}
-					size={iconSize}
-					color={iconColor || theme.colors.accentBlue}
-				/>
+				<CardIcon icon={leadingIcon} color={iconColor} iconSize={iconSize} />
 			)}
 			{label && <Text style={styles.label}>{label}</Text>}
 			{children}

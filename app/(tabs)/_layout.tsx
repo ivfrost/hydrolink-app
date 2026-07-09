@@ -1,16 +1,19 @@
-import { Tabs } from 'expo-router'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { Animated, StyleSheet, View } from 'react-native'
-import { useTheme } from '@/context/ThemeContext'
+
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useQuery } from '@tanstack/react-query'
-import { profileQuery } from '@/queries/profile'
-import { areasQuery } from '@/queries/areas'
+import { Tabs } from 'expo-router'
+
+import { tanstackKeys } from '@/constants'
+import { useTheme } from '@/context/ThemeContext'
+import { areasQueryFn } from '@/queries/areas'
+import { profileQueryFn } from '@/queries/profile'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 
 export default function TabsLayout() {
-	useQuery(profileQuery)
-	useQuery(areasQuery)
+	useQuery({ queryKey: tanstackKeys.PROFILE, queryFn: profileQueryFn })
+	useQuery({ queryKey: tanstackKeys.AREAS, queryFn: areasQueryFn })
 
 	const theme = useTheme()
 

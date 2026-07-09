@@ -1,8 +1,10 @@
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
-import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, View } from 'react-native'
+
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
+
 import { InputProps } from '@/components/ui/Input'
+import { useTheme } from '@/context/ThemeContext'
 
 export default function BottomSheetInput({
 	label,

@@ -1,75 +1,53 @@
-import Button from '@/components/ui/Button'
+import { View, StyleSheet } from 'react-native'
+
 import { CameraView, useCameraPermissions } from 'expo-camera'
-import { useRouter } from 'expo-router'
-import { useRef } from 'react'
-import { View, StyleSheet, Text } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+
 import QrCodeIllustration from '@/assets/images/onboarding/undraw_qr-code-scan_bewe.svg'
+import OnboardContainer from '@/components/onboard/OnboardContainer'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import Button from '@/components/ui/Button'
+import Subtitle from '@/components/ui/Subtitle'
+import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
-export default function Link() {
+
+export default function AreaQRScan() {
 	const [permission, requestPermission] = useCameraPermissions()
-	const scannedRef = useRef(false)
 	const router = useRouter()
 	const theme = useTheme()
-	const styles = StyleSheet.create({
-		container: {
-			justifyContent: 'space-evenly',
-			alignItems: 'center',
-			flex: 1,
-			paddingTop: 12,
-			paddingHorizontal: 26,
-		},
-		heroGroup: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 22,
-		},
-		textContainer: {
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 16,
-			paddingHorizontal: 20,
-		},
-		textTitle: {
-			fontSize: theme.font.lg,
-			fontWeight: '500',
-			textAlign: 'center',
-			color: theme.colors.textPrimary,
-		},
-		textSubtitle: {
-			fontSize: theme.font.base,
-			fontWeight: '400',
-			textAlign: 'center',
-			color: theme.colors.textSecondary,
-			paddingHorizontal: 20,
-			lineHeight: 24,
-		},
-	})
+	const origin = useLocalSearchParams<{ from?: string }>().from
 
+	// Get back to the origin screen with the scanned code as a query param
 	const handleScan = (code: string) => {
 		router.dismissTo({
-			pathname: '/(tabs)/areas',
+			pathname:
+				origin === 'onboarding'
+					? '/onboarding/onboarding4'
+					: origin === 'areas'
+						? '/(tabs)/areas'
+						: '/(tabs)/areas',
 			params: { scanned: code },
 		})
 	}
 
 	if (!permission?.granted) {
 		return (
-			<View style={styles.container}>
-				<View style={styles.heroGroup}>
+			<OnboardContainer>
+				<View
+					style={{
+						justifyContent: 'center',
+						alignItems: 'center',
+						gap: theme.space.xl,
+					}}
+				>
 					<QrCodeIllustration height={240} color={theme.colors.accentBlue} />
-					<View style={styles.textContainer}>
-						<Text style={styles.textTitle}>Camera access needed</Text>
-						<Text style={styles.textSubtitle}>
-							We need access to your camera to scan the QR code on your device.
-						</Text>
-					</View>
+					<OnboardTextWrapper>
+						<Title text="Camera access needed" />
+						<Subtitle text="We need access to your camera to scan the QR code on your device." />
+					</OnboardTextWrapper>
 				</View>
-				<Button
-					label="Allow camera access"
-					onPress={requestPermission}
-					modifier={['full']}
-				/>
-			</View>
+				<Button label="Allow camera access" onPress={requestPermission} />
+			</OnboardContainer>
 		)
 	}
 	return (
@@ -78,10 +56,6 @@ export default function Link() {
 			facing="back"
 			barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
 			onBarcodeScanned={({ data }) => {
-				if (scannedRef.current) return
-				scannedRef.current = true
-				// validate data and navigate
-				console.log('Scanned:', data)
 				handleScan(data)
 			}}
 		/>

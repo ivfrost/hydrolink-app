@@ -1,25 +1,28 @@
-import { useOnboarding } from '@/stores/onboardingStore'
-import { useRouter } from 'expo-router'
+import React, { useState } from 'react'
 import {
-	View,
-	Text,
 	ActivityIndicator,
 	RefreshControl,
 	ScrollView,
+	Text,
+	View,
 } from 'react-native'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { profileQuery } from '@/queries/profile'
-import { UserCard } from '@/components/profile/UserCard'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useHeaderHeight } from '@react-navigation/elements'
-import { useTheme } from '@/context/ThemeContext'
-import CardWrapper from '@/components/layout/CardWrapper'
-import React, { useState } from 'react'
-import SimpleRowCardItem from '@/components/ui/SimpleRowCard'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import SectionTitle from '@/components/ui/SectionTitle'
-import { useAuth } from '@/stores/authStore'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
+
+import CardWrapper from '@/components/layout/CardWrapper'
+import { UserCard } from '@/components/profile/UserCard'
+import Button from '@/components/ui/Button'
+import SectionTitle from '@/components/ui/SectionTitle'
+import SimpleRowCardItem from '@/components/ui/SimpleRowCard'
+import { useTheme } from '@/context/ThemeContext'
+import { profileQueryFn } from '@/queries/profile'
+import { useAuth } from '@/stores/authStore'
+import { useOnboarding } from '@/stores/onboardingStore'
 
 interface SettingsRow {
 	label: string
@@ -32,7 +35,7 @@ interface SettingsSection {
 	rows: SettingsRow[]
 }
 
-export default function SettingsScreen() {
+export default function SettingTabScreen() {
 	const queryClient = useQueryClient()
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const router = useRouter()
@@ -43,6 +46,7 @@ export default function SettingsScreen() {
 	const logout = async () => {
 		useAuth.getState().removeAccessToken()
 		await SecureStore.deleteItemAsync('refreshToken')
+		router.replace('/onboarding/onboarding2')
 	}
 
 	const resetOnboarding = async () => {
@@ -64,7 +68,14 @@ export default function SettingsScreen() {
 
 	const headerHeight = useHeaderHeight()
 
-	const { data: profile, isPending, error } = useQuery(profileQuery)
+	const {
+		data: profile,
+		isPending,
+		error,
+	} = useQuery({
+		queryKey: ['profile'],
+		queryFn: profileQueryFn,
+	})
 
 	if (isPending) {
 		return (
@@ -101,6 +112,7 @@ export default function SettingsScreen() {
 				>
 					Couldn't load your profile. Pull to retry or check your connection.
 				</Text>
+				<Button onPress={logout} label={'Logout'} />
 			</View>
 		)
 	}
@@ -120,7 +132,6 @@ export default function SettingsScreen() {
 		{
 			title: 'Preferences',
 			rows: [
-				{ label: 'Units', icon: 'straighten', onPress: () => {} },
 				{
 					label: 'Notifications',
 					icon: 'notifications-none',
@@ -135,30 +146,13 @@ export default function SettingsScreen() {
 				{ label: 'Contact support', icon: 'mail-outline', onPress: () => {} },
 			],
 		},
-		{
-			title: 'Account',
-			rows: [
-				{
-					label: 'Reset onboarding',
-					icon: 'restart-alt',
-					onPress: resetOnboarding,
-				},
-				{
-					label: 'Log out',
-					icon: 'logout',
-					onPress: async () => {
-						await logout().then(() => router.replace('/onboarding/onboarding2'))
-					},
-				},
-			],
-		},
 	]
 
 	return (
 		<ScrollView
 			contentContainerStyle={{
 				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight + theme.space.sm,
+				paddingTop: headerHeight,
 				paddingBottom: insets.bottom + theme.space.lg,
 				gap: theme.space.x2l,
 			}}
@@ -173,7 +167,7 @@ export default function SettingsScreen() {
 			{sections.map((section) => (
 				<View key={section.title}>
 					<SectionTitle text={section.title} />
-					<CardWrapper elevation={0} paddingDisabled={true}>
+					<CardWrapper elevation={0}>
 						{section.rows.map((row) => (
 							<SimpleRowCardItem
 								key={row.label}

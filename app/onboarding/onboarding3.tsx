@@ -1,26 +1,27 @@
-import Button from '@/components/ui/Button'
-import { useTheme } from '@/context/ThemeContext'
 import { View, Alert, Text } from 'react-native'
-import RecoveryCodesIllustration from '@/assets/images/onboarding/undraw_vault_tyfh.svg'
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import ButtonColumnWrapper from '@/components/layout/ButtonColumnWrapper'
-import OnboardContainer from '@/components/onboard/OnboardContainer'
 import * as Burnt from 'burnt'
-import { useLocalSearchParams } from 'expo-router'
+import { Directory } from 'expo-file-system'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+
+import OnboardContainer from '@/components/onboard/OnboardContainer'
 import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import Button from '@/components/ui/Button'
 import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
-import { File, Paths } from 'expo-file-system'
+import { useTheme } from '@/context/ThemeContext'
 
-export default function Onboarding4() {
+export default function OnboardingStep3() {
 	const theme = useTheme()
+	const router = useRouter()
 	const { recoveryCodes } = useLocalSearchParams()
 	const codes: string[] = recoveryCodes
 		? JSON.parse(recoveryCodes as string)
 		: []
 
 	const handleConfirmation = () => {
-		const response = Alert.alert(
+		Alert.alert(
 			'Have you saved your recovery codes?',
 			'Please confirm that you have saved your recovery codes before proceeding.',
 			[
@@ -28,7 +29,7 @@ export default function Onboarding4() {
 					text: 'Yes, I have saved them',
 					onPress: () => {
 						// Handle the case when the user confirms they have saved their recovery codes
-						console.log('User confirmed they have saved their recovery codes.')
+						router.push('/onboarding/onboarding4')
 					},
 				},
 				{
@@ -49,18 +50,40 @@ export default function Onboarding4() {
 		)
 	}
 
-	const downloadCodes = () => {
+	const downloadCodes = async () => {
 		const codesString = codes.join('\n')
+
 		try {
+			// Prompt the user to select their desired directory location
+			const selectedDir = await Directory.pickDirectoryAsync()
+
+			// If user cancels the prompt picker dialog
+			if (!selectedDir) {
+				console.log('User cancelled directory selection')
+				return
+			}
+
+			// Generate randomized filename
 			const suffix = Math.random().toString(36).slice(2, 8)
 			const filename = `recovery_codes_${suffix}.txt`
-			const file = new File(Paths.document, filename)
-			file.create()
+
+			// Create the file in the selected directory and write the recovery codes to it
+			const file = selectedDir.createFile(filename, 'text/plain')
 			file.write(codesString)
-			console.log(`Recovery codes saved to ${file.uri}`)
-			console.log(file.textSync())
+
+			// Alert the user it successfully saved
+			Burnt.toast({
+				title: 'Codes saved successfully!',
+				preset: 'done',
+			})
+
+			console.log(`Recovery codes saved to: ${file.uri}`)
 		} catch (error) {
-			console.error('Error saving recovery codes:', error)
+			console.error('Error selecting directory or saving file:', error)
+			Burnt.toast({
+				title: 'Failed to save recovery codes.',
+				preset: 'error',
+			})
 		}
 	}
 
@@ -76,11 +99,6 @@ export default function Onboarding4() {
 					width: '100%',
 				}}
 			>
-				<RecoveryCodesIllustration
-					height={160}
-					width={310}
-					color={theme.colors.accentBlue}
-				/>
 				<OnboardTextWrapper>
 					<Title text="Save your recovery codes" />
 					<Subtitle>
@@ -104,6 +122,7 @@ export default function Onboarding4() {
 						borderRadius: theme.radius.card,
 						gap: theme.space.md,
 						padding: theme.space.lg,
+						width: '100%',
 					}}
 				>
 					{codes.map((code, idx) => {
@@ -134,6 +153,7 @@ export default function Onboarding4() {
 					<Button
 						label="Download codes"
 						onPress={downloadCodes}
+						modifier={['full']}
 						icon={
 							<MaterialIcons
 								name="download"
@@ -144,21 +164,20 @@ export default function Onboarding4() {
 					/>
 				</View>
 
-				<ButtonColumnWrapper>
-					<Button
-						label="I have saved my recovery codes"
-						variant="secondary"
-						iconPosition="right"
-						onPress={handleConfirmation}
-						icon={
-							<MaterialIcons
-								name="check"
-								size={24}
-								color={theme.colors.buttonSecondaryText}
-							/>
-						}
-					/>
-				</ButtonColumnWrapper>
+				<Button
+					label="Continue"
+					variant="secondary"
+					modifier={['tall', 'full']}
+					iconPosition="right"
+					onPress={handleConfirmation}
+					icon={
+						<MaterialIcons
+							name="arrow-forward"
+							size={24}
+							color={theme.colors.buttonSecondaryText}
+						/>
+					}
+				/>
 			</View>
 		</OnboardContainer>
 	)

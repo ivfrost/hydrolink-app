@@ -1,99 +1,76 @@
-import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import { useTheme } from '@/context/ThemeContext'
 import { useEffect, useState } from 'react'
 import { View, Text } from 'react-native'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useRouter } from 'expo-router'
-import * as Burnt from 'burnt'
+
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import * as Burnt from 'burnt'
+import { useRouter } from 'expo-router'
+import * as SecureStore from 'expo-secure-store'
+import { useDebounce } from 'use-debounce'
+
+import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import { tanstackKeys } from '@/constants'
+import { useTheme } from '@/context/ThemeContext'
+import { registerFn } from '@/mutations/auth'
+import { checkAvailabilityFn } from '@/queries/auth'
+import { useAuth } from '@/stores/authStore'
+import { AppError } from '@/types/api'
 import {
-	RegisterInput,
 	RegisterPayload,
 	RegisterResponse,
 	registerSchema,
 	TokenResponse,
 } from '@/types/auth'
-import * as SecureStore from 'expo-secure-store'
-import { useAuth } from '@/stores/authStore'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import { checkAvailabilityQuery } from '@/queries/auth'
-import { useDebounce } from 'use-debounce'
+import { isValidEmailFormat } from '@/utils/isValidEmailFormat'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
-
-type ErrorState = Partial<Record<keyof RegisterInput, string>>
+type ErrorState = Partial<Record<keyof RegisterPayload, string>>
 
 export default function Register() {
-	const [inputState, setInputState] = useState({
+	const theme = useTheme()
+	const router = useRouter()
+	const setAccessToken = useAuth().setAccessToken
+	const [errorState, setErrorState] = useState<ErrorState>({})
+	const [inputState, setInputState] = useState<Partial<RegisterPayload>>({
 		email: '',
 		username: '',
 		fullName: '',
 		password: '',
 	})
-	const setAccessToken = useAuth().setAccessToken
-	const [errorState, setErrorState] = useState<ErrorState>({})
-	const [emailValue, setEmailValue] = useState('')
-	const [usernameValue, setUsernameValue] = useState('')
-	const [debouncedEmail] = useDebounce(emailValue, 400)
-	const [debouncedUsername] = useDebounce(usernameValue, 400)
+	const [debouncedEmail] = useDebounce(inputState.email ?? '', 400)
+	const [debouncedUsername] = useDebounce(inputState.username ?? '', 400)
 
-	const theme = useTheme()
-	const router = useRouter()
-
-	const registerFn = async (
-		input: RegisterInput,
-	): Promise<RegisterResponse> => {
-		try {
-			const response = await fetch(`${API_BASE_URL}/users`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-client-platform': 'react-native',
-				},
-				body: JSON.stringify(input),
-			})
-			console.log('response.status:', response.status)
-
-			let data: any = null
-			try {
-				data = await response.json()
-			} catch {
-				data = null
-			}
-			console.log('data:', data)
-			if (!response.ok) {
-				throw new Error(data?.message || 'REGISTER_FAILED')
-			}
-
-			return data as RegisterResponse
-		} catch (e) {
-			if (e instanceof TypeError) {
-				throw new Error('NETWORK_ERROR')
-			}
-			throw e
-		}
-	}
+	// Mutation for registering a new user
 	const { mutate, isPending } = useMutation<
 		RegisterResponse,
-		Error,
+		AppError,
 		RegisterPayload
 	>({
-		mutationKey: ['register'],
+		mutationKey: tanstackKeys.REGISTER,
 		mutationFn: registerFn,
-		onError: (error) => {
+		onError: (error: AppError) => {
 			Burnt.toast({
 				title:
-					error.message === 'NETWORK_ERROR'
-						? 'Could not connect to server'
+					error.code === 'UNKNOWN_ERROR'
+						? 'An unknown error occurred. Please try again later.'
 						: error.message,
 				preset: 'error',
 			})
 		},
 		onSuccess: async (data: RegisterResponse) => {
-			const accessToken = data.details.tokens.find(
-				(t) => t.type === 'AUTH_ACCESS_TOKEN',
-			)
+			if (data.error !== null || !data.details) {
+				Burnt.toast({
+					title:
+						data.message ||
+						'An unknown error occurred. Please try again later.',
+					preset: 'error',
+				})
+				return
+			}
+			const tokens = data.details.tokens
+
+			const accessToken = tokens.find((t) => t.type === 'AUTH_ACCESS_TOKEN')
 			const refreshToken = data.details.tokens.find(
 				(t) => t.type === 'AUTH_REFRESH_TOKEN',
 			)
@@ -102,14 +79,17 @@ export default function Register() {
 			)
 
 			if (!accessToken || !refreshToken || recoveryCodes.length === 0) {
-				Burnt.toast({ title: 'Authentication error', preset: 'error' })
+				Burnt.toast({
+					title: 'Authentication error. Please try again later.',
+					preset: 'error',
+				})
 				return
 			}
 
 			setAccessToken(accessToken.value)
 			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
 
-			// Navigate to the recovery codes screen and pass the recovery codes as a parameter
+			// Pass recovery codes to the next onboarding step via query params
 			router.replace({
 				pathname: '/onboarding/onboarding3',
 				params: {
@@ -120,18 +100,26 @@ export default function Register() {
 			})
 		},
 	})
-	const isValidEmailFormat = (value: string) =>
-		/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
-	const { data: isEmailAvailable, isFetching: emailChecking } = useQuery({
-		...checkAvailabilityQuery(debouncedEmail),
+	// Queries for checking email and username availability
+	const { data: isEmailAvailable, isPending: emailChecking } = useQuery({
+		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedEmail],
+		queryFn: () => checkAvailabilityFn(debouncedEmail),
 		enabled: isValidEmailFormat(debouncedEmail),
 	})
-	const { data: isUsernameAvailable, isFetching: usernameChecking } = useQuery({
-		...checkAvailabilityQuery(debouncedUsername),
-		enabled: debouncedUsername.length > 5,
+	const { data: isUsernameAvailable, isPending: usernameChecking } = useQuery({
+		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedUsername],
+		queryFn: () => checkAvailabilityFn(debouncedUsername),
+		enabled: registerSchema.shape.username.safeParse(debouncedUsername).success,
 	})
 
+	// Handler for input value changes
+	const handleInputChange = (field: keyof RegisterPayload, value: string) => {
+		setInputState((prev) => ({ ...prev, [field]: value }))
+		setErrorState((prev) => ({ ...prev, [field]: '' }))
+	}
+
+	// Handler for clicking the register button
 	const register = () => {
 		const { success, error, data } = registerSchema.safeParse(inputState)
 		if (!success) {
@@ -146,24 +134,17 @@ export default function Register() {
 		mutate(data)
 	}
 
-	const handleInputChange = (field: string, value: string) => {
-		setInputState((prev) => ({ ...prev, [field]: value }))
-		setErrorState((prev) => ({ ...prev, [field]: '' }))
-		if (field === 'email') setEmailValue(value)
-		if (field === 'username') setUsernameValue(value)
-	}
-
+	// Effects to update error state based on availability checks
 	useEffect(() => {
-		if (!isValidEmailFormat(emailValue) || emailValue !== debouncedEmail) return
+		if (inputState.email !== debouncedEmail) return
 		if (isEmailAvailable === false) {
-			setErrorState((prev) => ({ ...prev, email: 'Email is already taken' }))
+			setErrorState((prev) => ({ ...prev, email: 'Email is already in use' }))
 		} else if (isEmailAvailable === true) {
 			setErrorState((prev) => ({ ...prev, email: '' }))
 		}
-	}, [isEmailAvailable, emailValue, debouncedEmail])
-
+	}, [isEmailAvailable, inputState.email, debouncedEmail])
 	useEffect(() => {
-		if (usernameValue !== debouncedUsername) return
+		if (inputState.username !== debouncedUsername) return
 		if (isUsernameAvailable === false) {
 			setErrorState((prev) => ({
 				...prev,
@@ -172,19 +153,19 @@ export default function Register() {
 		} else if (isUsernameAvailable === true) {
 			setErrorState((prev) => ({ ...prev, username: '' }))
 		}
-	}, [isUsernameAvailable, usernameValue, debouncedUsername])
+	}, [isUsernameAvailable, inputState.username, debouncedUsername])
 
+	// Button state management logic
 	const hasErrors = Object.values(errorState).some((message) => !!message)
-
-	const isButtonDisabled =
-		isPending ||
-		emailChecking ||
-		usernameChecking ||
-		hasErrors ||
+	const hasEmptyFields =
 		!inputState.email ||
 		!inputState.username ||
 		!inputState.fullName ||
 		!inputState.password
+	const checkPending = emailChecking || usernameChecking
+
+	const isButtonDisabled =
+		hasErrors || hasEmptyFields || checkPending || isPending
 
 	const errorText = (field: keyof ErrorState) =>
 		errorState[field] ? (
@@ -200,17 +181,8 @@ export default function Register() {
 		) : null
 
 	return (
-		<View style={{ flex: 1 }}>
-			<KeyboardAwareScrollView
-				keyboardShouldPersistTaps="handled"
-				contentContainerStyle={{
-					paddingHorizontal: theme.space.x2l,
-					paddingBottom: theme.space.x3l,
-					gap: theme.space.x3l,
-					flex: 1,
-					justifyContent: 'center',
-				}}
-			>
+		<>
+			<KeyboardAwareScrollView>
 				<View
 					style={{
 						width: '100%',
@@ -279,19 +251,17 @@ export default function Register() {
 								Checking availability…
 							</Text>
 						)}
-						{!usernameChecking &&
-							usernameValue.length > 5 &&
-							isUsernameAvailable === true && (
-								<Text
-									style={{
-										color: theme.colors.success,
-										fontSize: theme.font.sm,
-										marginTop: 4,
-									}}
-								>
-									Username available
-								</Text>
-							)}
+						{!usernameChecking && isUsernameAvailable === true && (
+							<Text
+								style={{
+									color: theme.colors.success,
+									fontSize: theme.font.sm,
+									marginTop: 4,
+								}}
+							>
+								Username available
+							</Text>
+						)}
 						{!usernameChecking && errorText('username')}
 					</View>
 					<View>
@@ -363,6 +333,6 @@ export default function Register() {
 					}
 				/>
 			</KeyboardAwareScrollView>
-		</View>
+		</>
 	)
 }

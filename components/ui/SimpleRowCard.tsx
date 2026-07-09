@@ -1,7 +1,8 @@
-// SettingsRow.tsx
-import { useTheme } from '@/context/ThemeContext'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+
+import { useTheme } from '@/context/ThemeContext'
 
 interface SimpleRowCardItemProps {
 	label: string
@@ -21,8 +22,6 @@ export default function SimpleRowCardItem({
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: theme.space.lg,
-			paddingVertical: theme.space.lg,
-			paddingHorizontal: theme.space.lg,
 			elevation: 0,
 		},
 		iconWrapper: {

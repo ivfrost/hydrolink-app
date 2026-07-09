@@ -1,10 +1,13 @@
 import { View } from 'react-native'
+
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+
 import { useTheme } from '@/context/ThemeContext'
+
 import Button from '../ui/Button'
 
 interface StickyActionButtonsProps {
-	hasChanges: boolean
+	disabled: boolean
 	onSave: () => void
 	onDiscard: () => void
 	isLoading?: boolean
@@ -12,20 +15,19 @@ interface StickyActionButtonsProps {
 }
 
 export function StickyActionButtons({
-	hasChanges,
+	disabled,
 	onSave,
 	onDiscard,
 	isLoading = false,
 	bottomInset = 0,
 }: StickyActionButtonsProps) {
 	const theme = useTheme()
-	const discardColor = hasChanges
+	const discardColor = !disabled
 		? theme.colors.buttonSecondaryText
 		: theme.colors.textMuted
-	const saveColor = hasChanges
+	const saveColor = !disabled
 		? theme.colors.buttonPrimaryText
 		: theme.colors.textMuted
-	const STICKY_BAR_HEIGHT = 90
 
 	return (
 		<View
@@ -42,7 +44,7 @@ export function StickyActionButtons({
 				shadowOffset: { width: 0, height: -2 },
 				shadowOpacity: 0.1,
 				shadowRadius: 8,
-				height: STICKY_BAR_HEIGHT,
+				height: theme.space.stickyBarHeight,
 				elevation: 6,
 			}}
 		>
@@ -61,12 +63,12 @@ export function StickyActionButtons({
 					height: 54,
 					justifyContent: 'center',
 					alignItems: 'center',
-					backgroundColor: hasChanges
+					backgroundColor: !disabled
 						? theme.colors.buttonSecondaryBg
 						: theme.colors.buttonDisabledBg,
-					opacity: hasChanges ? 1 : 0.4,
+					opacity: !disabled ? 1 : 0.4,
 				}}
-				disabled={!hasChanges || isLoading}
+				disabled={disabled || isLoading}
 				label="Discard"
 			/>
 			<Button
@@ -83,12 +85,12 @@ export function StickyActionButtons({
 				extraStyles={{
 					flex: 1,
 					height: 54,
-					backgroundColor: hasChanges
+					backgroundColor: !disabled
 						? theme.colors.buttonPrimaryBg
 						: theme.colors.buttonDisabledBg,
-					opacity: hasChanges ? 1 : 0.4,
+					opacity: !disabled ? 1 : 0.4,
 				}}
-				disabled={!hasChanges || isLoading}
+				disabled={disabled}
 				loading={isLoading}
 			/>
 		</View>

@@ -1,122 +1,228 @@
-import { useState } from 'react'
-import { View } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Burnt from 'burnt'
 import { useRouter } from 'expo-router'
-import { profileQuery } from '@/queries/profile'
+import { useDebounce } from 'use-debounce'
+
+import ChangeEmailIllustration from '@/assets/images/profile/undraw_message-sent_iyz6.svg'
+import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
+import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
+import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHeader'
+import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
+import SectionTitle from '@/components/ui/SectionTitle'
+import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
 import { profileUpdateFn } from '@/mutations/profile'
-import * as Burnt from 'burnt'
-import { ProfileInfo } from './profile'
-import { CredentialChangeHeader } from '@/components/profile/CredentialChangeHeader'
-import SectionTitle from '@/components/ui/SectionTitle'
-import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
-import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
-import ChangeEmailIllustration from '@/assets/images/profile/undraw_message-sent_iyz6.svg'
-import { STICKY_BAR_HEIGHT } from '@/app/_layout'
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
-import { UserResponse } from '@/types/auth'
+import { checkAvailabilityFn } from '@/queries/auth'
+import { profileQueryFn } from '@/queries/profile'
+import { AppError } from '@/types/api'
+import {
+	ProfileUpdatePayload,
+	profileUpdateSchema,
+	User,
+	userSchema,
+} from '@/types/user'
+import { isValidEmailFormat } from '@/utils/isValidEmailFormat'
+
+type ErrorState = {
+	email?: string
+	currentPassword?: string
+}
 
 export default function ChangeEmailScreen() {
 	const theme = useTheme()
 	const router = useRouter()
 	const queryClient = useQueryClient()
-	const { data: profile } = useQuery(profileQuery)
+	const insets = useSafeAreaInsets()
+	const [errorState, setErrorState] = useState<ErrorState>({})
+	const [inputState, setInputState] = useState<Partial<ProfileUpdatePayload>>({
+		email: '',
+		currentPassword: '',
+	})
+	const [debouncedEmail] = useDebounce(inputState.email ?? '', 400)
 
-	const [email, setEmail] = useState('')
-	const [currentPassword, setCurrentPassword] = useState('')
+	// Query for fetching user's profile data to preserve unchanged fields on save
+	const {
+		data: profile,
+		isPending: loadProfilePending,
+		error: profileLoadError,
+	} = useQuery({
+		queryKey: ['profile'],
+		queryFn: profileQueryFn,
+	})
 
+	// Query for checking email availability
+	const { data: isEmailAvailable, isFetching: emailChecking } = useQuery({
+		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, 'email', debouncedEmail],
+		queryFn: () => checkAvailabilityFn(debouncedEmail),
+		enabled:
+			isValidEmailFormat(debouncedEmail) &&
+			// Only check if it's actually a new email
+			debouncedEmail !== profile?.email,
+	})
+
+	// Mutation for updating the user's email
 	const { mutate, isPending: isUpdating } = useMutation({
-		...profileUpdateFn,
-		mutationKey: ['emailUpdate'],
-		onError: (error) => {
-			console.error('Email update error:', error)
+		mutationFn: profileUpdateFn,
+		mutationKey: tanstackKeys.EMAIL_UPDATE,
+		onError: (error: AppError) => {
 			Burnt.toast({
 				title:
-					error.message === 'UPDATE_FAILED'
-						? 'Failed to update email. Please try again'
-						: 'An unexpected error occurred. Please try again.',
+					error.code === 'UNKNOWN_ERROR'
+						? 'An unknown error occurred. Please try again.'
+						: error.message,
 				preset: 'error',
 			})
 		},
-		onSuccess: async (updatedUser: UserResponse) => {
+		onSuccess: async (updatedUser: User) => {
 			Burnt.toast({
 				title: 'Email updated successfully',
 				preset: 'done',
 			})
-			queryClient.setQueryData(['profile'], updatedUser)
+			// Evict the old profile data and update with the new one
+			queryClient.setQueryData(tanstackKeys.PROFILE, updatedUser)
 			router.back()
 		},
 	})
 
-	const handleInfoChange = (field: keyof ProfileInfo, value: string) => {
-		if (field === 'email') {
-			setEmail(value)
-		} else if (field === 'currentPassword') {
-			setCurrentPassword(value)
-		}
+	// Handler for input value changes
+	const handleInputChange = (field: string, value: string) => {
+		setInputState((prev) => ({ ...prev, [field]: value }))
+		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
 
+	// Handlers for save and discard actions
 	const handleSave = () => {
-		if (!email || email.trim() === '') {
-			Burnt.toast({
-				title: 'Please enter a new email address',
-				preset: 'error',
-			})
-			return
-		}
-
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-		if (!emailRegex.test(email.trim())) {
-			Burnt.toast({
-				title: 'Please enter a valid email address',
-				preset: 'error',
-			})
-			return
-		}
-
-		// Check if email is same as current
-		if (email.trim().toLowerCase() === profile?.email?.toLowerCase()) {
-			Burnt.toast({
-				title: 'New email is the same as current email',
-				preset: 'error',
-			})
-			return
-		}
-
-		if (!currentPassword || currentPassword.trim() === '') {
-			Burnt.toast({
-				title: 'Please enter your current password',
-				preset: 'error',
-			})
-			return
-		}
-
 		Burnt.dismissAllAlerts()
-		mutate({
-			email: email.trim(),
-			currentPassword: currentPassword.trim(),
-			// Keep other fields to avoid clearing them
-			fullName: profile?.fullName || '',
-			username: profile?.username || '',
-			phoneNumber: profile?.phoneNumber || '',
-			address: profile?.address || '',
-		})
+		setErrorState({})
+
+		const payload = {
+			email: inputState.email,
+			currentPassword: inputState.currentPassword,
+		}
+
+		const result = profileUpdateSchema.safeParse(payload)
+		if (!result.success) {
+			const formattedErrors: ErrorState = {}
+			result.error.issues.forEach((issue) => {
+				const field = issue.path[0] as keyof ErrorState
+				if (field && !formattedErrors[field]) {
+					formattedErrors[field] = issue.message
+				}
+			})
+			setErrorState(formattedErrors)
+			return
+		}
+
+		// Check if the new email is the same as the current one
+		const isEmailSameAsCurrent = profile?.email === inputState.email
+		if (isEmailSameAsCurrent) {
+			setErrorState((prev) => ({
+				...prev,
+				email: 'New email cannot be the same as your current email',
+			}))
+			return
+		}
+
+		// Email availability check
+		if (isEmailAvailable === false && debouncedEmail !== profile?.email) {
+			setErrorState((prev) => ({ ...prev, email: 'Email is already taken' }))
+			return
+		} else {
+			setErrorState((prev) => ({ ...prev, email: '' }))
+		}
+
+		mutate(payload)
+	}
+
+	const handleDiscard = () => {
+		if (!profile) return
+		setInputState({ email: '', currentPassword: '' })
+		setErrorState({})
+	}
+
+	useEffect(() => {
+		if (!profile?.email || !inputState.email) return
+		if (!inputState.email) {
+			setErrorState((prev) => ({ ...prev, email: '' }))
+			return
+		}
+
+		// Don't flag issues mid-typing before the debounce loop settles
+		if (inputState.email !== debouncedEmail) return
+
+		if (profile.email === debouncedEmail) {
+			setErrorState((prev) => ({
+				...prev,
+				email: 'New email cannot be the same as your current email',
+			}))
+			return
+		}
+
+		const emailCheck = userSchema.shape.email.safeParse(debouncedEmail)
+		if (!emailCheck.success) {
+			setErrorState((prev) => ({
+				...prev,
+				email: emailCheck.error.issues[0]?.message ?? 'Invalid email',
+			}))
+			return
+		}
+
+		if (isEmailAvailable === false) {
+			setErrorState((prev) => ({ ...prev, email: 'Email is already taken' }))
+		} else {
+			setErrorState((prev) => ({ ...prev, email: '' }))
+		}
+	}, [isEmailAvailable, inputState.email, debouncedEmail, profile?.email])
+
+	// Guard routing fallback for failure configurations
+	useEffect(() => {
+		if (profileLoadError) {
+			Burnt.toast({
+				title: 'Failed to load profile. Please try again.',
+				preset: 'error',
+			})
+			router.back()
+		}
+	}, [profileLoadError, router])
+
+	// Button state management logic
+	const hasErrors = Object.values(errorState).some((msg) => !!msg)
+	const hasChanges =
+		profile && inputState.email && inputState.email !== profile.email
+	const hasEmptyFields = !inputState.email || !inputState.currentPassword
+	const isEmailInputDebouncing = inputState.email !== debouncedEmail
+	const isButtonDisabled =
+		hasErrors ||
+		hasEmptyFields ||
+		!hasChanges ||
+		isEmailInputDebouncing ||
+		emailChecking
+
+	if (loadProfilePending) {
+		return (
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<Text style={{ color: theme.colors.textSecondary, marginTop: 12 }}>
+					Loading profile...
+				</Text>
+			</View>
+		)
 	}
 
 	return (
-		<View style={{ flex: 1 }}>
-			<KeyboardAwareScrollView
-				bottomOffset={STICKY_BAR_HEIGHT}
-				keyboardShouldPersistTaps="handled"
-				contentContainerStyle={{
-					flexGrow: 1,
-					paddingHorizontal: theme.space.lg,
-					paddingBottom: theme.space.x3l,
-					justifyContent: 'center',
-					gap: theme.space.x3l,
-				}}
-			>
-				<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+		<>
+			<KeyboardAwareScrollView bottomOffset={theme.space.stickyBarHeight}>
+				<View
+					style={{
+						justifyContent: 'center',
+						alignItems: 'center',
+						paddingVertical: 20,
+					}}
+				>
 					<ChangeEmailIllustration
 						height={180}
 						color={theme.colors.accentBlue}
@@ -130,20 +236,22 @@ export default function ChangeEmailScreen() {
 				<View>
 					<SectionTitle text="Email Details" />
 					<EditableProfileInfoCard
-						email={email}
-						currentPassword={currentPassword}
-						onInfoChange={handleInfoChange}
+						email={inputState.email}
+						currentPassword={inputState.currentPassword}
+						onInfoChange={handleInputChange}
 						isCredentialChanging={true}
+						errorState={errorState}
 					/>
 				</View>
 			</KeyboardAwareScrollView>
 
 			<StickyActionButtons
-				hasChanges={email.trim() !== '' || currentPassword.trim() !== ''}
-				onSave={handleSave}
-				onDiscard={() => router.back()}
+				disabled={isButtonDisabled}
 				isLoading={isUpdating}
+				onSave={handleSave}
+				onDiscard={handleDiscard}
+				bottomInset={insets.bottom}
 			/>
-		</View>
+		</>
 	)
 }

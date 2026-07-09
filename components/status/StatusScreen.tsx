@@ -1,8 +1,10 @@
-import { useTheme } from '@/context/ThemeContext'
 import { RefreshControl, ScrollView, View, Text } from 'react-native'
+
 import Button from '@/components/ui/Button'
-import Title from '../ui/Title'
+import { useTheme } from '@/context/ThemeContext'
+
 import Subtitle from '../ui/Subtitle'
+import Title from '../ui/Title'
 
 export interface StatusScreenProps {
 	image: React.ReactNode
@@ -39,7 +41,7 @@ export default function StatusScreen({
 				paddingBottom: theme.space.x3l,
 				justifyContent: 'center',
 				alignItems: 'center',
-				gap: theme.space.xl,
+				gap: theme.space.x2l,
 			}}
 			refreshControl={
 				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
@@ -50,24 +52,26 @@ export default function StatusScreen({
 			<View
 				style={{
 					alignItems: 'center',
-					gap: theme.space.md,
+					gap: theme.space.x2l,
 				}}
 			>
-				<Title text={title} />
-				{subtitle && <Subtitle text={subtitle} />}
+				<View style={{ alignItems: 'center', gap: theme.space.md }}>
+					<Title text={title} />
+					{subtitle && <Subtitle text={subtitle} />}
 
-				{!customContent && hint && (
-					<Text
-						style={{
-							color: theme.colors.textMuted,
-							textAlign: 'center',
-							marginBottom: theme.space.md,
-						}}
-					>
-						{hint}
-					</Text>
-				)}
-				{!hint && !subtitle && customContent}
+					{!customContent && hint && (
+						<Text
+							style={{
+								color: theme.colors.textMuted,
+								textAlign: 'center',
+								marginBottom: theme.space.md,
+							}}
+						>
+							{hint}
+						</Text>
+					)}
+					{!hint && !subtitle && customContent}
+				</View>
 
 				{buttonLabel && onButtonPress && (
 					<Button

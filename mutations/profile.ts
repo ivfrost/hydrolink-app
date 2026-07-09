@@ -1,56 +1,44 @@
-import type { ProfileInfo } from '@/app/settings/profile'
-import type { UserResponse } from '@/types/auth'
-import { ApiResponse } from '@/types/api'
+import { AppError } from '@/types/api'
 import apiFetch from '@/utils/apiFetch'
 import { encode as b64encode } from 'base-64'
+import { ProfileUpdatePayload, User } from '@/types/user'
+import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-export const profileUpdateFn = {
-	mutationFn: async (
-		profileData: ProfileInfo & {
-			profilePicture?: { uri: string; type: string; name: string }
-		},
-	): Promise<UserResponse> => {
-		const formData = new FormData()
-		// Encode JSON payload as base64 and attach as a file-like object so RN
-		// sends it with the right MIME type.
-		const jsonString = JSON.stringify(profileData)
-		const base64 = b64encode(jsonString)
+export const profileUpdateFn = async (
+	payload: ProfileUpdatePayload,
+): Promise<User> => {
+	const formData = new FormData()
 
-		formData.append('data', {
-			uri: `data:application/json;base64,${base64}`,
-			type: 'application/json',
-			name: 'data.json',
+	// Encode JSON payload as base64 and attach as a file-like object so RN
+	// sends it with the right MIME type.
+	const jsonString = JSON.stringify(payload)
+	const base64 = b64encode(jsonString)
+
+	formData.append('data', {
+		uri: `data:application/json;base64,${base64}`,
+		type: 'application/json',
+		name: 'data.json',
+	} as any)
+
+	if (payload.profilePictureFile) {
+		formData.append('profilePicture', {
+			uri: payload.profilePictureFile.uri,
+			type: payload.profilePictureFile.type,
+			name: payload.profilePictureFile.name,
 		} as any)
+	}
+	const data = await apiFetch<User>('/me', {
+		method: 'PUT',
+		body: formData,
+	})
 
-		// The "profilePicture" key is optional and expects a MultipartFile
-		if (profileData.profilePicture) {
-			formData.append('profilePicture', {
-				uri: profileData.profilePicture.uri,
-				type: profileData.profilePicture.type,
-				name: profileData.profilePicture.name,
-			} as any)
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		} else {
+			throw new AppError('UNKNOWN_ERROR', data.message)
 		}
+	}
 
-		const response = await apiFetch('/me', {
-			method: 'PUT',
-			body: formData,
-		})
-
-		let data: ApiResponse<UserResponse> | null = null
-		try {
-			data = await response.json()
-		} catch {
-			data = null
-		}
-
-		if (!response.ok) {
-			throw new Error(data?.message || 'UPDATE_FAILED')
-		}
-
-		if (!data?.details) {
-			throw new Error('UPDATE_FAILED')
-		}
-
-		return data.details
-	},
+	return data.details as User
 }

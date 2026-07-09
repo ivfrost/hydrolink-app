@@ -1,7 +1,9 @@
 import { View, Text } from 'react-native'
+
 import { useTheme } from '@/context/ThemeContext'
-import Title from '../ui/Title'
+
 import Subtitle from '../ui/Subtitle'
+import Title from '../ui/Title'
 
 interface CredentialChangeHeaderProps {
 	title: string

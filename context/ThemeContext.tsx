@@ -31,6 +31,7 @@ const themeTokens = {
 			scheduled: '#1b2a3b',
 
 			onlineBg: '#eaf6ef',
+			offlineBg: '#f0f3f7',
 			warningBg: '#faf3e6',
 			faultBg: '#f8eceb',
 			scheduledBg: '#e9edf3',
@@ -93,6 +94,14 @@ const themeTokens = {
 		x2l: 24,
 		x3l: 32,
 		xxxl: 40,
+		buttonHeight: 50,
+		tallButtonHeight: 62,
+		fabButtonSize: 56,
+		buttonHorizontalPadding: 18,
+		buttonVerticalPadding: 12,
+		tallButtonHorizontalPadding: 20,
+		tallButtonVerticalPadding: 16,
+		stickyBarHeight: 90,
 	},
 
 	radius: {

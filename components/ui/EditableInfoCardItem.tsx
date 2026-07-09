@@ -1,16 +1,19 @@
-import { useTheme } from '@/context/ThemeContext'
 import { useRef } from 'react'
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 interface EditableInfoCardItemProps extends TextInputProps {
 	label: string
 	text: string
+	error: string | undefined
 	icon: React.ReactNode
 }
 
 export default function EditableInfoCardItem({
 	label,
 	text,
+	error,
 	icon,
 	...props
 }: EditableInfoCardItemProps) {
@@ -62,13 +65,22 @@ export default function EditableInfoCardItem({
 			<View style={styles.textContainer}>
 				<Text style={styles.label}>{label}</Text>
 				{props.editable ? (
-					<TextInput
-						ref={inputRef}
-						value={text}
-						style={[styles.text, styles.input]}
-						placeholderTextColor={theme.colors.textMuted}
-						{...props}
-					/>
+					<>
+						<TextInput
+							ref={inputRef}
+							value={text}
+							style={[styles.text, styles.input]}
+							placeholderTextColor={theme.colors.textMuted}
+							{...props}
+						/>
+						{error && (
+							<Text
+								style={{ color: theme.colors.fault, fontSize: theme.font.xs }}
+							>
+								{error}
+							</Text>
+						)}
+					</>
 				) : (
 					<Text style={styles.text}>{text}</Text>
 				)}

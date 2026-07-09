@@ -1,10 +1,12 @@
 import React from 'react'
 import { Text } from 'react-native'
+
 import { useTheme } from '@/context/ThemeContext'
+import { RecentActivityEvent } from '@/types/card'
+import { formatRelativeTime } from '@/utils/formatRelativeTime'
+
 import CardWrapper from '../layout/CardWrapper'
 import DashboardRowItem from './DashboardRowItem'
-import { formatRelativeTime } from '@/utils/formatRelativeTime'
-import { RecentActivityEvent } from '@/types/card'
 
 export interface RecentActivityCardProps {
 	events: RecentActivityEvent[]

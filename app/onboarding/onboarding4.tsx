@@ -1,60 +1,98 @@
-import Button from '@/components/ui/Button'
-import { useTheme } from '@/context/ThemeContext'
-import { Text, View, ActivityIndicator } from 'react-native'
-import CurrentLocationIllustration from '@/assets/images/onboarding/undraw_current-location_c8qn.svg'
-import BottomSheet from '@gorhom/bottom-sheet'
 import { useEffect, useRef, useState } from 'react'
-import HydroBSheet from '@/components/layout/BottomSheet'
+import { Text, View, ActivityIndicator } from 'react-native'
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import BottomSheetInput from '@/components/ui/BottomSheetInput'
-import { useRouter } from 'expo-router'
+import BottomSheet from '@gorhom/bottom-sheet'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { areaLinkMutation } from '@/mutations/areas'
-import { areasQuery } from '@/queries/areas'
-import { useOnboarding } from '@/stores/onboardingStore'
-import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
-import Title from '@/components/ui/Title'
-import Subtitle from '@/components/ui/Subtitle'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+
+import CurrentLocationIllustration from '@/assets/images/onboarding/undraw_current-location_c8qn.svg'
+import HydroBSheet from '@/components/layout/BottomSheet'
 import ButtonColumnWrapper from '@/components/layout/ButtonColumnWrapper'
 import OnboardContainer from '@/components/onboard/OnboardContainer'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import BottomSheetInput from '@/components/ui/BottomSheetInput'
+import Button from '@/components/ui/Button'
+import Subtitle from '@/components/ui/Subtitle'
+import Title from '@/components/ui/Title'
+import { tanstackKeys } from '@/constants'
+import { useTheme } from '@/context/ThemeContext'
+import { areaLinkMutationFn } from '@/mutations/areas'
+import { areasQueryFn } from '@/queries/areas'
+import { useOnboarding } from '@/stores/onboardingStore'
+import { AppError } from '@/types/api'
 
-export default function Onboarding4() {
+export default function OnboardingStep4() {
+	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const bottomSheetRef = useRef<BottomSheet>(null)
 	const router = useRouter()
 	const [linkCode, setLinkCode] = useState('')
+	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
 	const setHasOnboarded = useOnboarding().setHasOnboarded
+
+	// Mutation for linking an area
 	const { mutate, isPending: linkPending } = useMutation({
-		...areaLinkMutation,
+		mutationKey: tanstackKeys.AREA_LINK,
+		mutationFn: areaLinkMutationFn,
 		onSuccess: () => {
 			setHasOnboarded(true)
 			Burnt.toast({ title: 'Area linked successfully', preset: 'done' })
+			queryClient.refetchQueries({ queryKey: ['areas'] })
 			router.replace('/(tabs)')
 		},
-		onError: (error) => {
+		onError: (error: AppError) => {
 			Burnt.toast({
 				title:
-					error.message === 'NETWORK_ERROR'
-						? 'Could not connect to server'
-						: 'Invalid link code',
+					error.code === 'UNKNOWN_ERROR'
+						? 'An unknown error occurred. Please try again later.'
+						: error.message,
 				preset: 'error',
 			})
 		},
 	})
-	const { data: areas, isPending: fetchAreasPending } = useQuery(areasQuery)
 
+	// Query for fetching user's areas
+	const { data: areas, isPending: fetchAreasPending } = useQuery({
+		queryKey: tanstackKeys.AREAS,
+		queryFn: areasQueryFn,
+	})
+
+	// Skip onboarding if the user already has linked areas
 	useEffect(() => {
-		console.log('areas:', areas)
-		console.log('fetchAreasPending:', fetchAreasPending)
 		if (fetchAreasPending) {
 			return
 		}
-		if (areas && Array.isArray(areas.details) && areas.details.length > 0) {
+		if (areas && areas.length > 0) {
 			router.replace('/(tabs)')
 		}
 	}, [router, areas, fetchAreasPending])
 
+	// Effect to handle received scanned code from QR scanner
+	useEffect(() => {
+		if (!scanned) return
+
+		const cleanedCode = scanned.trim()
+
+		if (cleanedCode.length === 32) {
+			mutate(cleanedCode)
+		} else {
+			Burnt.toast({ title: 'The Link Code must be 32 characters long' })
+		}
+
+		// Clear the navigation parameter immediately so the same code
+		// doesn't accidentally re-execute if the screen re-focuses
+		router.setParams({ scanned: undefined })
+	}, [scanned, mutate, router])
+
+	// Handler to go to the QR code scanner screen
+	const handleGoScan = () => {
+		bottomSheetRef.current?.close()
+		router.push({ pathname: '/(area)/scan', params: { from: 'onboarding' } })
+	}
+
+	// Handler for submitting the link code
 	const handleLinkCodeSubmit = () => {
 		if (linkCode.length !== 32) {
 			Burnt.dismissAllAlerts()
@@ -145,7 +183,7 @@ export default function Onboarding4() {
 							color={theme.colors.buttonPrimaryText}
 						/>
 					}
-					onPress={() => router.push('/(area)/scan')}
+					onPress={handleGoScan}
 				/>
 				<View
 					style={{

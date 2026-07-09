@@ -1,8 +1,11 @@
-import { useTheme } from '@/context/ThemeContext'
 import { Text, View } from 'react-native'
+
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+
+import { useTheme } from '@/context/ThemeContext'
+
 import CardWrapper from '../layout/CardWrapper'
 import CardItem from '../ui/CardItem'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 export type DashboardItemStatus =
 	| 'online'

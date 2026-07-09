@@ -1,6 +1,8 @@
-import { useTheme } from '@/context/ThemeContext'
 import { View, Text, StyleSheet } from 'react-native'
+
 import { MaterialIcons } from '@expo/vector-icons'
+
+import { useTheme } from '@/context/ThemeContext'
 
 type HintVariant = 'info' | 'warning' | 'error' | 'success'
 

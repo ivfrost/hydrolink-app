@@ -1,10 +1,8 @@
+import { Stack } from 'expo-router'
+
 import { useTheme } from '@/context/ThemeContext'
-import { Ionicons } from '@expo/vector-icons'
-import { Stack, useRouter } from 'expo-router'
-import { TouchableOpacity } from 'react-native'
 
 export default function SettingsLayout() {
-	const router = useRouter()
 	const theme = useTheme()
 
 	return (

@@ -1,5 +1,6 @@
-import { useTheme } from '@/context/ThemeContext'
 import { Text } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export default function Subtitle({
 	text,

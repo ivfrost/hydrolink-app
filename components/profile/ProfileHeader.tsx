@@ -1,13 +1,20 @@
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+
 import { useTheme } from '@/context/ThemeContext'
-import { View, Text, StyleSheet } from 'react-native'
+
 import UserAvatar from '../ui/UserAvatar'
 
 interface ProfileHeaderProps {
 	email: string
 	imageUrl?: string
+	handleChooseImage?: () => void
 }
 
-export function ProfileHeader({ email, imageUrl }: ProfileHeaderProps) {
+export function ProfileHeader({
+	email,
+	imageUrl,
+	handleChooseImage,
+}: ProfileHeaderProps) {
 	const theme = useTheme()
 	const styles = StyleSheet.create({
 		container: {
@@ -22,7 +29,13 @@ export function ProfileHeader({ email, imageUrl }: ProfileHeaderProps) {
 
 	return (
 		<View style={styles.container}>
-			<UserAvatar imageUrl={imageUrl} seed={email} size={72} />
+			<TouchableOpacity
+				activeOpacity={0.8}
+				hitSlop={10}
+				onPress={handleChooseImage}
+			>
+				<UserAvatar imageUrl={imageUrl} seed={email} size={72} />
+			</TouchableOpacity>
 			<Text style={[styles.email, { color: theme.colors.textSecondary }]}>
 				{email}
 			</Text>

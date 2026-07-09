@@ -1,5 +1,6 @@
-import { useTheme } from '@/context/ThemeContext'
 import { View } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export default function OnboardTextWrapper({
 	children,

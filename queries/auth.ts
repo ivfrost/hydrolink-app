@@ -1,30 +1,26 @@
-import { ApiResponse } from '@/types/api'
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
+import { API_BASE_URL } from '@/constants'
+import { ApiResponse, AppError } from '@/types/api'
+import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-export const checkAvailabilityQuery = (emailUsername: string) => ({
-	queryKey: ['validEmailUsername', emailUsername],
-	queryFn: async (): Promise<boolean> => {
-		const isEmail = emailUsername.includes('@')
-		const url = isEmail
-			? `/users/validate?email=${encodeURIComponent(emailUsername)}`
-			: `/users/validate?username=${encodeURIComponent(emailUsername)}`
+export const checkAvailabilityFn = async (
+	emailUsername: string,
+): Promise<boolean> => {
+	const isEmail = emailUsername.includes('@')
+	const url = isEmail
+		? `/users/validate?email=${encodeURIComponent(emailUsername)}`
+		: `/users/validate?username=${encodeURIComponent(emailUsername)}`
 
-		const response = await fetch(`${API_BASE_URL}${url}`)
+	const response = await fetch(`${API_BASE_URL}${url}`)
 
-		let data: ApiResponse<boolean> | null = null
-		try {
-			data = await response.json()
-		} catch {
-			data = null
+	const data = (await response.json()) as ApiResponse<boolean>
+
+	if (!response.ok) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		} else {
+			throw new AppError('UNKNOWN_ERROR', data.message)
 		}
+	}
 
-		if (!response.ok) {
-			throw new Error(data?.message || 'VALIDATION_FAILED')
-		}
-		if (data?.details === undefined) {
-			throw new Error('VALIDATION_FAILED')
-		}
-
-		return data.details
-	},
-})
+	return data.details as boolean
+}

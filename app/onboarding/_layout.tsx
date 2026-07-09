@@ -1,9 +1,6 @@
-import { Ionicons } from '@expo/vector-icons'
-import { Stack, useRouter } from 'expo-router'
-import { TouchableOpacity } from 'react-native'
+import { Stack } from 'expo-router'
 
 export default function Layout() {
-	const router = useRouter()
 	return (
 		<Stack
 			screenOptions={{
@@ -30,7 +27,7 @@ export default function Layout() {
 				name="onboarding3"
 				options={{
 					presentation: 'modal',
-					title: 'Recovery Codes',
+					title: '',
 					headerLeft: () => null,
 				}}
 			/>

@@ -1,6 +1,7 @@
-import { useTheme } from '@/context/ThemeContext'
 import { useRef, useState } from 'react'
 import { Animated, TextInput, TextInputProps, View } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export interface InputProps extends TextInputProps {
 	label: string

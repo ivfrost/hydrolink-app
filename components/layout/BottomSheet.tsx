@@ -1,4 +1,6 @@
-import { useTheme } from '@/context/ThemeContext'
+import { RefObject, useCallback } from 'react'
+import { StyleProp, ViewStyle } from 'react-native'
+
 import GorhomBottomSheet, {
 	BottomSheetProps as GorhomBottomSheetProps,
 	BottomSheetBackdrop,
@@ -7,8 +9,8 @@ import GorhomBottomSheet, {
 } from '@gorhom/bottom-sheet'
 import { BottomSheetDefaultBackdropProps } from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetBackdrop/types'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
-import { RefObject, useCallback } from 'react'
-import { StyleProp, ViewStyle } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 interface BottomSheetProps extends GorhomBottomSheetProps {
 	ref: RefObject<BottomSheetMethods | null>

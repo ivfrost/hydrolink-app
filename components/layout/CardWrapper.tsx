@@ -1,6 +1,7 @@
-import { useTheme } from '@/context/ThemeContext'
 import { Children, Fragment } from 'react'
 import { View, StyleSheet } from 'react-native'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export interface CardWrapperProps {
 	flexDirection?: 'column' | 'row'
@@ -28,7 +29,7 @@ export default function CardWrapper({
 			elevation: elevation,
 		},
 		itemContainer: {
-			padding: paddingDisabled ? 0 : theme.space.md,
+			padding: paddingDisabled ? 0 : theme.space.lg,
 		},
 		divider: {
 			width: flexDirection === 'row' ? 1 : '100%',

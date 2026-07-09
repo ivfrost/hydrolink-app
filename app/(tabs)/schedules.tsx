@@ -1,1 +1,1 @@
-export default function ScheduleScreen() {}
+export default function ScheduleTabScreen() {}

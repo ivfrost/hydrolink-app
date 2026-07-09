@@ -1,41 +1,44 @@
-import AreaSummaryCard from '@/components/dashboard/AreaSummaryCard'
-import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
-import { useTheme } from '@/context/ThemeContext'
-import '@/global.css'
-import { areasQuery } from '@/queries/areas'
-import { profileQuery } from '@/queries/profile'
+import { useState } from 'react'
+import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import { ScrollView } from 'react-native-gesture-handler'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 import { useHeaderHeight } from '@react-navigation/elements'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
-import SectionTitle from '@/components/ui/SectionTitle'
-import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useState } from 'react'
+
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
+import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
+import AreaSummaryCard from '@/components/dashboard/AreaSummaryCard'
+import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
 import StatusScreen from '@/components/status/StatusScreen'
-import { ScrollView } from 'react-native-gesture-handler'
+import SectionTitle from '@/components/ui/SectionTitle'
+import { tanstackKeys } from '@/constants'
+import { useTheme } from '@/context/ThemeContext'
+import '@/global.css'
+import { areasQueryFn } from '@/queries/areas'
+import { profileQueryFn } from '@/queries/profile'
 
 const mockActiveAreaData: AreaCardProps['areaData'] = [
 	{
 		name: 'Pago de las Viñas',
 		activeStation: {
 			name: 'Pozo de la Loma',
-			time: '2026-07-01T09:55:00+02:00',
+			time: '2026-07-06T09:55:00+02:00',
 		},
 	},
 	{
 		name: 'Los Almendrales',
 		activeStation: {
 			name: 'Finca El Mirador',
-			time: '2026-07-01T10:15:00+02:00',
+			time: '2026-07-06T10:15:00+02:00',
 		},
 	},
 	{
 		name: 'Barranco del Acebuchal',
 		activeStation: {
 			name: 'Pozo del Camino',
-			time: '2026-07-01T10:45:00+02:00',
+			time: '2026-07-06T10:45:00+02:00',
 		},
 	},
 ]
@@ -45,21 +48,21 @@ const mockIncomingAreaData: AreaCardProps['areaData'] = [
 		name: 'Cortijo Justo',
 		activeStation: {
 			name: 'Pozo Llano',
-			time: '2026-07-01T09:55:00+02:00',
+			time: '2026-07-07T09:55:00+02:00',
 		},
 	},
 	{
 		name: 'Cuesta Almachar',
 		activeStation: {
-			name: 'Finca Rogelio',
-			time: '2026-07-01T10:15:00+02:00',
+			name: 'Finca Victoria',
+			time: '2026-07-07T06:15:00+02:00',
 		},
 	},
 	{
 		name: 'Llanos del Río',
 		activeStation: {
 			name: 'Alrededores del Río',
-			time: '2026-07-01T10:45:00+02:00',
+			time: '2026-07-07T10:45:00+02:00',
 		},
 	},
 ]
@@ -135,23 +138,30 @@ function buildMockEvents(): ActivityEvent[] {
 	]
 }
 
-export default function Index() {
+export default function DashboardTabScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const insets = useSafeAreaInsets()
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
 
+	// Queries for fetching areas and profile data
 	const {
 		data: areas,
 		isPending: areasPending,
 		error: areaLoadError,
-	} = useQuery(areasQuery)
+	} = useQuery({
+		queryKey: tanstackKeys.AREAS,
+		queryFn: areasQueryFn,
+	})
 	const {
 		data: profile,
 		error: profileLoadError,
 		isPending: profilePending,
-	} = useQuery(profileQuery)
+	} = useQuery({
+		queryKey: tanstackKeys.PROFILE,
+		queryFn: profileQueryFn,
+	})
 
 	const areaCount = areas?.length || 0
 	// TODO: Send a command to linked devices to make them report their status
@@ -160,11 +170,13 @@ export default function Index() {
 	const onlineAreaCount =
 		areas?.filter(
 			// TODO: Replace this with online check over MQTT instead of DB flush timestamp
-			(area) => Date.now() - new Date(area.lastSeen).getTime() < 5 * 60 * 1000, // 5 minutes
+			// 5 minutes
+			(area) => Date.now() - new Date(area.lastSeen).getTime() < 5 * 60 * 1000,
 		).length || 0
 	const recentEvents = buildMockEvents()
 	const firstName = profile?.fullName?.split(' ')[0]
 
+	// Handler to refresh areas and profile data on pull-to-refresh
 	const onRefresh = async () => {
 		setIsRefreshing(true)
 		try {
@@ -199,6 +211,16 @@ export default function Index() {
 
 	// --- Cloud/server/connection failure ---
 	if (profileLoadError || areaLoadError) {
+		// Cast to any or AppError to read custom properties safely in the log
+		const pErr = profileLoadError as any
+		const aErr = areaLoadError as any
+
+		console.log(
+			'Error loading dashboard data:',
+			pErr ? { code: pErr.code, message: pErr.message } : null,
+			aErr ? { code: aErr.code, message: aErr.message } : null,
+		)
+
 		return (
 			<StatusScreen
 				image={
@@ -216,7 +238,6 @@ export default function Index() {
 			/>
 		)
 	}
-
 	// --- Missing or unavailable dashboard data ---
 	if (!profile || !areas) {
 		return (
@@ -241,7 +262,7 @@ export default function Index() {
 		<ScrollView
 			contentContainerStyle={{
 				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight + theme.space.sm,
+				paddingTop: headerHeight,
 				paddingBottom: insets.bottom + theme.space.lg,
 				gap: theme.space.x2l,
 			}}
@@ -259,18 +280,13 @@ export default function Index() {
 				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 					<SectionTitle text="Active Now" />
 				</View>
-				<AreaCard
-					variant="active"
-					areaData={mockActiveAreaData}
-					actions={mockActiveActions}
-				/>
+				<AreaCard areaData={mockActiveAreaData} actions={mockActiveActions} />
 			</View>
 			<View>
 				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 					<SectionTitle text="Incoming" />
 				</View>
 				<AreaCard
-					variant="incoming"
 					areaData={mockIncomingAreaData}
 					actions={mockIncomingActions}
 				/>

@@ -1,15 +1,17 @@
-import Button from '@/components/ui/Button'
-import { useTheme } from '@/context/ThemeContext'
-import { useRouter } from 'expo-router'
 import { Text, View } from 'react-native'
-import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-devices_i15y.svg'
-import { useAuth } from '@/stores/authStore'
-import Title from '@/components/ui/Title'
-import Subtitle from '@/components/ui/Subtitle'
-import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
-import OnboardContainer from '@/components/onboard/OnboardContainer'
 
-export default function Onboarding1() {
+import { useRouter } from 'expo-router'
+
+import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-devices_i15y.svg'
+import OnboardContainer from '@/components/onboard/OnboardContainer'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import Button from '@/components/ui/Button'
+import Subtitle from '@/components/ui/Subtitle'
+import Title from '@/components/ui/Title'
+import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/stores/authStore'
+
+export default function OnboardingStep1() {
 	const router = useRouter()
 	const theme = useTheme()
 	const accessToken = useAuth().accessToken

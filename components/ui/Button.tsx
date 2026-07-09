@@ -1,4 +1,3 @@
-import { useTheme } from '@/context/ThemeContext'
 import {
 	ActivityIndicator,
 	StyleProp,
@@ -7,7 +6,10 @@ import {
 	TouchableOpacity,
 	ViewStyle,
 } from 'react-native'
+
 import * as Haptics from 'expo-haptics'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export interface ButtonProps {
 	label: string
@@ -43,12 +45,34 @@ export default function Button({
 	const styles = StyleSheet.create({
 		button: {
 			borderRadius: isFab ? theme.radius.fab : theme.radius.button,
-			paddingVertical: isFab ? 0 : isTall ? theme.space.xl : theme.space.lg,
-			paddingHorizontal: isFab ? 0 : theme.space.xl,
+			paddingVertical: isFab
+				? 0
+				: isTall
+					? theme.space.tallButtonVerticalPadding
+					: theme.space.buttonVerticalPadding,
+			paddingHorizontal: isFab
+				? 0
+				: isTall
+					? theme.space.tallButtonHorizontalPadding
+					: theme.space.buttonHorizontalPadding,
+			paddingLeft: isFab
+				? 0
+				: icon && iconPosition === 'left'
+					? theme.space.lg
+					: theme.space.buttonHorizontalPadding,
+			paddingRight: isFab
+				? 0
+				: icon && iconPosition === 'right'
+					? theme.space.lg
+					: theme.space.buttonHorizontalPadding,
 			alignItems: 'center',
 			justifyContent: 'center',
-			width: isFab ? 60 : isFull ? '100%' : 'auto',
-			height: isFab ? 60 : undefined,
+			width: isFab ? theme.space.fabButtonSize : isFull ? '100%' : 'auto',
+			height: isFab
+				? theme.space.fabButtonSize
+				: isTall
+					? theme.space.tallButtonHeight
+					: theme.space.buttonHeight,
 			backgroundColor:
 				disabled || loading
 					? theme.colors.buttonDisabledBg

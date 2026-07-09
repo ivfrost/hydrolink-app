@@ -1,49 +1,34 @@
-import { ApiResponse } from '@/types/api'
-import type { AreaResponse } from '@/types/area'
+import { AppError } from '@/types/api'
+import type { Area } from '@/types/area'
 import apiFetch from '@/utils/apiFetch'
+import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-export const areaLinkMutation = {
-	mutationFn: async (secret: string): Promise<AreaResponse> => {
-		const response = await apiFetch('/me/devices/link', {
-			method: 'POST',
-			body: JSON.stringify({ secret }),
-		})
+export const areaLinkMutationFn = async (secret: string): Promise<Area> => {
+	const data = await apiFetch<Area>('/me/devices/link', {
+		method: 'POST',
+		body: JSON.stringify({ secret }),
+	})
 
-		let data: ApiResponse<AreaResponse> | null = null
-		try {
-			data = await response.json()
-		} catch {
-			data = null
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
 		}
+		throw new AppError('UNKNOWN_ERROR', data.message)
+	}
 
-		if (!response.ok) {
-			throw new Error(data?.message || 'LINK_FAILED')
-		}
-
-		if (!data?.details) {
-			throw new Error('LINK_FAILED')
-		}
-
-		return data.details
-	},
+	return data.details
 }
 
-export const areaUnlinkMutation = {
-	mutationFn: async (areaId: number): Promise<void> => {
-		const response = await apiFetch('/me/devices/unlink', {
-			method: 'DELETE',
-			body: JSON.stringify({ deviceId: areaId }),
-		})
+export const areaUnlinkMutationFn = async (areaId: number): Promise<void> => {
+	const data = await apiFetch<void>('/me/devices/unlink', {
+		method: 'DELETE',
+		body: JSON.stringify({ deviceId: areaId }),
+	})
 
-		if (!response.ok) {
-			let message = 'UNLINK_FAILED'
-			try {
-				const data = await response.json()
-				message = data?.message || message
-			} catch {
-				// no body, use default message
-			}
-			throw new Error(message)
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
 		}
-	},
+		throw new AppError('UNKNOWN_ERROR', data.message)
+	}
 }

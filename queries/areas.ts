@@ -1,18 +1,20 @@
-import { AreaResponse } from '@/types/area'
+import { AppError } from '@/types/api'
+import { Area } from '@/types/area'
 import apiFetch from '@/utils/apiFetch'
-export const areasQuery = {
-	queryKey: ['areas'],
-	queryFn: async (): Promise<AreaResponse[]> => {
-		const response = await apiFetch('/me/devices')
-		const json = await response.json()
+import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-		if (!response.ok) {
-			throw new Error(json.message || 'AREAS_FETCH_FAILED')
+export const areasQueryFn = async (): Promise<Area[]> => {
+	const data = await apiFetch<Area[]>('/me/devices')
+
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
 		}
+		throw new AppError('UNKNOWN_ERROR', data.message)
+	}
 
-		const areas = json?.details
-		if (!areas) return []
+	const areas = data.details
+	if (!areas) return []
 
-		return Array.isArray(areas) ? areas : [areas]
-	},
+	return Array.isArray(areas) ? areas : [areas]
 }

@@ -1,7 +1,9 @@
 import React from 'react'
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native'
-import { useTheme } from '@/context/ThemeContext'
+
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+
+import { useTheme } from '@/context/ThemeContext'
 
 export interface DashboardRowItemProps {
 	title: string

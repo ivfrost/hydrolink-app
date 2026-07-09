@@ -1,20 +1,20 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { StatusBar } from 'expo-status-bar'
-import { Stack, useRouter } from 'expo-router'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import Toast from 'react-native-toast-message'
 import { TouchableOpacity } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
+import Toast from 'react-native-toast-message'
+
+import { Ionicons } from '@expo/vector-icons'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalProvider } from '@gorhom/portal'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Stack, useRouter } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
+
 import { ThemeProvider, useTheme } from '@/context/ThemeContext'
-import { Ionicons } from '@expo/vector-icons'
-import { KeyboardProvider } from 'react-native-keyboard-controller'
 
 export const unstable_settings = {
-	initialRouteName: 'index',
+	initialRouteName: '(tabs)',
 }
-
-export const STICKY_BAR_HEIGHT = 90
 
 const queryClient = new QueryClient({
 	defaultOptions: {

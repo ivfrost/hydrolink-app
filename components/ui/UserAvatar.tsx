@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { View, StyleSheet, Pressable, Image } from 'react-native'
+import { SvgXml } from 'react-native-svg'
+
 import { Style, Avatar } from '@dicebear/core'
 import shapeGrid from '@dicebear/styles/shape-grid.json' with { type: 'json' }
-import { SvgXml } from 'react-native-svg'
+
 import { useTheme } from '@/context/ThemeContext'
 
 const style = new Style(shapeGrid)

@@ -1,7 +1,9 @@
+import { TokenType } from '@/constants'
 import { ApiResponse } from './api'
-import { UserRole, userSchema } from './user'
+import { User, userSchema } from './user'
 import { z } from 'zod'
 
+// Register schemas and types
 export const registerSchema = userSchema
 	.omit({
 		id: true,
@@ -9,12 +11,13 @@ export const registerSchema = userSchema
 		settings: true,
 		address: true,
 		phoneNumber: true,
+		roles: true,
 	})
 	.extend({
 		password: z
 			.string()
-			.min(8)
-			.max(42)
+			.min(8, { message: 'Password must be at least 8 characters long' })
+			.max(42, { message: 'Password must be at most 42 characters long' })
 			.regex(
 				/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\];'/\\]).+$/,
 				{
@@ -23,47 +26,32 @@ export const registerSchema = userSchema
 				},
 			),
 	})
+export type RegisterPayload = z.infer<typeof registerSchema>
 
-export type RegisterInput = z.infer<typeof registerSchema>
+// Sign-in schemas and types
+export const signInSchema = registerSchema
+	.pick({
+		email: true,
+	})
+	.extend({
+		// Password validation not needed for sign-in
+		password: z.string(),
+	})
 
-export interface LoginPayload {
-	email: string
-	password: string
-}
+export type SignInPayload = z.infer<typeof signInSchema>
 
-export interface RegisterPayload {
-	email: string
-	username: string
-	fullName: string
-	password: string
-}
-
+// Auth response types
 export interface TokenResponse {
-	type: 'AUTH_ACCESS_TOKEN' | 'AUTH_REFRESH_TOKEN' | 'AUTH_RECOVERY_CODE'
+	type: TokenType
 	value: string
 	expiryDate: string
 	userId: number
 }
 
-export interface UserResponse {
-	id: number
-	username: string
-	fullName: string
-	email: string
-	profilePictureUrl: string | null
-	phoneNumber: string
-	address: string
-	createdAt: string
-	updatedAt: string
-	roles: UserRole[]
-	settings: Record<string, any>
-}
-
 export interface AuthResponse {
-	user: UserResponse
+	userResponse: User
 	tokens: TokenResponse[]
 }
-
-export type LoginResponse = ApiResponse<AuthResponse>
+export type SignInResponse = ApiResponse<AuthResponse>
 export type RegisterResponse = ApiResponse<AuthResponse>
 export type RefreshResponse = ApiResponse<TokenResponse[]>

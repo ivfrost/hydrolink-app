@@ -1,27 +1,18 @@
-import type { UserResponse } from '@/types/auth'
-import type { ApiResponse } from '@/types/api'
+import { AppError } from '@/types/api'
+import { User, userSchema } from '@/types/user'
 import apiFetch from '@/utils/apiFetch'
+import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-export const profileQuery = {
-	queryKey: ['profile'],
-	queryFn: async (): Promise<UserResponse> => {
-		const response = await apiFetch('/me')
+export const profileQueryFn = async (): Promise<User> => {
+	const data = await apiFetch<User>('/me')
 
-		let data: ApiResponse<UserResponse> | null = null
-		try {
-			data = await response.json()
-		} catch {
-			data = null
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		} else {
+			throw new AppError('UNKNOWN_ERROR', data.message)
 		}
+	}
 
-		if (!response.ok) {
-			throw new Error(data?.message || 'PROFILE_FETCH_FAILED')
-		}
-
-		if (!data?.details) {
-			throw new Error('PROFILE_FETCH_FAILED')
-		}
-
-		return data.details
-	},
+	return userSchema.parse(data.details)
 }

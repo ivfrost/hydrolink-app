@@ -1,17 +1,19 @@
-import Button from '@/components/ui/Button'
-import { useTheme } from '@/context/ThemeContext'
-import { useRouter } from 'expo-router'
-import { View } from 'react-native'
-import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import { useEffect } from 'react'
-import { useAuth } from '@/stores/authStore'
-import Subtitle from '@/components/ui/Subtitle'
-import Title from '@/components/ui/Title'
-import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import { View } from 'react-native'
+
+import { useRouter } from 'expo-router'
+
+import LoginIllustration from '@/assets/images/onboarding/undraw_login_weas.svg'
 import ButtonColumnWrapper from '@/components/layout/ButtonColumnWrapper'
 import OnboardContainer from '@/components/onboard/OnboardContainer'
+import OnboardTextWrapper from '@/components/onboard/OnboardTextWrapper'
+import Button from '@/components/ui/Button'
+import Subtitle from '@/components/ui/Subtitle'
+import Title from '@/components/ui/Title'
+import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/stores/authStore'
 
-export default function Onboarding2() {
+export default function OnboardingStep2() {
 	const router = useRouter()
 	const theme = useTheme()
 	const accessToken = useAuth().accessToken

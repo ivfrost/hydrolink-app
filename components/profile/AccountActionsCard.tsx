@@ -1,15 +1,19 @@
-import { useTheme } from '@/context/ThemeContext'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
+
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+
+import { useTheme } from '@/context/ThemeContext'
 
 interface AccountActionsCardProps {
 	onChangeEmail: () => void
 	onChangePassword: () => void
+	onDeleteAccount?: () => void
 }
 
 export function AccountActionsCard({
 	onChangeEmail,
 	onChangePassword,
+	onDeleteAccount,
 }: AccountActionsCardProps) {
 	const theme = useTheme()
 
@@ -23,9 +27,17 @@ export function AccountActionsCard({
 		row: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 14,
-			paddingVertical: 16,
-			paddingHorizontal: 16,
+			gap: theme.space.lg,
+			paddingVertical: theme.space.lg,
+			paddingHorizontal: theme.space.lg,
+		},
+		faultRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: theme.space.lg,
+			paddingVertical: theme.space.lg,
+			paddingHorizontal: theme.space.lg,
+			backgroundColor: theme.colors.faultBg,
 		},
 		rowDivider: {
 			height: 1,
@@ -36,6 +48,14 @@ export function AccountActionsCard({
 			height: 32,
 			borderRadius: 10,
 			backgroundColor: theme.colors.accentBlueLight,
+			justifyContent: 'center',
+			alignItems: 'center',
+		},
+		faultIconWrapper: {
+			width: 32,
+			height: 32,
+			borderRadius: 10,
+			backgroundColor: theme.colors.faultBg,
 			justifyContent: 'center',
 			alignItems: 'center',
 		},
@@ -77,6 +97,23 @@ export function AccountActionsCard({
 					name="chevron-right"
 					size={20}
 					color={theme.colors.textMuted}
+				/>
+			</Pressable>
+			<Pressable style={styles.faultRow} onPress={onDeleteAccount}>
+				<View style={styles.faultIconWrapper}>
+					<MaterialCommunityIcons
+						name="account-remove-outline"
+						size={18}
+						color={theme.colors.fault}
+					/>
+				</View>
+				<Text style={[styles.rowLabel, { color: theme.colors.fault }]}>
+					Delete account
+				</Text>
+				<MaterialCommunityIcons
+					name="chevron-right"
+					size={20}
+					color={theme.colors.fault}
 				/>
 			</Pressable>
 		</View>

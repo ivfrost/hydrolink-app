@@ -1,7 +1,9 @@
-import { useTheme } from '@/context/ThemeContext'
-import { LinearGradient } from 'expo-linear-gradient'
 import { Text, View } from 'react-native'
+
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+
+import { useTheme } from '@/context/ThemeContext'
 
 function getGreeting() {
 	const hour = new Date().getHours()

@@ -25,6 +25,7 @@
     "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
+    "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-mqtt": "^0.1.4",
@@ -58,6 +59,7 @@
   },
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/base-64": "^1.0.2",
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",

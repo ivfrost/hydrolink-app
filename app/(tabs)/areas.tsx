@@ -1,68 +1,76 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-	View,
-	StyleSheet,
-	Text,
-	Animated,
-	Pressable,
-	ActivityIndicator,
-	TouchableOpacity,
-} from 'react-native'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import BottomSheet from '@/components/layout/BottomSheet'
-import Button from '@/components/ui/Button'
-import BottomSheetInput from '@/components/ui/BottomSheetInput'
-import { useTheme } from '@/context/ThemeContext'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { areaLinkMutation, areaUnlinkMutation } from '@/mutations/areas'
-import * as Burnt from 'burnt'
-import { Portal } from '@gorhom/portal'
-import { areasQuery } from '@/queries/areas'
+import { ActivityIndicator, Text, View } from 'react-native'
+import { RefreshControl } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useHeaderHeight } from '@react-navigation/elements'
+
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
-import { RefreshControl, ScrollView } from 'react-native-gesture-handler'
-import StatusScreen from '@/components/status/StatusScreen'
+import { Portal } from '@gorhom/portal'
+import { useHeaderHeight } from '@react-navigation/elements'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import * as Burnt from 'burnt'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import DashboardRowItem from '@/components/dashboard/DashboardRowItem'
+import BottomSheet from '@/components/layout/BottomSheet'
+import CardWrapper from '@/components/layout/CardWrapper'
+import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
+import StatusScreen from '@/components/status/StatusScreen'
+import BottomSheetInput from '@/components/ui/BottomSheetInput'
+import Button from '@/components/ui/Button'
+import { tanstackKeys } from '@/constants'
+import { useTheme } from '@/context/ThemeContext'
+import { areaLinkMutationFn } from '@/mutations/areas'
+import { areasQueryFn } from '@/queries/areas'
+import { AppError } from '@/types/api'
+import { formatRelativeTime } from '@/utils/formatRelativeTime'
 
-export default function DevicesScreen() {
+export default function AreaTabScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
+	const bottomSheetRef = useRef<BottomSheetMethods>(null)
 	const insets = useSafeAreaInsets()
+	const router = useRouter()
+	const [linkCode, setLinkCode] = useState('')
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
-	const router = useRouter()
-	const bottomSheetRef = useRef<BottomSheetMethods>(null)
-
-	const [linkCode, setLinkCode] = useState('')
 	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
-	const [scannedCode, setScannedCode] = useState<string | null>(null)
 
+	// Query for fetching user's areas
 	const {
 		data: areas,
 		isPending: areasPending,
 		error: areaLoadError,
-	} = useQuery(areasQuery)
+	} = useQuery({
+		queryKey: tanstackKeys.AREAS,
+		queryFn: areasQueryFn,
+	})
 
+	// Mutation for linking an area
 	const { mutate, isPending: linkPending } = useMutation({
-		mutationFn: areaLinkMutation.mutationFn,
+		mutationKey: ['linkArea'],
+		mutationFn: areaLinkMutationFn,
+		onError: (error: AppError) => {
+			Burnt.toast({
+				title:
+					error.code === 'UNKNOWN_ERROR'
+						? 'An unknown error occurred. Please try again later.'
+						: error.message,
+				preset: 'error',
+			})
+		},
 		onSuccess: () => {
 			Burnt.toast({ title: 'Area linked successfully', preset: 'done' })
-			// force refetch immediately
 			queryClient.refetchQueries({ queryKey: ['areas'] })
 			bottomSheetRef.current?.close()
 			setLinkCode('')
-			setScannedCode(null)
-		},
-		onError: (error) => {
-			Burnt.toast({ title: error.message, preset: 'error' })
-			setScannedCode(null)
 		},
 	})
 
+	// Handler for submitting the link code
 	const handleLinkCodeSubmit = useCallback(() => {
 		if (linkCode.length !== 32) {
 			Burnt.dismissAllAlerts()
@@ -72,6 +80,7 @@ export default function DevicesScreen() {
 		mutate(linkCode)
 	}, [linkCode, mutate])
 
+	// Handler to refresh areas data on pull-to-refresh
 	const onRefresh = async () => {
 		setIsRefreshing(true)
 		try {
@@ -83,50 +92,28 @@ export default function DevicesScreen() {
 		}
 	}
 
+	// Effect to handle received scanned code from QR scanner
 	useEffect(() => {
-		if (scanned) {
-			setScannedCode(scanned.trim())
-		}
-	}, [scanned])
+		if (!scanned) return
 
-	useEffect(() => {
-		if (!scannedCode) return
-		if (scannedCode.length === 32) {
-			mutate(scannedCode)
+		const cleanedCode = scanned.trim()
+
+		if (cleanedCode.length === 32) {
+			mutate(cleanedCode)
 		} else {
 			Burnt.toast({ title: 'The Link Code must be 32 characters long' })
 		}
-		setScannedCode(null)
-	}, [scannedCode, mutate])
 
-	const { mutate: unlinkArea } = useMutation({
-		mutationFn: areaUnlinkMutation.mutationFn,
-		onSuccess: (_, areaId) => {
-			Burnt.toast({ title: 'Area unlinked successfully', preset: 'done' })
-			queryClient.resetQueries({ queryKey: ['areas'] })
-			queryClient.refetchQueries({ queryKey: ['areas'], type: 'active' })
-		},
-		onError: (error) => {
-			Burnt.toast({ title: error.message, preset: 'error' })
-		},
-	})
+		// Clear the navigation parameter immediately so the same code
+		// doesn't accidentally re-execute if the screen re-focuses
+		router.setParams({ scanned: undefined })
+	}, [scanned, mutate, router])
 
-	const handleScanPress = () => {
+	// Handler to go to the QR code scanner screen
+	const handleGoScan = () => {
 		bottomSheetRef.current?.close()
-		router.push('/(area)/scan')
+		router.push({ pathname: '/(area)/scan', params: { from: 'areas' } })
 	}
-
-	const styles = StyleSheet.create({
-		fab: { position: 'absolute', right: 20, bottom: 28 },
-		iconBackdrop: {
-			width: theme.space.x3l,
-			height: theme.space.x3l,
-			borderRadius: theme.radius.fab,
-			backgroundColor: theme.colors.accentBlueLight,
-			justifyContent: 'center',
-			alignItems: 'center',
-		},
-	})
 
 	// --- Loading state ---
 	if (areasPending) {
@@ -204,8 +191,8 @@ export default function DevicesScreen() {
 							style={{
 								color: theme.colors.textSecondary,
 								textAlign: 'center',
-								marginBottom: theme.space.md,
 								fontSize: theme.font.base,
+								lineHeight: theme.lineHeight.paragraph,
 							}}
 						>
 							You can link a device by scanning a QR code or entering a{' '}
@@ -244,7 +231,7 @@ export default function DevicesScreen() {
 									color={theme.colors.buttonPrimaryText}
 								/>
 							}
-							onPress={handleScanPress}
+							onPress={handleGoScan}
 						/>
 						<View
 							style={{
@@ -308,77 +295,89 @@ export default function DevicesScreen() {
 	}
 
 	return (
-		<ScrollView
+		<KeyboardAwareScrollView
 			contentContainerStyle={{
 				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight + theme.space.sm,
+				paddingTop: headerHeight,
 				paddingBottom: insets.bottom + theme.space.lg,
 				gap: theme.space.x2l,
 				flexGrow: 1,
 			}}
 		>
 			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-			{areas.map((area) => (
-				<TouchableOpacity
-					key={area.id}
-					style={{
-						padding: theme.space.lg,
-						borderRadius: theme.radius.card,
-						backgroundColor: theme.colors.card,
-					}}
-				>
-					<View
-						style={{
-							flexDirection: 'row',
-							justifyContent: 'space-between',
-							gap: theme.space.md,
-							alignItems: 'center',
-						}}
-					>
-						<View style={styles.iconBackdrop}>
-							<MaterialCommunityIcons
-								name="home-city-outline"
-								size={20}
-								color={theme.colors.accentBlue}
-							/>
-						</View>
-						<View style={{ flexShrink: 1, gap: theme.space.x3s, flex: 1 }}>
-							<Text
-								style={{
-									color: theme.colors.textPrimary,
-									fontSize: theme.font.md,
-									fontWeight: '500',
-									flexDirection: 'row',
-								}}
-							>
-								{area.name ?? area.technicalName}
-							</Text>
+			{areas.map((area) => {
+				const recentlySeen =
+					// 5 minutes
+					new Date(area.lastSeen).getTime() > Date.now() - 1000 * 60 * 5
 
-							<Text
-								style={{
-									color: theme.colors.textSecondary,
-									marginTop: 4,
-									fontSize: theme.font.sm,
-								}}
-							>
-								{area.location} -{' '}
-								{area.firmware
-									? `Firmware ${area.firmware}`
-									: 'Firmware unknown'}{' '}
-								- {area.lastSeen ? `Last seen ${area.lastSeen}` : 'Never seen'}
-							</Text>
-						</View>
-						<Pressable onPress={() => unlinkArea(area.id)}>
-							<MaterialIcons
-								name="link-off"
-								size={24}
-								color={theme.colors.textSecondary}
-								style={{ opacity: 0.7 }}
-							/>
-						</Pressable>
-					</View>
-				</TouchableOpacity>
-			))}
+				return (
+					<CardWrapper key={area.id} flexDirection="column" elevation={0}>
+						<DashboardRowItem
+							key={area.id}
+							title={area.name ?? 'Unnamed Area'}
+							subtitle={area.location ?? 'Unknown Location'}
+							icon="map-marker-radius"
+							statusColor={
+								recentlySeen ? theme.colors.online : theme.colors.offline
+							}
+							statusBg={
+								recentlySeen ? theme.colors.onlineBg : theme.colors.offlineBg
+							}
+							onPress={() =>
+								router.push({
+									pathname: '/areas/[key]',
+									params: {
+										id: area.id,
+										key: area.key,
+										name: area.name,
+										location: area.location,
+										description: area.description,
+										firmware: area.firmware,
+										technicalName: area.technicalName,
+										ip: area.ip,
+										imageUrl: area.imageUrl,
+										createdAt: area.createdAt,
+										updatedAt: area.updatedAt,
+										linkedAt: area.linkedAt,
+										lastSeen: area.lastSeen,
+										userId: area.userId,
+										displayOrder: area.displayOrder,
+									},
+								})
+							}
+							renderRightElement={() => (
+								<View
+									style={{
+										flexDirection: 'row',
+										alignItems: 'center',
+										gap: theme.space.x3s,
+									}}
+								>
+									<MaterialIcons
+										name={
+											recentlySeen ? 'wifi-tethering' : 'wifi-tethering-off'
+										}
+										size={12}
+										color={
+											recentlySeen
+												? theme.colors.online
+												: theme.colors.textSecondary
+										}
+									/>
+									<Text
+										style={{
+											color: theme.colors.textSecondary,
+											fontSize: theme.font.xs,
+										}}
+									>
+										{formatRelativeTime(area.lastSeen)}
+									</Text>
+								</View>
+							)}
+						/>
+					</CardWrapper>
+				)
+			})}
 
 			<Portal>
 				<BottomSheet ref={bottomSheetRef} snapPoints={[364]}>
@@ -457,13 +456,17 @@ export default function DevicesScreen() {
 				icon={
 					<MaterialIcons
 						name="add"
-						size={28}
+						size={26}
 						color={theme.colors.buttonPrimaryText}
 					/>
 				}
-				extraStyles={styles.fab}
+				extraStyles={{
+					position: 'absolute',
+					right: 20,
+					bottom: 28,
+				}}
 				onPress={() => bottomSheetRef.current?.expand()}
 			/>
-		</ScrollView>
+		</KeyboardAwareScrollView>
 	)
 }
