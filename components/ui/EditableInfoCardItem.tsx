@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native'
+import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
 
@@ -25,8 +25,7 @@ export default function EditableInfoCardItem({
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: theme.space.lg,
-			paddingVertical: theme.space.lg,
-			paddingHorizontal: theme.space.lg,
+			padding: theme.space.lg,
 		},
 		iconWrapper: {
 			width: theme.space.x3l,

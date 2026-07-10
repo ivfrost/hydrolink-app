@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Text, View } from 'react-native'
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
 import { RefreshControl } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -14,13 +14,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
-import DashboardRowItem from '@/components/dashboard/DashboardRowItem'
 import BottomSheet from '@/components/layout/BottomSheet'
-import CardWrapper from '@/components/layout/CardWrapper'
+import Card from '@/components/layout/Card'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
+import Badge from '@/components/ui/Badge'
 import BottomSheetInput from '@/components/ui/BottomSheetInput'
 import Button from '@/components/ui/Button'
+import CardItem from '@/components/ui/CardItem'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
 import { areaLinkMutationFn } from '@/mutations/areas'
@@ -38,6 +39,209 @@ export default function AreaTabScreen() {
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
 	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
+
+	const now = new Date()
+
+	// Helper functions
+	const minutesAgo = (m: number) =>
+		new Date(now.getTime() - m * 60000).toISOString()
+	const minutesFromNow = (m: number) =>
+		new Date(now.getTime() + m * 60000).toISOString()
+
+	const mockMqttAreaData = [
+		{
+			key: 'zona-competa-pozo',
+			stations: [
+				{
+					id: 1,
+					type: 'solenoid',
+					name: 'Riego Pozo Llano',
+					status: 'active',
+					reason: 'scheduled',
+				},
+				{
+					id: 2,
+					type: 'solenoid',
+					name: 'Válvula Principal Oeste',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 3,
+					type: 'solenoid',
+					name: 'Válvula Principal Este',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 4,
+					type: 'solenoid',
+					name: 'Riego Bancada Hidropónica',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 6,
+					type: 'pump',
+					name: 'Bomba de Pozo',
+					status: 'active',
+					reason: 'none',
+				},
+				{
+					id: 7,
+					type: 'fertilizer',
+					name: 'Fertilizante A',
+					status: 'active',
+					reason: 'none',
+				},
+			],
+			schedules: [
+				{
+					id: 1,
+					name: 'Riego de la Mañana',
+					status: 'active',
+					startTime: minutesAgo(15),
+					endTime: minutesFromNow(75),
+				},
+			],
+			scheduleState: {
+				pastSchedule: {
+					id: 99,
+					name: 'Lavado Nocturno',
+					status: 'completed',
+					startTime: minutesAgo(300),
+					endTime: minutesAgo(240),
+				},
+				currentSchedule: {
+					id: 1,
+					name: 'Riego de la Mañana',
+					status: 'active',
+					startTime: minutesAgo(15),
+					endTime: minutesFromNow(75),
+				},
+			},
+			lastSeen: now.toISOString(),
+			location: '36.8366, -3.9740',
+		},
+
+		{
+			key: 'zona-almeria-invernadero',
+			stations: [
+				{
+					id: 1,
+					type: 'solenoid',
+					name: 'Riego Pozo Llano',
+					status: 'active',
+					reason: 'scheduled',
+				},
+				{
+					id: 2,
+					type: 'solenoid',
+					name: 'Válvula Principal Oeste',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 3,
+					type: 'solenoid',
+					name: 'Válvula Principal Este',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 4,
+					type: 'solenoid',
+					name: 'Riego Bancada Hidropónica',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 6,
+					type: 'pump',
+					name: 'Bomba de Pozo',
+					status: 'active',
+					reason: 'none',
+				},
+				{
+					id: 7,
+					type: 'fertilizer',
+					name: 'Fertilizante A',
+					status: 'active',
+					reason: 'none',
+				},
+			],
+			schedules: [
+				{
+					id: 3,
+					name: 'Ciclo de Alimentación Continua',
+					status: 'inactive',
+					startTime: minutesAgo(120),
+					endTime: minutesAgo(60),
+				},
+			],
+			scheduleState: {
+				pastSchedule: null,
+				currentSchedule: null,
+			},
+			lastSeen: now.toISOString(),
+			location: '36.7750, -2.8100',
+		},
+
+		{
+			key: 'zona-manchuela-pastizal',
+			stations: [
+				{
+					id: 1,
+					type: 'solenoid',
+					name: 'Riego Pozo Llano',
+					status: 'active',
+					reason: 'scheduled',
+				},
+				{
+					id: 2,
+					type: 'solenoid',
+					name: 'Válvula Principal Oeste',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 3,
+					type: 'solenoid',
+					name: 'Válvula Principal Este',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 4,
+					type: 'solenoid',
+					name: 'Riego Bancada Hidropónica',
+					status: 'inactive',
+					reason: 'none',
+				},
+				{
+					id: 6,
+					type: 'pump',
+					name: 'Bomba de Pozo',
+					status: 'active',
+					reason: 'none',
+				},
+				{
+					id: 7,
+					type: 'fertilizer',
+					name: 'Fertilizante A',
+					status: 'active',
+					reason: 'none',
+				},
+			],
+			schedules: [],
+			scheduleState: {
+				pastSchedule: null,
+				currentSchedule: null,
+			},
+			lastSeen: now.toISOString(),
+			location: '39.2764, -3.0933',
+		},
+	]
 
 	// Query for fetching user's areas
 	const {
@@ -110,7 +314,7 @@ export default function AreaTabScreen() {
 	}, [scanned, mutate, router])
 
 	// Handler to go to the QR code scanner screen
-	const handleGoScan = () => {
+	const handleGoScan = async () => {
 		bottomSheetRef.current?.close()
 		router.push({ pathname: '/(area)/scan', params: { from: 'areas' } })
 	}
@@ -305,77 +509,191 @@ export default function AreaTabScreen() {
 			}}
 		>
 			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-			{areas.map((area) => {
-				const recentlySeen =
-					// 5 minutes
-					new Date(area.lastSeen).getTime() > Date.now() - 1000 * 60 * 5
+			{areas.map((area, index) => {
+				// MQTT data provides real-time data about areas like last seen,
+				// stations data, location, etc.
+
+				// Drop the .find() and the API key check entirely—just map them 1:1 by array index
+				const mqttData = mockMqttAreaData[index]
+
+				if (!mqttData) {
+					return (
+						<Card key={area.id} flexDirection="column" elevation={0}>
+							<CardItem
+								title={area.name ?? 'Unnamed Area'}
+								subtitle="Offline • No data available"
+								icon="map-marker-radius"
+								statusColor={theme.colors.offline}
+								statusBg={theme.colors.offlineBg}
+							/>
+						</Card>
+					)
+				}
+
+				const isOnline =
+					new Date().getTime() - new Date(mqttData.lastSeen).getTime() <
+					5 * 60 * 1000
+
+				const solenoids = mqttData.stations.filter(
+					(station) => station.type === 'solenoid',
+				)
+				const currentlyActiveStation = solenoids.find(
+					(station) => station.status === 'active',
+				)
+				const currentlyActiveSchedule = mqttData.schedules.find(
+					(schedule) => schedule.status === 'active',
+				)
+
+				const subtitle = `${solenoids.length} ${
+					solenoids.length === 1 ? 'station' : 'stations'
+				}`
+
+				const pumps = mqttData.stations.filter(
+					(station) => station.type === 'pump',
+				)
+				console.log('pumps', pumps)
+				const fertilizers = mqttData.stations.filter(
+					(station) => station.type === 'fertilizer',
+				)
+
+				// The API provides more "static" data like name, description,
+				// picture, firmware version, etc.
 
 				return (
-					<CardWrapper key={area.id} flexDirection="column" elevation={0}>
-						<DashboardRowItem
-							key={area.id}
+					<Card key={area.id} flexDirection="column" elevation={0}>
+						<CardItem
 							title={area.name ?? 'Unnamed Area'}
-							subtitle={area.location ?? 'Unknown Location'}
-							icon="map-marker-radius"
+							subtitle={subtitle}
+							icon={isOnline ? 'map-marker-check' : 'map-marker-off'}
 							statusColor={
-								recentlySeen ? theme.colors.online : theme.colors.offline
+								isOnline ? theme.colors.online : theme.colors.offline
 							}
 							statusBg={
-								recentlySeen ? theme.colors.onlineBg : theme.colors.offlineBg
+								isOnline ? theme.colors.onlineBg : theme.colors.offlineBg
 							}
-							onPress={() =>
-								router.push({
-									pathname: '/areas/[key]',
-									params: {
-										id: area.id,
-										key: area.key,
-										name: area.name,
-										location: area.location,
-										description: area.description,
-										firmware: area.firmware,
-										technicalName: area.technicalName,
-										ip: area.ip,
-										imageUrl: area.imageUrl,
-										createdAt: area.createdAt,
-										updatedAt: area.updatedAt,
-										linkedAt: area.linkedAt,
-										lastSeen: area.lastSeen,
-										userId: area.userId,
-										displayOrder: area.displayOrder,
-									},
-								})
-							}
-							renderRightElement={() => (
+							rightElement={
 								<View
 									style={{
 										flexDirection: 'row',
 										alignItems: 'center',
-										gap: theme.space.x3s,
+										gap: 4,
+										flex: 1,
 									}}
 								>
-									<MaterialIcons
-										name={
-											recentlySeen ? 'wifi-tethering' : 'wifi-tethering-off'
-										}
-										size={12}
-										color={
-											recentlySeen
-												? theme.colors.online
-												: theme.colors.textSecondary
-										}
-									/>
-									<Text
-										style={{
-											color: theme.colors.textSecondary,
-											fontSize: theme.font.xs,
-										}}
-									>
-										{formatRelativeTime(area.lastSeen)}
-									</Text>
+									<TouchableOpacity>
+										<MaterialIcons
+											name="chevron-right"
+											size={24}
+											color={theme.colors.textMuted}
+										/>
+									</TouchableOpacity>
 								</View>
-							)}
+							}
+							bottomElement={
+								<View>
+									{currentlyActiveStation && (
+										<>
+											<View
+												style={{
+													flexDirection: 'row',
+													alignItems: 'center',
+													gap: theme.space.md,
+													borderRadius: theme.radius.boxInCard,
+													backgroundColor: theme.colors.activeBg,
+													padding: theme.space.lg,
+												}}
+											>
+												<View style={{ flex: 1 }}>
+													<View
+														style={{
+															flexDirection: 'row',
+															alignItems: 'center',
+														}}
+													>
+														<View
+															style={{
+																flexDirection: 'row',
+																alignItems: 'center',
+																gap: theme.space.sm,
+															}}
+														>
+															<MaterialCommunityIcons
+																name="valve-open"
+																size={18}
+																color={theme.colors.active}
+															/>
+															<Text
+																numberOfLines={1}
+																style={{
+																	color: theme.colors.active,
+																	fontSize: theme.font.base,
+																	fontWeight: '500',
+																}}
+															>
+																{currentlyActiveStation.name}
+															</Text>
+														</View>
+													</View>
+													<Text
+														style={{
+															color: theme.colors.textSecondary,
+															fontSize: theme.font.sm,
+															fontWeight: '400',
+															marginTop: 2,
+														}}
+													>
+														{currentlyActiveStation.reason === 'manual'
+															? 'Manual Mode'
+															: currentlyActiveSchedule
+																? `${currentlyActiveSchedule.name}`
+																: 'Scheduled'}
+														{' • '}
+
+														{currentlyActiveSchedule?.startTime &&
+															formatRelativeTime(
+																currentlyActiveSchedule.startTime,
+															)}
+													</Text>
+												</View>
+											</View>
+										</>
+									)}
+									{(pumps.length > 0 || fertilizers.length > 0) && (
+										<View
+											style={{
+												flexDirection: 'row',
+												flexWrap: 'wrap',
+												gap: theme.space.sm,
+												marginTop: theme.space.md,
+											}}
+										>
+											{pumps.map((pump) => (
+												<Badge
+													key={pump.id}
+													icon="water-pump"
+													text={pump.name}
+													color={theme.colors.textSecondary}
+													borderColor={theme.colors.accentBlueLight}
+													backgroundColor={theme.colors.card}
+												/>
+											))}
+
+											{fertilizers.map((fertilizer) => (
+												<Badge
+													key={fertilizer.id}
+													icon="chemical-weapon"
+													text={fertilizer.name}
+													color={theme.colors.textSecondary}
+													borderColor={theme.colors.accentBlueLight}
+													backgroundColor={theme.colors.card}
+												/>
+											))}
+										</View>
+									)}
+								</View>
+							}
 						/>
-					</CardWrapper>
+					</Card>
 				)
 			})}
 

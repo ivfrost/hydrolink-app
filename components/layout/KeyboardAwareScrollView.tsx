@@ -22,6 +22,7 @@ export default function KeyboardAwareScrollView({
 				keyboardShouldPersistTaps="handled"
 				contentContainerStyle={[
 					{
+						flexGrow: 1,
 						paddingHorizontal: theme.space.xl,
 						paddingBottom: theme.space.x3l,
 						gap: theme.space.x3l,

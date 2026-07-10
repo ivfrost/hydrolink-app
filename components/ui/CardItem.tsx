@@ -1,57 +1,143 @@
-import { Text, Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native'
+import React from 'react'
+import { Text, TouchableOpacity, View } from 'react-native'
 
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
-import CardIcon from './CardIcon'
-
-interface CardItemProps {
-	label?: string
-	children?: React.ReactNode
-	leadingIcon?: keyof typeof MaterialIcons.glyphMap
-	iconColor?: string
-	iconSize?: number
-	flexDirection?: 'row' | 'column'
-	extraStyles?: StyleProp<ViewStyle>
+export interface CardItemProps {
+	title: string
+	titleFontWeight?: '400' | '500' | '600' | '700'
+	titleColor?: string
+	subtitle?: string
+	icon:
+		| keyof typeof MaterialCommunityIcons.glyphMap
+		| keyof typeof MaterialIcons.glyphMap
+	statusColor: string
+	statusBg: string
 	onPress?: () => void
+	rightElement?: React.ReactNode
+	bottomElement?: React.ReactNode
 }
 
 export default function CardItem({
-	label,
-	children,
-	leadingIcon,
-	iconColor,
-	iconSize = 24,
-	flexDirection = 'column',
-	extraStyles,
+	title,
+	titleFontWeight = '600',
+	titleColor,
+	subtitle,
+	icon,
+	statusColor,
+	statusBg,
 	onPress,
+	rightElement,
+	bottomElement,
 }: CardItemProps) {
 	const theme = useTheme()
 
-	const styles = StyleSheet.create({
-		container: {
-			flexDirection: flexDirection,
-			alignItems: 'center',
-			gap: theme.space.sm,
-			paddingVertical: theme.space.lg,
-			paddingHorizontal: theme.space.lg,
-			flex: 1,
-		},
-		label: {
-			fontSize: theme.font.xs,
-			color: theme.colors.textMuted,
-			textAlign: 'center',
-		},
-	})
+	const ContainerElement = onPress ? TouchableOpacity : View
+	const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {}
 
 	return (
-		<Pressable style={[styles.container, extraStyles]} onPress={onPress}>
-			{leadingIcon && (
-				<CardIcon icon={leadingIcon} color={iconColor} iconSize={iconSize} />
-			)}
-			{label && <Text style={styles.label}>{label}</Text>}
-			{children}
-		</Pressable>
+		<ContainerElement
+			{...containerProps}
+			style={{
+				flex: 1,
+				width: '100%',
+				paddingVertical: theme.space.xl,
+				backgroundColor: theme.colors.card,
+				gap: theme.space.lg,
+			}}
+		>
+			<View
+				style={{
+					flexDirection: 'row',
+					gap: theme.space.lg,
+					alignItems: 'center',
+				}}
+			>
+				{/* Icon Backdrop */}
+				{icon && (
+					<View
+						style={{
+							width: theme.space.x3l,
+							height: theme.space.x3l,
+							borderRadius: theme.radius.fab,
+							backgroundColor: statusBg,
+							justifyContent: 'center',
+							alignItems: 'center',
+						}}
+					>
+						{(() => {
+							const iconName = icon.includes('/') ? icon.split('/')[1] : icon
+
+							if (icon in MaterialCommunityIcons.glyphMap) {
+								return (
+									<MaterialCommunityIcons
+										name={iconName as any}
+										size={19}
+										color={statusColor}
+									/>
+								)
+							} else {
+								return (
+									<MaterialIcons
+										name={iconName as any}
+										size={19}
+										color={statusColor}
+									/>
+								)
+							}
+						})()}
+					</View>
+				)}
+
+				{/* Content Body */}
+				<View
+					style={{
+						flex: 1,
+						flexDirection: 'row',
+						justifyContent: 'space-between',
+						alignItems: 'flex-start',
+					}}
+				>
+					<View style={{ flex: 1, gap: theme.space.x2s }}>
+						<Text
+							style={{
+								fontSize: theme.font.base,
+								fontWeight: titleFontWeight,
+								color: titleColor ?? theme.colors.textPrimary,
+								lineHeight: theme.lineHeight.cardTextTitle,
+							}}
+							numberOfLines={1}
+						>
+							{title}
+						</Text>
+						{subtitle && (
+							<Text
+								style={{
+									fontSize: theme.font.sm,
+									fontWeight: '400',
+									color: theme.colors.textSecondary,
+									lineHeight: theme.lineHeight.cardTextSubtitle,
+								}}
+								numberOfLines={1}
+							>
+								{subtitle}
+							</Text>
+						)}
+					</View>
+
+					{/* Right Slot */}
+					{rightElement && (
+						<View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
+							{rightElement}
+						</View>
+					)}
+				</View>
+			</View>
+
+			{/* Bottom Slot */}
+			{bottomElement && <View style={{ width: '100%' }}>{bottomElement}</View>}
+		</ContainerElement>
 	)
 }

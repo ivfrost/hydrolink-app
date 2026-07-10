@@ -54,7 +54,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="account-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -72,7 +72,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="at"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -91,7 +91,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="email-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -112,7 +112,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="lock-plus-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -133,7 +133,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="shield-lock-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -151,7 +151,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="phone-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}
@@ -168,7 +168,7 @@ export function EditableProfileInfoCard({
 					icon={
 						<MaterialCommunityIcons
 							name="map-marker-outline"
-							size={18}
+							size={19}
 							color={theme.colors.accentBlue}
 						/>
 					}

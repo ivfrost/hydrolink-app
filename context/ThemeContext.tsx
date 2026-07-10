@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react'
+
 const themeTokens = {
 	colors: {
 		light: {
@@ -9,7 +10,7 @@ const themeTokens = {
 			textSecondary: '#4d5a66',
 			textMuted: '#8a97a8',
 			textBoxBackground: '#f5f7fa',
-			border: '#d7dee5',
+			border: '#e7ecf2',
 			accentBlue: '#4a6a8a',
 			accentBlueLight: '#eef2f7',
 			gradientStart: '#f4f6f9',
@@ -23,24 +24,31 @@ const themeTokens = {
 			buttonDisabledBg: '#edf1f5',
 			buttonDisabledText: '#8a97a8',
 
+			active: '#5169ac',
 			online: '#1e6b35',
 			success: '#1e6b35',
 			warning: '#a16a1c',
 			fault: '#ad3b2c',
 			offline: '#5d6b7c',
-			scheduled: '#1b2a3b',
+			scheduled: '#2F5B8A',
 
-			onlineBg: '#eaf6ef',
-			offlineBg: '#f0f3f7',
-			warningBg: '#faf3e6',
-			faultBg: '#f8eceb',
-			scheduledBg: '#e9edf3',
+			activeBg: '#eff6ff',
+			onlineBg: '#E8F5EC',
+			successBg: '#E8F5EC',
+			warningBg: '#FFF6E8',
+			faultBg: '#FCECEC',
+			offlineBg: '#F3F5F8',
+			scheduledBg: '#EEF2F7',
 
-			onlineBorder: '#ccebd8',
-			warningBorder: '#f3e3ca',
-			faultBorder: '#f0d6d3',
-			scheduledBorder: '#d7dee5',
+			activeBorder: '#D7DEE5',
+			onlineBorder: '#CDE9D6',
+			successBorder: '#CDE9D6',
+			warningBorder: '#F4E3C8',
+			faultBorder: '#F1D5D2',
+			offlineBorder: '#DDE2E8',
+			scheduledBorder: '#D7DEE5',
 		},
+
 		dark: {
 			background: '#0f1115',
 			card: '#1a1e26',
@@ -67,17 +75,21 @@ const themeTokens = {
 			success: '#4ade80',
 			warning: '#fbbf24',
 			fault: '#f87171',
-			offline: '#94a3b8',
+			offline: '#94A3B8',
 			scheduled: '#38bdf8',
 
 			onlineBg: 'rgba(74, 222, 128, 0.15)',
+			successBg: 'rgba(74, 222, 128, 0.15)',
 			warningBg: 'rgba(251, 191, 36, 0.15)',
 			faultBg: 'rgba(248, 113, 113, 0.15)',
+			offlineBg: 'rgba(148, 163, 184, 0.15)',
 			scheduledBg: 'rgba(56, 189, 248, 0.15)',
 
 			onlineBorder: 'rgba(74, 222, 128, 0.3)',
+			successBorder: 'rgba(74, 222, 128, 0.3)',
 			warningBorder: 'rgba(251, 191, 36, 0.3)',
 			faultBorder: 'rgba(248, 113, 113, 0.3)',
+			offlineBorder: 'rgba(148, 163, 184, 0.3)',
 			scheduledBorder: 'rgba(56, 189, 248, 0.3)',
 		},
 	},
@@ -106,7 +118,9 @@ const themeTokens = {
 
 	radius: {
 		card: 16,
+		boxInCard: 8,
 		fab: 12,
+		badge: 8,
 		button: 8,
 		pill: 9999,
 		input: 8,
@@ -122,6 +136,8 @@ const themeTokens = {
 	},
 
 	lineHeight: {
+		cardTextTitle: 18,
+		cardTextSubtitle: 16,
 		paragraph: 24,
 	},
 } as const

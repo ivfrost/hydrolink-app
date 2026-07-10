@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { RefreshControl, Text } from 'react-native'
+import { RefreshControl } from 'react-native'
 
 import { useLocalSearchParams } from 'expo-router'
 
 import { EditableAreaInfoCard } from '@/components/areas/EditableAreaInfoCard'
-import CardWrapper from '@/components/layout/CardWrapper'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
-import CardItem from '@/components/ui/CardItem'
 import { useTheme } from '@/context/ThemeContext'
 import { Area, AreaUpdatePayload } from '@/types/area'
 
@@ -72,11 +70,11 @@ export default function AreaInfoScreen() {
 				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 			}
 		>
-			<CardWrapper>
+			{/* <Card>
 				<CardItem label="Firmware" leadingIcon="style">
 					<Text style={{ color: theme.colors.accentBlue }}>{firmware}</Text>
 				</CardItem>
-			</CardWrapper>
+			</Card> */}
 			<EditableAreaInfoCard
 				name={areaState.name}
 				description={areaState.description}

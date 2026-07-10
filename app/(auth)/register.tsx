@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -102,12 +102,12 @@ export default function Register() {
 	})
 
 	// Queries for checking email and username availability
-	const { data: isEmailAvailable, isPending: emailChecking } = useQuery({
+	const { data: isEmailAvailable, isFetching: emailChecking } = useQuery({
 		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedEmail],
 		queryFn: () => checkAvailabilityFn(debouncedEmail),
 		enabled: isValidEmailFormat(debouncedEmail),
 	})
-	const { data: isUsernameAvailable, isPending: usernameChecking } = useQuery({
+	const { data: isUsernameAvailable, isFetching: usernameChecking } = useQuery({
 		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedUsername],
 		queryFn: () => checkAvailabilityFn(debouncedUsername),
 		enabled: registerSchema.shape.username.safeParse(debouncedUsername).success,

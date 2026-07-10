@@ -1,57 +1,54 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native'
-
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
-interface SimpleRowCardItemProps {
+import CardItem from './CardItem'
+
+interface SimpleCardItemProps {
 	label: string
-	icon: keyof typeof MaterialIcons.glyphMap
+	icon:
+		| keyof typeof MaterialCommunityIcons.glyphMap
+		| keyof typeof MaterialIcons.glyphMap
+	modifiers?: string[]
 	onPress?: () => void
 }
 
-export default function SimpleRowCardItem({
+export default function SimpleCardItem({
 	label,
 	icon,
+	modifiers,
 	onPress,
-}: SimpleRowCardItemProps) {
+}: SimpleCardItemProps) {
 	const theme = useTheme()
 
-	const styles = StyleSheet.create({
-		row: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: theme.space.lg,
-			elevation: 0,
-		},
-		iconWrapper: {
-			width: theme.space.x3l,
-			height: theme.space.x3l,
-			borderRadius: theme.radius.fab,
-			backgroundColor: theme.colors.accentBlueLight,
-			justifyContent: 'center',
-			alignItems: 'center',
-		},
-		label: {
-			flex: 1,
-			fontSize: theme.font.base,
-			color: theme.colors.textPrimary,
-		},
-	})
-
 	return (
-		<Pressable style={styles.row} onPress={onPress}>
-			<View style={styles.iconWrapper}>
-				<MaterialIcons name={icon} size={18} color={theme.colors.accentBlue} />
-			</View>
-			<Text style={styles.label}>{label}</Text>
-			{onPress ? (
-				<MaterialIcons
+		<CardItem
+			title={label}
+			titleFontWeight="400"
+			titleColor={
+				modifiers?.includes('fault')
+					? theme.colors.fault
+					: theme.colors.textPrimary
+			}
+			icon={icon}
+			statusColor={
+				modifiers?.includes('fault')
+					? theme.colors.fault
+					: theme.colors.accentBlue
+			}
+			statusBg={
+				modifiers?.includes('fault')
+					? theme.colors.faultBg
+					: theme.colors.accentBlueLight
+			}
+			rightElement={
+				<MaterialCommunityIcons
 					name="chevron-right"
 					size={20}
 					color={theme.colors.textMuted}
 				/>
-			) : null}
-		</Pressable>
+			}
+			onPress={onPress}
+		/>
 	)
 }

@@ -34,7 +34,7 @@ export function ProfileHeader({
 				hitSlop={10}
 				onPress={handleChooseImage}
 			>
-				<UserAvatar imageUrl={imageUrl} seed={email} size={72} />
+				<UserAvatar imageUrl={imageUrl} seed={email} size={86} />
 			</TouchableOpacity>
 			<Text style={[styles.email, { color: theme.colors.textSecondary }]}>
 				{email}

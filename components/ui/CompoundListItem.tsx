@@ -1,11 +1,11 @@
 import React from 'react'
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
-export interface DashboardRowItemProps {
+export interface CompoundListItemProps {
 	title: string
 	subtitle: string
 	icon: keyof typeof MaterialCommunityIcons.glyphMap
@@ -13,9 +13,10 @@ export interface DashboardRowItemProps {
 	statusBg: string
 	onPress?: () => void
 	renderRightElement?: () => React.ReactNode
+	renderBottomElement?: () => React.ReactNode
 }
 
-export default function DashboardRowItem({
+export default function CompoundListItem({
 	title,
 	subtitle,
 	icon,
@@ -23,7 +24,8 @@ export default function DashboardRowItem({
 	statusBg,
 	onPress,
 	renderRightElement,
-}: DashboardRowItemProps) {
+	renderBottomElement,
+}: CompoundListItemProps) {
 	const theme = useTheme()
 
 	const ContainerElement = onPress ? TouchableOpacity : View
@@ -71,27 +73,34 @@ export default function DashboardRowItem({
 	})
 
 	return (
-		<ContainerElement style={styles.container} {...containerProps}>
-			<View style={styles.iconBackdrop}>
-				<MaterialCommunityIcons name={icon} size={20} color={statusColor} />
-			</View>
-
-			<View style={styles.contentWrapper}>
-				<View style={styles.textStack}>
-					<Text style={styles.titleText} numberOfLines={1}>
-						{title}
-					</Text>
-					<Text style={styles.subtitleText} numberOfLines={1}>
-						{subtitle}
-					</Text>
+		<ContainerElement {...containerProps}>
+			<View style={styles.container}>
+				<View style={styles.iconBackdrop}>
+					<MaterialCommunityIcons name={icon} size={20} color={statusColor} />
 				</View>
 
-				{renderRightElement && (
-					<View style={styles.rightElementContainer}>
-						{renderRightElement()}
+				<View style={styles.contentWrapper}>
+					<View style={styles.textStack}>
+						<Text style={styles.titleText} numberOfLines={1}>
+							{title}
+						</Text>
+						<Text style={styles.subtitleText} numberOfLines={1}>
+							{subtitle}
+						</Text>
 					</View>
-				)}
+
+					{renderRightElement && (
+						<View style={styles.rightElementContainer}>
+							{renderRightElement()}
+						</View>
+					)}
+				</View>
 			</View>
+			{renderBottomElement && (
+				<View style={{ marginTop: theme.space.sm }}>
+					{renderBottomElement()}
+				</View>
+			)}
 		</ContainerElement>
 	)
 }

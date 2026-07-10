@@ -5,8 +5,8 @@ import { useTheme } from '@/context/ThemeContext'
 import { RecentActivityEvent } from '@/types/card'
 import { formatRelativeTime } from '@/utils/formatRelativeTime'
 
-import CardWrapper from '../layout/CardWrapper'
-import DashboardRowItem from './DashboardRowItem'
+import Card from '../layout/Card'
+import CardItem from '../ui/CardItem'
 
 export interface RecentActivityCardProps {
 	events: RecentActivityEvent[]
@@ -34,18 +34,18 @@ export default function RecentActivityCard({
 	}
 
 	return (
-		<CardWrapper flexDirection="column" elevation={0}>
+		<Card flexDirection="column" elevation={0}>
 			{events.map((event) => {
 				const { color, bg } = getStatusColors(event.status)
 				return (
-					<DashboardRowItem
+					<CardItem
 						key={event.id}
 						title={event.title}
 						subtitle={event.description}
 						icon={event.icon}
 						statusColor={color}
 						statusBg={bg}
-						renderRightElement={() => (
+						rightElement={
 							<Text
 								style={{
 									fontSize: theme.font.xs,
@@ -53,12 +53,12 @@ export default function RecentActivityCard({
 									fontWeight: '500',
 								}}
 							>
-								{formatRelativeTime(event.time, 'active')}
+								{formatRelativeTime(event.time)}
 							</Text>
-						)}
+						}
 					/>
 				)
 			})}
-		</CardWrapper>
+		</Card>
 	)
 }

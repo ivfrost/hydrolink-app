@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import { useMutation } from '@tanstack/react-query'
@@ -14,7 +14,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { signinFn } from '@/mutations/auth'
 import { useAuth } from '@/stores/authStore'
 import { AppError } from '@/types/api'
-import { SignInResponse, SignInPayload, signInSchema } from '@/types/auth'
+import { SignInPayload, SignInResponse, signInSchema } from '@/types/auth'
 
 type ErrorState = Partial<Record<keyof SignInPayload, string>>
 
@@ -107,6 +107,7 @@ export default function SignIn() {
 						width: '100%',
 						alignItems: 'center',
 						marginBottom: theme.space.lg,
+						justifyContent: 'center',
 					}}
 				>
 					<View

@@ -14,11 +14,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 
-import CardWrapper from '@/components/layout/CardWrapper'
+import Card from '@/components/layout/Card'
 import { UserCard } from '@/components/profile/UserCard'
 import Button from '@/components/ui/Button'
 import SectionTitle from '@/components/ui/SectionTitle'
-import SimpleRowCardItem from '@/components/ui/SimpleRowCard'
+import SimpleCardItem from '@/components/ui/SimpleRowCard'
 import { useTheme } from '@/context/ThemeContext'
 import { profileQueryFn } from '@/queries/profile'
 import { useAuth } from '@/stores/authStore'
@@ -146,6 +146,20 @@ export default function SettingTabScreen() {
 				{ label: 'Contact support', icon: 'mail-outline', onPress: () => {} },
 			],
 		},
+		{
+			title: 'Session',
+			rows: [{ label: 'Logout', icon: 'logout', onPress: logout }],
+		},
+		{
+			title: 'Development',
+			rows: [
+				{
+					label: 'Reset onboarding',
+					icon: 'restart-alt',
+					onPress: resetOnboarding,
+				},
+			],
+		},
 	]
 
 	return (
@@ -161,22 +175,37 @@ export default function SettingTabScreen() {
 			<UserCard
 				name={profile.fullName}
 				email={profile.email}
+				avatarSize={62}
 				onPress={() => router.push('/settings/profile')}
 			/>
 
 			{sections.map((section) => (
 				<View key={section.title}>
 					<SectionTitle text={section.title} />
-					<CardWrapper elevation={0}>
-						{section.rows.map((row) => (
-							<SimpleRowCardItem
-								key={row.label}
-								label={row.label}
-								icon={row.icon}
-								onPress={row.onPress}
-							/>
-						))}
-					</CardWrapper>
+					<Card elevation={0}>
+						{section.rows.map((row) => {
+							if (row.label === 'Logout') {
+								return (
+									<SimpleCardItem
+										key={row.label}
+										label={row.label}
+										icon={row.icon}
+										onPress={row.onPress}
+										modifiers={['fault']}
+									/>
+								)
+							}
+
+							return (
+								<SimpleCardItem
+									key={row.label}
+									label={row.label}
+									icon={row.icon}
+									onPress={row.onPress}
+								/>
+							)
+						})}
+					</Card>
 				</View>
 			))}
 		</ScrollView>

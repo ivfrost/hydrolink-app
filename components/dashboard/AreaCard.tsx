@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, View, Text } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
@@ -10,8 +10,8 @@ import {
 	isRelativeTimeInFuture,
 } from '@/utils/formatRelativeTime'
 
-import CardWrapper from '../layout/CardWrapper'
-import DashboardRowItem from './DashboardRowItem'
+import Card from '../layout/Card'
+import CardItem from '../ui/CardItem'
 
 export interface ActiveStation {
 	name: string
@@ -46,7 +46,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 	})
 
 	return (
-		<CardWrapper flexDirection="column" elevation={0}>
+		<Card flexDirection="column" elevation={0}>
 			{areaData.map((area: AreaItem, idx: number) => {
 				const station = area.activeStation
 				const incoming = isRelativeTimeInFuture(station.time)
@@ -64,7 +64,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 				if (!station) return null
 
 				return (
-					<DashboardRowItem
+					<CardItem
 						key={idx}
 						title={station.name}
 						subtitle={area.name}
@@ -76,7 +76,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 								? () => actions[0].onPress(idx)
 								: undefined
 						}
-						renderRightElement={() => (
+						rightElement={
 							<View style={[styles.timeBadge, { backgroundColor: badgeBg }]}>
 								{!incoming ? (
 									<View
@@ -98,10 +98,10 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 									{formatRelativeTime(station.time)}
 								</Text>
 							</View>
-						)}
+						}
 					/>
 				)
 			})}
-		</CardWrapper>
+		</Card>
 	)
 }

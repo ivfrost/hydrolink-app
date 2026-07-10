@@ -3,7 +3,6 @@ import { ActivityIndicator, Platform, Text, View } from 'react-native'
 import { RefreshControl } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useHeaderHeight } from '@react-navigation/elements'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import * as ImagePicker from 'expo-image-picker'
@@ -12,13 +11,14 @@ import { useDebounce } from 'use-debounce'
 
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
+import Card from '@/components/layout/Card'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
-import { AccountActionsCard } from '@/components/profile/AccountActionsCard'
 import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import StatusScreen from '@/components/status/StatusScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
+import SimpleCardItem from '@/components/ui/SimpleRowCard'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
 import { profileUpdateFn } from '@/mutations/profile'
@@ -33,7 +33,6 @@ type ErrorState = Partial<Record<keyof ProfileUpdatePayload, string>>
 export default function ProfileScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
-	const headerHeight = useHeaderHeight()
 	const router = useRouter()
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const insets = useSafeAreaInsets()
@@ -392,10 +391,24 @@ export default function ProfileScreen() {
 
 					<View>
 						<SectionTitle text="Account" />
-						<AccountActionsCard
-							onChangeEmail={() => router.push('/settings/change-email')}
-							onChangePassword={() => router.push('/settings/change-password')}
-						/>
+						<Card>
+							<SimpleCardItem
+								label="Change email"
+								icon="email-outline"
+								onPress={() => router.push('/settings/change-email')}
+							/>
+							<SimpleCardItem
+								label="Change password"
+								icon="lock-outline"
+								onPress={() => router.push('/settings/change-password')}
+							/>
+							<SimpleCardItem
+								label="Delete account"
+								modifiers={['fault']}
+								icon="account-remove-outline"
+								onPress={() => router.push('/settings/delete-account')}
+							/>
+						</Card>
 					</View>
 				</View>
 			</KeyboardAwareScrollView>

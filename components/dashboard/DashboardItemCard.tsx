@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
-import CardWrapper from '../layout/CardWrapper'
+import Card from '../layout/Card'
 import CardItem from '../ui/CardItem'
 
 export type DashboardItemStatus =
@@ -67,7 +67,7 @@ export default function DashboardItemCard({ items }: DashboardItemCardProps) {
 	}
 
 	return (
-		<CardWrapper flexDirection="column" elevation={0}>
+		<Card flexDirection="column" elevation={0}>
 			{items.map((item) => {
 				const { color, bg } = statusStyle(item.status)
 				return (
@@ -143,6 +143,6 @@ export default function DashboardItemCard({ items }: DashboardItemCardProps) {
 					</CardItem>
 				)
 			})}
-		</CardWrapper>
+		</Card>
 	)
 }
