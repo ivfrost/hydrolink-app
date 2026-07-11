@@ -92,7 +92,3 @@ export const initMqtt = async (): Promise<void> => {
 		throw error
 	}
 }
-
-export default {
-	initMqtt,
-}
