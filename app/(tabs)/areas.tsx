@@ -23,6 +23,7 @@ import BottomSheetInput from '@/components/ui/BottomSheetInput'
 import Button from '@/components/ui/Button'
 import CardItem from '@/components/ui/CardItem'
 import { tanstackKeys } from '@/constants'
+import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
 import { areaLinkMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
@@ -39,6 +40,7 @@ export default function AreaTabScreen() {
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
 	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
+	const { isReady: isMqttReady, status: mqttStatus, lastMessage } = useMqtt()
 
 	const now = new Date()
 
@@ -670,7 +672,7 @@ export default function AreaTabScreen() {
 											{pumps.map((pump) => (
 												<Badge
 													key={pump.id}
-													icon="water-pump"
+													// TODO: Icons will be user defined in the future
 													text={pump.name}
 													color={theme.colors.textSecondary}
 													borderColor={theme.colors.accentBlueLight}
@@ -680,8 +682,8 @@ export default function AreaTabScreen() {
 
 											{fertilizers.map((fertilizer) => (
 												<Badge
+													// icon="sprout"
 													key={fertilizer.id}
-													icon="chemical-weapon"
 													text={fertilizer.name}
 													color={theme.colors.textSecondary}
 													borderColor={theme.colors.accentBlueLight}
@@ -696,6 +698,44 @@ export default function AreaTabScreen() {
 					</Card>
 				)
 			})}
+			{console.log(
+				'MQTT Status:',
+				mqttStatus,
+				'Is Ready:',
+				isMqttReady,
+				'Last Message:',
+				lastMessage,
+			)}
+			{isMqttReady && mqttStatus === 'CONNECTED' && lastMessage && (
+				<View
+					style={{
+						backgroundColor: theme.colors.card,
+						padding: theme.space.md,
+						borderRadius: theme.radius.boxInCard,
+						marginTop: theme.space.x2l,
+					}}
+				>
+					<Text
+						style={{
+							color: theme.colors.textSecondary,
+							fontSize: theme.font.sm,
+							fontWeight: '400',
+						}}
+					>
+						Last MQTT Message:
+					</Text>
+					<Text
+						style={{
+							color: theme.colors.textPrimary,
+							fontSize: theme.font.base,
+							fontWeight: '500',
+							marginTop: 4,
+						}}
+					>
+						{JSON.stringify(lastMessage, null, 2)}
+					</Text>
+				</View>
+			)}
 
 			<Portal>
 				<BottomSheet ref={bottomSheetRef} snapPoints={[364]}>

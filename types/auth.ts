@@ -1,7 +1,9 @@
+import { z } from 'zod'
+
 import { TokenType } from '@/constants'
+
 import { ApiResponse } from './api'
 import { User, userSchema } from './user'
-import { z } from 'zod'
 
 // Register schemas and types
 export const registerSchema = userSchema
@@ -52,6 +54,15 @@ export interface AuthResponse {
 	userResponse: User
 	tokens: TokenResponse[]
 }
+
 export type SignInResponse = ApiResponse<AuthResponse>
 export type RegisterResponse = ApiResponse<AuthResponse>
 export type RefreshResponse = ApiResponse<TokenResponse[]>
+
+export const mqttCredentialSchema = z.object({
+	userId: z.number(),
+	mqttToken: z.string(),
+})
+
+export type MqttCredentials = z.infer<typeof mqttCredentialSchema>
+export type MqttCredentialResponse = ApiResponse<MqttCredentials>

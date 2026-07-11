@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useTheme } from '@/context/ThemeContext'
 
 export interface BadgeProps {
-	icon: keyof typeof MaterialCommunityIcons.glyphMap
+	icon?: keyof typeof MaterialCommunityIcons.glyphMap
 	text: string
 	color: string
 	borderColor?: string
@@ -35,7 +35,7 @@ export default function Badge({
 				borderColor: borderColor || 'transparent',
 			}}
 		>
-			<MaterialCommunityIcons name={icon} size={16} color={color} />
+			{icon && <MaterialCommunityIcons name={icon} size={16} color={color} />}
 			<View>
 				<Text
 					style={{

@@ -1,10 +1,10 @@
 import { API_BASE_URL } from '@/constants'
 import { AppError } from '@/types/api'
 import {
-	SignInResponse,
 	RegisterPayload,
 	RegisterResponse,
 	SignInPayload,
+	SignInResponse,
 } from '@/types/auth'
 import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
