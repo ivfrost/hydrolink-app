@@ -7,8 +7,10 @@ import mqtt from 'mqtt'
 import { getMqttCredentials } from '@/queries/auth'
 import { decodeJwt } from '@/utils/decodeJwt'
 
-let isMqttInitialized = false
 export let mqttClient: any = null
+export let publishableTopics: string[] = []
+let activeRun: Promise<void> | null = null
+let rerunQueued = false
 
 export async function getUniqueDeviceId(): Promise<string> {
 	try {
@@ -40,55 +42,80 @@ export async function getUniqueDeviceId(): Promise<string> {
 }
 
 export const initMqtt = async (): Promise<void> => {
-	if (isMqttInitialized) return
-
-	try {
-		const brokerUrlStr = process.env.EXPO_PUBLIC_MQTT_BROKER_URL
-		if (!brokerUrlStr) {
-			throw new Error(
-				'MQTT broker URL is not defined in the environment variables.',
-			)
-		}
-
-		const clientId = await getUniqueDeviceId()
-		const mqttCredentials = await getMqttCredentials()
-
-		if (
-			!mqttCredentials ||
-			!mqttCredentials.mqttToken ||
-			mqttCredentials.userId === undefined
-		) {
-			throw new Error('MQTT token or user ID is missing in the credentials.')
-		}
-
-		const { mqttToken, userId } = mqttCredentials
-		const claims = decodeJwt(mqttToken)
-		const topicsToSubscribe: string[] = claims?.subs || []
-
-		console.log(
-			`Initializing MQTT with client ID: ${clientId}, user ID: ${userId}`,
-		)
-
-		// Use connectAsync to meet the required v5 instantiation flow
-		console.log(`Connecting to MQTT broker at: ${brokerUrlStr}`)
-		mqttClient = await mqtt.connectAsync(brokerUrlStr, {
-			clientId,
-			username: String(userId),
-			password: mqttToken,
-			clean: true,
-			connectTimeout: 5000,
-			reconnectPeriod: 2000,
+	if (activeRun) {
+		// Don't drop this call — it may carry newer credentials (e.g. after
+		// linking a new area). Queue exactly one follow-up run once the
+		// current attempt finishes, and let this caller await that result.
+		console.log('MQTT init already in progress, queuing a follow-up run...')
+		rerunQueued = true
+		return activeRun.then(() => {
+			if (rerunQueued) return initMqtt()
 		})
-
-		if (topicsToSubscribe.length > 0) {
-			await mqttClient.subscribeAsync(topicsToSubscribe)
-			console.log(`Subscribed to topics: ${topicsToSubscribe.join(', ')}`)
-		}
-
-		isMqttInitialized = true
-	} catch (error) {
-		console.error('Failed to initialize MQTT:', error)
-		isMqttInitialized = false
-		throw error
 	}
+
+	rerunQueued = false
+	activeRun = (async () => {
+		try {
+			if (mqttClient) {
+				console.log(
+					'Existing MQTT client detected. Tearing down before re-initialization...',
+				)
+				const staleClient = mqttClient
+				mqttClient = null
+				try {
+					await staleClient.endAsync(true)
+				} catch (e) {
+					console.warn('Error closing existing client:', e)
+				}
+			}
+
+			const brokerUrlStr = process.env.EXPO_PUBLIC_MQTT_BROKER_URL
+			if (!brokerUrlStr) {
+				throw new Error(
+					'MQTT broker URL is not defined in the environment variables.',
+				)
+			}
+
+			const clientId = await getUniqueDeviceId()
+			const mqttCredentials = await getMqttCredentials()
+
+			if (
+				!mqttCredentials ||
+				!mqttCredentials.mqttToken ||
+				mqttCredentials.userId === undefined
+			) {
+				throw new Error('MQTT token or user ID is missing in the credentials.')
+			}
+
+			const { mqttToken, userId } = mqttCredentials
+			const claims = decodeJwt(mqttToken)
+			const topicsToSubscribe: string[] = claims?.subs || []
+			publishableTopics = claims?.publ || []
+
+			console.log(
+				`Initializing MQTT with client ID: ${clientId}, user ID: ${userId}`,
+			)
+			mqttClient = await mqtt.connectAsync(brokerUrlStr, {
+				clientId,
+				username: String(userId),
+				password: mqttToken,
+				clean: true,
+				connectTimeout: 10000,
+				reconnectPeriod: 2000,
+			})
+
+			if (topicsToSubscribe.length > 0) {
+				await mqttClient.subscribeAsync(topicsToSubscribe, { qos: 1 })
+				console.log(`Subscribed to topics: ${topicsToSubscribe.join(', ')}`)
+			}
+		} catch (error) {
+			console.error('Failed to initialize MQTT:', error)
+			mqttClient = null
+			throw error
+		} finally {
+			activeRun = null
+		}
+	})()
+
+	return activeRun
 }

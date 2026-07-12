@@ -20,7 +20,7 @@ const logoutAndRedirect = async () => {
 // refresh call instead of racing each other and stomping on rotated tokens.
 let refreshPromise: Promise<string> | null = null
 
-const refreshAccessToken = async (): Promise<string> => {
+export const refreshAccessToken = async (): Promise<string> => {
 	if (refreshPromise) return refreshPromise
 
 	refreshPromise = (async () => {
@@ -156,16 +156,18 @@ const apiFetch = async <T = unknown>(
 		}
 
 		response = await fetch(`${API_BASE_URL}${url}`, retryOptions)
-		data = (await response.json()) as ApiResponse<T>
+		const responseText = await response.text()
+		data = (responseText ? JSON.parse(responseText) : {}) as ApiResponse<T>
 
 		// If the retry fails with another auth error, log out the user
 		const isRetryAuthError =
 			response.status === 401 ||
-			(data.code != null &&
+			(data?.code != null &&
 				authErrors.includes(data.code as unknown as ErrorCode))
+
 		if (isRetryAuthError) {
 			console.error(
-				`[apiFetch] ${data.code} received on retry, logging out user.`,
+				`[apiFetch] ${data?.code || response.status} received on retry, logging out user.`,
 			)
 			await logoutAndRedirect()
 			throw new AppError(

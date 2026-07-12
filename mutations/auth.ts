@@ -52,6 +52,7 @@ export const registerFn = async (
 			},
 			body: JSON.stringify(payload),
 		})
+		console.log(`${API_BASE_URL}/users`, payload)
 
 		const data = (await response.json()) as RegisterResponse
 

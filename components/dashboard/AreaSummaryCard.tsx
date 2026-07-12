@@ -5,8 +5,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useTheme } from '@/context/ThemeContext'
 
 import Card from '../layout/Card'
-import CardItem from '../ui/CardItem'
-import DashboardHeader from './DashboardHeader'
 
 export interface AreaSummaryCardProps {
 	firstName?: string
@@ -64,16 +62,10 @@ export default function AreaSummaryCard({
 
 	return (
 		<Card flexDirection="column" dividerDisabled elevation={0}>
-			<DashboardHeader name={firstName} />
+			{/* <DashboardHeader name={firstName} /> */}
 			<View style={{ flexDirection: 'row' }}>
 				{stats.map((stat) => (
-					<CardItem
-						key={stat.label}
-						extraStyles={{
-							borderTopColor: theme.colors.accentBlueLight,
-							borderTopWidth: 1,
-						}}
-					>
+					<>
 						<View
 							style={{
 								backgroundColor: stat.bg,
@@ -106,7 +98,7 @@ export default function AreaSummaryCard({
 						>
 							{stat.label}
 						</Text>
-					</CardItem>
+					</>
 				))}
 			</View>
 		</Card>
