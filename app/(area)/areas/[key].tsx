@@ -412,7 +412,6 @@ export default function AreaInfoScreen() {
 		}
 
 		// Normal area UI
-
 		return (
 			<>
 				<GestureHandlerRootView style={{ flex: 1 }}>

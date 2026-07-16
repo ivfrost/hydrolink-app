@@ -44,10 +44,12 @@ export default function DurationControl({
 				}
 				disabled={disabled}
 				onPress={() => {
-					setMinutes(
-						Math.max(1, minutes === 5 ? 3 : minutes === 3 ? 1 : minutes - 5),
+					const next = Math.max(
+						1,
+						minutes === 5 ? 3 : minutes === 3 ? 1 : minutes - 5,
 					)
-					onDurationChange?.(minutes)
+					setMinutes(next)
+					onDurationChange?.(next)
 				}}
 			/>
 			<Text style={{ fontWeight: '500', color: theme.colors.textSecondary }}>
@@ -65,10 +67,12 @@ export default function DurationControl({
 					/>
 				}
 				onPress={() => {
-					setMinutes(
-						Math.min(60, minutes === 1 ? 3 : minutes === 3 ? 5 : minutes + 5),
+					const next = Math.min(
+						60,
+						minutes === 1 ? 3 : minutes === 3 ? 5 : minutes + 5,
 					)
-					onDurationChange?.(minutes)
+					setMinutes(next)
+					onDurationChange?.(next)
 				}}
 			/>
 		</View>

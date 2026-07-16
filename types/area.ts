@@ -26,6 +26,11 @@ export interface AreaUpdatePayload {
 	description: string
 	imageUrl?: string
 }
+export const manualOverrideSchema = z.object({
+	active: z.boolean(),
+	start: z.number(),
+	end: z.number(),
+})
 
 export const stationSchema = z.object({
 	id: z.number(),
@@ -35,13 +40,7 @@ export const stationSchema = z.object({
 		state: z.enum(['Running', 'Idle', 'Unknown']),
 		cause: z.enum(['Manual', 'Sensor', 'Schedule', 'Done', 'None']),
 	}),
-	manualOverride: z
-		.object({
-			active: z.boolean(),
-			start: z.coerce.string().optional(),
-			end: z.coerce.string().optional(),
-		})
-		.optional(),
+	manualOverride: manualOverrideSchema.optional(),
 	// Current schedule is at idx 1, past at 0 and future at 2
 	schedules: z.array(
 		z.object({
