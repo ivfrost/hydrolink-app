@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Text, View } from 'react-native'
 
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import { useMutation } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import * as SecureStore from 'expo-secure-store'
 
+import SpiralSvg from '@/assets/images/spiral-30-svgrepo-com.svg'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -121,11 +122,7 @@ export default function SignIn() {
 							marginBottom: theme.space.md,
 						}}
 					>
-						<MaterialCommunityIcons
-							name="sprinkler-variant"
-							size={40}
-							color={theme.colors.accentBlue}
-						/>
+						<SpiralSvg width={36} height={36} color={theme.colors.accentBlue} />
 					</View>
 					<Text
 						style={{

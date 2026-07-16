@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
 
-import UserAvatar from '../ui/UserAvatar'
+import { UserAvatar } from '../ui/UserAvatar'
 
 interface ProfileHeaderProps {
 	email: string

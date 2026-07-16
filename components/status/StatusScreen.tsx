@@ -1,5 +1,7 @@
-import { RefreshControl, ScrollView, View, Text } from 'react-native'
+import { RefreshControl, ScrollView, Text, View } from 'react-native'
 
+import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
+import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
 import Button from '@/components/ui/Button'
 import { useTheme } from '@/context/ThemeContext'
 
@@ -7,10 +9,10 @@ import Subtitle from '../ui/Subtitle'
 import Title from '../ui/Title'
 
 export interface StatusScreenProps {
-	image: React.ReactNode
 	title: string
 	subtitle?: string
 	hint?: string
+	variant?: 'network-error' | 'missing-data'
 	customContent?: React.ReactNode
 	onButtonPress?: () => void
 	onRefresh: () => void
@@ -20,10 +22,10 @@ export interface StatusScreenProps {
 }
 
 export default function StatusScreen({
-	image,
 	title,
 	subtitle,
 	hint,
+	variant = 'network-error',
 	customContent,
 	onButtonPress,
 	onRefresh,
@@ -47,7 +49,11 @@ export default function StatusScreen({
 				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 			}
 		>
-			{image}
+			{variant === 'network-error' ? (
+				<ServerFailureIllustration width={200} height={220} />
+			) : (
+				<FilesMissingIllustration width={200} height={220} />
+			)}
 
 			<View
 				style={{

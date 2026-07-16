@@ -156,7 +156,7 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 			newStationType: type,
 			cause: 'Manual',
 		}
-
+		console.log(`Publishing SetType command to ${commandTopic}:`, cmd)
 		publish(commandTopic, JSON.stringify(cmd))
 	}
 

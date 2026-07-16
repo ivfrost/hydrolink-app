@@ -9,6 +9,7 @@ export interface AreaSummaryCardItemProps {
 	pumpCount: number
 	fertilizerCount: number
 	sensorCount: number
+	unclassifiedCount: number
 }
 
 export default function AreaSummaryCardItem({
@@ -16,6 +17,7 @@ export default function AreaSummaryCardItem({
 	pumpCount,
 	fertilizerCount,
 	sensorCount,
+	unclassifiedCount,
 }: AreaSummaryCardItemProps) {
 	const theme = useTheme()
 
@@ -26,6 +28,13 @@ export default function AreaSummaryCardItem({
 		color: string
 		bg: string
 	}[] = [
+		{
+			label: 'Total',
+			value: solenoidCount + pumpCount + fertilizerCount + sensorCount,
+			icon: 'chart-box',
+			color: theme.colors.accentBlue,
+			bg: theme.colors.accentBlueLight,
+		},
 		{
 			label: 'Solenoids',
 			value: solenoidCount,
@@ -43,7 +52,7 @@ export default function AreaSummaryCardItem({
 		{
 			label: 'Fertilizers',
 			value: fertilizerCount,
-			icon: 'chemical-weapon',
+			icon: 'sprout',
 			color: theme.colors.accentBlue,
 			bg: theme.colors.accentBlueLight,
 		},
@@ -54,17 +63,36 @@ export default function AreaSummaryCardItem({
 			color: theme.colors.accentBlue,
 			bg: theme.colors.accentBlueLight,
 		},
+		{
+			label: 'Unclassified',
+			value: unclassifiedCount,
+			icon: 'help-circle',
+			color: theme.colors.accentBlue,
+			bg: theme.colors.accentBlueLight,
+		},
 	]
 
 	return (
-		<View style={{ flex: 1, flexDirection: 'row', gap: theme.space.md }}>
+		<View
+			style={{
+				flexDirection: 'row',
+				flexWrap: 'wrap',
+				gap: theme.space.xl,
+				paddingVertical: theme.space.xl,
+				paddingHorizontal: theme.space.xl,
+				justifyContent: 'flex-start',
+				width: '100%',
+			}}
+		>
 			{stats.map((stat) => (
 				<View
 					key={stat.label}
 					style={{
 						alignItems: 'center',
+						flexDirection: 'row',
+						flexBasis: '45%',
+						paddingVertical: theme.space.x2s,
 						gap: theme.space.sm,
-						flex: 1,
 					}}
 				>
 					<View
@@ -83,7 +111,13 @@ export default function AreaSummaryCardItem({
 							color={stat.color}
 						/>
 					</View>
-					<View>
+					<View
+						style={{
+							alignItems: 'center',
+							gap: theme.space.x2s,
+							flexDirection: 'row',
+						}}
+					>
 						<Text
 							style={{
 								color: theme.colors.textPrimary,

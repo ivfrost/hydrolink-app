@@ -3,13 +3,12 @@ import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useHeaderHeight } from '@react-navigation/elements'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
 import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
-import AreaSummaryCard from '@/components/dashboard/AreaSummaryCard'
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
 import StatusScreen from '@/components/status/StatusScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
@@ -268,14 +267,6 @@ export default function DashboardTabScreen() {
 			}}
 		>
 			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-			<AreaSummaryCard
-				firstName={firstName}
-				areaCount={areaCount}
-				activeAreaCount={activeAreaCount}
-				onlineAreaCount={onlineAreaCount}
-				// TODO: Replace this with actual alert count from status topics over MQTT
-				alertCount={5}
-			/>
 			<View>
 				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 					<SectionTitle text="Active Now" />

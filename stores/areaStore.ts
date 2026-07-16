@@ -5,20 +5,48 @@ import { AreaData, stationArrSchema, StationType } from '@/types/area'
 interface AreaState {
 	// keyed by area key
 	areas: Record<string, AreaData>
+	updateStations: (areaKey: string, stations: AreaData['stations']) => void
 	clearAreas: () => void
-	setStationTypeForArea: (
+	setTypeForAreaStation: (
 		areaKey: string,
 		stationId: number,
 		type: StationType,
 	) => void
 	isOnline: (areaKey: string) => boolean
+	getManualOverrideForStation: (
+		areaKey: string,
+		stationId: number,
+	) => { active: boolean; start?: string; end?: string } | null
 	handleIcomingMqtt: (topic: string, rawMessage: string) => void
 }
 
 export const useAreaStore = create<AreaState>((set) => ({
 	areas: {},
+	updateStations: (areaKey, stations) => {
+		set((state) => {
+			const area = state.areas[areaKey]
+			if (!area) return state
+
+			const updatedArea: AreaData = {
+				key: area.key,
+				stations: stations,
+				lastUpdated: new Date().toISOString(),
+				online: area.online,
+			}
+
+			return {
+				areas: {
+					...state.areas,
+					[areaKey]: updatedArea,
+				},
+			}
+		})
+	},
 	clearAreas: () => set({ areas: {} }),
-	setStationTypeForArea: (areaKey, stationId, type) => {
+	setTypeForAreaStation: (areaKey, stationId, type) => {
+		console.log(
+			`[areaStore] Setting station type for area ${areaKey}, station ${stationId} to ${type}`,
+		)
 		set((state) => {
 			const area = state.areas[areaKey]
 			if (!area) return state
@@ -51,6 +79,13 @@ export const useAreaStore = create<AreaState>((set) => ({
 		const area: AreaData = useAreaStore.getState().areas[areaKey]
 		return area?.online ?? false
 	},
+	getManualOverrideForStation: (areaKey, stationId) => {
+		const area: AreaData = useAreaStore.getState().areas[areaKey]
+		const station = area?.stations[stationId]
+		if (!station || !station.manualOverride) return null
+
+		return station.manualOverride
+	},
 	handleIcomingMqtt: (topic, rawMessage) => {
 		const parts = topic.split('/')
 		if (parts.length < 3) return
@@ -61,6 +96,7 @@ export const useAreaStore = create<AreaState>((set) => ({
 			if (subTopic !== 'status') return
 
 			const trimmed = rawMessage.trim()
+			console.log(`[areaStore] MQTT message for area ${areaKey}: ${trimmed}`)
 
 			set((state) => {
 				const prev = state.areas[areaKey] ?? {
@@ -98,6 +134,10 @@ export const useAreaStore = create<AreaState>((set) => ({
 				const normalizedStations = Object.fromEntries(
 					validated.data.map((s) => [s.id, s]),
 				)
+				const mergedStations = {
+					...prev.stations,
+					...normalizedStations,
+				}
 
 				return {
 					areas: {
@@ -105,7 +145,7 @@ export const useAreaStore = create<AreaState>((set) => ({
 						[areaKey]: {
 							...prev,
 							online: true,
-							stations: normalizedStations,
+							stations: mergedStations,
 							lastUpdated: new Date().toISOString(),
 						},
 					},

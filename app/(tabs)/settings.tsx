@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
 	ActivityIndicator,
 	RefreshControl,
@@ -9,9 +9,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
-import { useHeaderHeight } from '@react-navigation/elements'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/build/react-navigation'
 import * as SecureStore from 'expo-secure-store'
 
 import Card from '@/components/layout/Card'
@@ -170,8 +170,14 @@ export default function SettingTabScreen() {
 				paddingBottom: insets.bottom + theme.space.lg,
 				gap: theme.space.x2l,
 			}}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					progressViewOffset={headerHeight}
+					onRefresh={onRefresh}
+				/>
+			}
 		>
-			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 			<UserCard
 				name={profile.fullName}
 				email={profile.email}

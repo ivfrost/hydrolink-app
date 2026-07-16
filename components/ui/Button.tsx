@@ -4,6 +4,8 @@ import {
 	StyleSheet,
 	Text,
 	TouchableOpacity,
+	TouchableOpacityProps,
+	View,
 	ViewStyle,
 } from 'react-native'
 
@@ -11,19 +13,21 @@ import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '@/context/ThemeContext'
 
-export interface ButtonProps {
-	label: string
+export interface ButtonProps extends TouchableOpacityProps {
+	ref?: React.Ref<View>
+	label?: string
 	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
-	modifier?: ('tall' | 'full' | 'fab')[]
+	modifier?: ('tall' | 'full' | 'fab' | 'iconOnly' | 'small' | 'outlined')[]
+	icon?: React.ReactNode
 	loading?: boolean
 	disabled?: boolean
-	icon?: React.ReactNode
+	onPress?: () => void
 	iconPosition?: 'left' | 'right'
 	extraStyles?: StyleProp<ViewStyle>
-	onPress?: () => any
 }
 
 export default function Button({
+	ref,
 	label,
 	variant = 'primary',
 	modifier,
@@ -36,43 +40,67 @@ export default function Button({
 }: ButtonProps) {
 	const isTall = modifier?.includes('tall') ?? false
 	const isFull = modifier?.includes('full') ?? false
+	const isIconOnly = modifier?.includes('iconOnly') ?? false
 	const isFab = modifier?.includes('fab') ?? false
+	const isFabOrIconOnly = isFab || isIconOnly
+	const isSmall = modifier?.includes('small') ?? false
 	const theme = useTheme()
 	const handlePress = () => {
+		if (disabled || loading) return
+
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-		if (onPress) onPress()
+		onPress?.()
 	}
+
 	const styles = StyleSheet.create({
 		button: {
-			borderRadius: isFab ? theme.radius.fab : theme.radius.button,
-			paddingVertical: isFab
+			borderRadius: isFabOrIconOnly ? theme.radius.fab : theme.radius.button,
+			paddingVertical: isFabOrIconOnly
 				? 0
-				: isTall
-					? theme.space.tallButtonVerticalPadding
-					: theme.space.buttonVerticalPadding,
-			paddingHorizontal: isFab
+				: isSmall
+					? 0
+					: isTall
+						? theme.space.tallButtonVerticalPadding
+						: theme.space.buttonVerticalPadding,
+			paddingHorizontal: isFabOrIconOnly
 				? 0
-				: isTall
-					? theme.space.tallButtonHorizontalPadding
-					: theme.space.buttonHorizontalPadding,
-			paddingLeft: isFab
+				: isSmall
+					? 0
+					: isTall
+						? theme.space.tallButtonHorizontalPadding
+						: theme.space.buttonHorizontalPadding,
+			paddingLeft: isFabOrIconOnly
 				? 0
 				: icon && iconPosition === 'left'
-					? theme.space.lg
+					? isSmall
+						? theme.space.smallButtonHorizontalPadding
+						: theme.space.lg
 					: theme.space.buttonHorizontalPadding,
-			paddingRight: isFab
+			paddingRight: isFabOrIconOnly
 				? 0
 				: icon && iconPosition === 'right'
 					? theme.space.lg
-					: theme.space.buttonHorizontalPadding,
+					: isSmall
+						? theme.space.smallButtonHorizontalPadding
+						: theme.space.buttonHorizontalPadding,
 			alignItems: 'center',
 			justifyContent: 'center',
-			width: isFab ? theme.space.fabButtonSize : isFull ? '100%' : 'auto',
+			minWidth: isFab
+				? theme.space.fabButtonSize
+				: isTall
+					? theme.space.tallButtonSize
+					: isSmall
+						? theme.space.smallButtonSize
+						: isFull
+							? '100%'
+							: 'auto',
+			width: isFab ? theme.space.fabButtonSize : 'auto',
+
 			height: isFab
 				? theme.space.fabButtonSize
 				: isTall
-					? theme.space.tallButtonHeight
-					: theme.space.buttonHeight,
+					? theme.space.tallButtonSize
+					: theme.space.buttonSize,
 			backgroundColor:
 				disabled || loading
 					? theme.colors.buttonDisabledBg
@@ -92,12 +120,33 @@ export default function Button({
 				shadowRadius: 4,
 				elevation: 6,
 			}),
+			...(isIconOnly && {
+				width: theme.space.iconOnlyButtonSize,
+				height: theme.space.iconOnlyButtonSize,
+			}),
+			...(isSmall && {
+				paddingVertical: theme.space.smallButtonVerticalPadding,
+				paddingHorizontal: theme.space.smallButtonHorizontalPadding,
+				width: 'auto',
+				height: theme.space.smallButtonSize,
+			}),
+			borderWidth:
+				variant === 'tertiary' && modifier?.includes('outlined') ? 1 : 0,
+			borderColor:
+				variant === 'tertiary' && modifier?.includes('outlined')
+					? theme.colors.border
+					: 'transparent',
 		},
-		buttonWithIcon: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+		buttonWithIcon: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: isSmall ? theme.space.xs : theme.space.sm,
+		},
 		buttonText: {
 			fontSize: theme.font.base,
 			fontWeight: '500',
 			textAlign: 'center',
+			flexShrink: 1,
 			color:
 				disabled || loading
 					? theme.colors.buttonDisabledText
@@ -106,7 +155,7 @@ export default function Button({
 						: variant === 'secondary'
 							? theme.colors.buttonSecondaryText
 							: variant === 'tertiary'
-								? theme.colors.textPrimary
+								? theme.colors.textSecondary
 								: variant === 'destructive'
 									? theme.colors.buttonPrimaryText
 									: theme.colors.buttonPrimaryText,
@@ -114,10 +163,12 @@ export default function Button({
 	})
 	return (
 		<TouchableOpacity
+			ref={ref}
 			style={[styles.button, icon ? styles.buttonWithIcon : null, extraStyles]}
 			onPress={handlePress}
 			disabled={disabled}
 			activeOpacity={0.9}
+			hitSlop={10}
 		>
 			{iconPosition === 'left' && icon ? (
 				loading ? (
@@ -133,7 +184,9 @@ export default function Button({
 					icon
 				)
 			) : null}
-			{label ? <Text style={styles.buttonText}>{label}</Text> : null}
+			{!isFabOrIconOnly && label ? (
+				<Text style={styles.buttonText}>{label}</Text>
+			) : null}
 			{iconPosition === 'right' && icon ? (
 				loading ? (
 					<ActivityIndicator

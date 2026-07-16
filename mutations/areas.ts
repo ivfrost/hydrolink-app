@@ -32,3 +32,25 @@ export const areaUnlinkMutationFn = async (areaId: number): Promise<void> => {
 		throw new AppError('UNKNOWN_ERROR', data.message)
 	}
 }
+
+export const areaUpdateMutationFn = async (
+	updates: Partial<Area>,
+): Promise<Area> => {
+	const areaId = updates.id
+	if (!areaId) {
+		throw new AppError('VALIDATION_FAILED', 'Area ID is required for updates.')
+	}
+	const data = await apiFetch<Area>(`/me/devices/${areaId}`, {
+		method: 'PATCH',
+		body: JSON.stringify(updates),
+	})
+
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		}
+		throw new AppError('UNKNOWN_ERROR', data.message)
+	}
+
+	return data.details
+}

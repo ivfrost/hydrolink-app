@@ -1,9 +1,9 @@
 import {
 	Pressable,
-	View,
-	Text,
-	StyleSheet,
 	StyleProp,
+	StyleSheet,
+	Text,
+	View,
 	ViewStyle,
 } from 'react-native'
 
@@ -11,7 +11,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 
 import { useTheme } from '@/context/ThemeContext'
 
-import UserAvatar from '../ui/UserAvatar'
+import { UserAvatar } from '../ui/UserAvatar'
 
 export interface UserCardProps {
 	name: string

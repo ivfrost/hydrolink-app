@@ -10,5 +10,6 @@ export type MqttCommand = {
 	action: MqttAction
 	stationId: number
 	cause: MqttCause
+	durationMs?: string
 	newStationType?: string
 }

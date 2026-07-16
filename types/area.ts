@@ -19,6 +19,7 @@ export interface Area {
 }
 
 export interface AreaUpdatePayload {
+	id: number
 	key: string
 	name: string
 	location: string
@@ -34,6 +35,13 @@ export const stationSchema = z.object({
 		state: z.enum(['Running', 'Idle', 'Unknown']),
 		cause: z.enum(['Manual', 'Sensor', 'Schedule', 'Done', 'None']),
 	}),
+	manualOverride: z
+		.object({
+			active: z.boolean(),
+			start: z.coerce.string().optional(),
+			end: z.coerce.string().optional(),
+		})
+		.optional(),
 	// Current schedule is at idx 1, past at 0 and future at 2
 	schedules: z.array(
 		z.object({
@@ -53,6 +61,7 @@ export type StationType = z.infer<typeof stationSchema.shape.type>
 export type Station = z.infer<typeof stationSchema>
 export const stationArrSchema = z.array(stationSchema)
 
+// MQTT area data structure
 export interface AreaData {
 	key: string
 	// stations are keyed by station ID

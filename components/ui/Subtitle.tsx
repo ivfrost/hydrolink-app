@@ -5,8 +5,10 @@ import { useTheme } from '@/context/ThemeContext'
 export default function Subtitle({
 	text,
 	children,
+	textAlign = 'center',
 }: {
 	text?: string
+	textAlign?: 'left' | 'center' | 'right'
 	children?: React.ReactNode
 }) {
 	const theme = useTheme()
@@ -15,8 +17,8 @@ export default function Subtitle({
 			style={{
 				fontSize: theme.font.base,
 				color: theme.colors.textSecondary,
-				textAlign: 'center',
-				paddingHorizontal: theme.space.md,
+				textAlign: textAlign,
+				paddingHorizontal: theme.space.x2s,
 				lineHeight: theme.lineHeight.paragraph,
 			}}
 		>

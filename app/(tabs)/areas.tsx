@@ -7,10 +7,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
 import { Portal } from '@gorhom/portal'
-import { useHeaderHeight } from '@react-navigation/elements'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
 import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
@@ -332,7 +332,9 @@ export default function AreaTabScreen() {
 					'area.key',
 					area.key,
 				)
-				if (!areaData || !isAreaOnline(area.key)) {
+				const online = isAreaOnline(area.key)
+				// Fallback screen for missing MQTT data
+				if (!areaData || !online) {
 					console.warn(
 						`Area ${area.key} has no MQTT data or is offline. Falling back to API data for display.`,
 					)
@@ -343,8 +345,13 @@ export default function AreaTabScreen() {
 								title={area.name ?? area.key ?? 'Unnamed Area'}
 								subtitle={subtitle}
 								icon="map-marker-off"
-								statusColor={theme.colors.offline}
-								statusBg={theme.colors.offlineBg}
+								statusColor={
+									!online ? theme.colors.offline : theme.colors.online
+								}
+								statusBg={
+									!online ? theme.colors.offlineBg : theme.colors.onlineBg
+								}
+								onPress={() => router.push(`/areas/${area.key}`)}
 								rightElement={
 									<View
 										style={{

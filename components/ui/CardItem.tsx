@@ -5,6 +5,8 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
+import HeadingIcon from './HeadingIcon'
+
 export interface CardItemProps {
 	title: string
 	titleFontWeight?: '400' | '500' | '600' | '700'
@@ -55,40 +57,13 @@ export default function CardItem({
 					alignItems: 'center',
 				}}
 			>
-				{/* Icon Backdrop */}
+				{/* Heading Icon */}
 				{icon && (
-					<View
-						style={{
-							width: theme.space.x3l,
-							height: theme.space.x3l,
-							borderRadius: theme.radius.fab,
-							backgroundColor: statusBg,
-							justifyContent: 'center',
-							alignItems: 'center',
-						}}
-					>
-						{(() => {
-							const iconName = icon.includes('/') ? icon.split('/')[1] : icon
-
-							if (icon in MaterialCommunityIcons.glyphMap) {
-								return (
-									<MaterialCommunityIcons
-										name={iconName as any}
-										size={19}
-										color={statusColor}
-									/>
-								)
-							} else {
-								return (
-									<MaterialIcons
-										name={iconName as any}
-										size={19}
-										color={statusColor}
-									/>
-								)
-							}
-						})()}
-					</View>
+					<HeadingIcon
+						icon={icon}
+						statusColor={statusColor}
+						statusBg={statusBg}
+					/>
 				)}
 
 				{/* Content Body */}
@@ -97,7 +72,7 @@ export default function CardItem({
 						flex: 1,
 						flexDirection: 'row',
 						justifyContent: 'space-between',
-						alignItems: 'flex-start',
+						alignItems: 'center',
 					}}
 				>
 					<View style={{ flex: 1, gap: theme.space.x2s }}>
@@ -129,7 +104,13 @@ export default function CardItem({
 
 					{/* Right Slot */}
 					{rightElement && (
-						<View style={{ alignItems: 'flex-end', justifyContent: 'center' }}>
+						<View
+							style={{
+								alignItems: 'center',
+								justifyContent: 'center',
+								overflow: 'hidden',
+							}}
+						>
 							{rightElement}
 						</View>
 					)}

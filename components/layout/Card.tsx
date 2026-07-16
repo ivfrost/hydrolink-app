@@ -8,6 +8,7 @@ export interface CardProps {
 	children: React.ReactNode
 	elevation?: number
 	dividerDisabled?: boolean
+	overflow?: 'visible' | 'hidden'
 }
 
 export default function Card({
@@ -15,6 +16,7 @@ export default function Card({
 	children,
 	elevation = 0,
 	dividerDisabled = false,
+	overflow = 'visible',
 }: CardProps) {
 	const theme = useTheme()
 	const items = Children.toArray(children)
@@ -26,8 +28,8 @@ export default function Card({
 				backgroundColor: theme.colors.card,
 				borderRadius: theme.radius.card,
 				paddingHorizontal: theme.space.lg,
-				overflow: 'hidden',
 				elevation: elevation,
+				overflow: overflow,
 			}}
 		>
 			{items.map((child, index) => (

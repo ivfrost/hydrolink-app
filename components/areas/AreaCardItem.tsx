@@ -17,7 +17,7 @@ export interface AreaCardItemProps {
 	activeFertilizers?: Station[] | undefined
 	sensors?: Station[] | undefined
 	schedules?: StationSchedule[] | undefined
-	onPress: () => void
+	onPress?: () => void
 }
 
 export default function AreaCardItem({
@@ -44,20 +44,22 @@ export default function AreaCardItem({
 			statusBg={online ? theme.colors.onlineBg : theme.colors.faultBg}
 			onPress={onPress}
 			rightElement={
-				<View
-					style={{
-						flexDirection: 'row',
-						alignItems: 'center',
-						gap: theme.space.x2s,
-						flex: 1,
-					}}
-				>
-					<MaterialIcons
-						name="chevron-right"
-						size={24}
-						color={theme.colors.textMuted}
-					/>
-				</View>
+				onPress && (
+					<View
+						style={{
+							flexDirection: 'row',
+							alignItems: 'center',
+							gap: theme.space.x2s,
+							flex: 1,
+						}}
+					>
+						<MaterialIcons
+							name="chevron-right"
+							size={24}
+							color={theme.colors.textMuted}
+						/>
+					</View>
+				)
 			}
 			bottomElement={
 				activeSolenoid && (

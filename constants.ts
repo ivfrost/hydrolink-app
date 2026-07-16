@@ -1,5 +1,3 @@
-import SignIn from './app/(auth)/signin'
-
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL
 export const errorCodes = {
 	// Auth / credentials
@@ -26,6 +24,9 @@ export const errorCodes = {
 
 	// Validation
 	VALIDATION_FAILED: 'VALIDATION_FAILED',
+
+	// MQTT
+	MQTT_ERROR: 'MQTT_ERROR',
 
 	// Others
 	NETWORK_ERROR: 'NETWORK_ERROR',
