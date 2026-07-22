@@ -266,7 +266,12 @@ export default function DashboardTabScreen() {
 				gap: theme.space.x2l,
 			}}
 		>
-			<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+			<RefreshControl
+				refreshing={isRefreshing}
+				onRefresh={onRefresh}
+				progressViewOffset={20}
+				colors={[theme.colors.accentBlue]}
+			/>
 			<View>
 				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 					<SectionTitle text="Active Now" />

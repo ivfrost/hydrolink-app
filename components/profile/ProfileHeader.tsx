@@ -30,7 +30,7 @@ export function ProfileHeader({
 	return (
 		<View style={styles.container}>
 			<TouchableOpacity
-				activeOpacity={0.8}
+				activeOpacity={0.9}
 				hitSlop={10}
 				onPress={handleChooseImage}
 			>

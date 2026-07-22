@@ -37,7 +37,7 @@ export default function CardItem({
 	const theme = useTheme()
 
 	const ContainerElement = onPress ? TouchableOpacity : View
-	const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {}
+	const containerProps = onPress ? { onPress, activeOpacity: 0.9 } : {}
 
 	return (
 		<ContainerElement
@@ -47,7 +47,7 @@ export default function CardItem({
 				width: '100%',
 				paddingVertical: theme.space.xl,
 				backgroundColor: theme.colors.card,
-				gap: theme.space.lg,
+				gap: theme.space.md,
 			}}
 		>
 			<View

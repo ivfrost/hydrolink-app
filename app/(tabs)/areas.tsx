@@ -12,8 +12,6 @@ import * as Burnt from 'burnt'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
-import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
-import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
 import AreaCardItem from '@/components/areas/AreaCardItem'
 import BottomSheet from '@/components/layout/BottomSheet'
 import Card from '@/components/layout/Card'
@@ -40,7 +38,6 @@ export default function AreaTabScreen() {
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const headerHeight = useHeaderHeight()
 	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
-	const { isReady: isMqttReady, publishableTopics, publish } = useMqtt()
 	const reconnectMqtt = useMqtt().reconnect
 
 	// Query for fetching user's areas
@@ -146,13 +143,7 @@ export default function AreaTabScreen() {
 	if (areaLoadError) {
 		return (
 			<StatusScreen
-				image={
-					<ServerFailureIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="network-error"
 				title="Areas Unavailable"
 				subtitle="Your areas couldn’t be loaded."
 				hint="Local features are still available, but some cloud functionality may be limited."
@@ -166,13 +157,7 @@ export default function AreaTabScreen() {
 	if (!areas) {
 		return (
 			<StatusScreen
-				image={
-					<FilesMissingIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="missing-data"
 				title="Area Data Unavailable"
 				subtitle="Some area data couldn’t be loaded."
 				hint="Local features are still available, but some cloud functionality may be limited."
@@ -187,13 +172,7 @@ export default function AreaTabScreen() {
 		return (
 			<>
 				<StatusScreen
-					image={
-						<FilesMissingIllustration
-							width={200}
-							height={220}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					variant="missing-data"
 					title="No Areas Linked"
 					customContent={
 						<Text
@@ -338,11 +317,11 @@ export default function AreaTabScreen() {
 					console.warn(
 						`Area ${area.key} has no MQTT data or is offline. Falling back to API data for display.`,
 					)
-					subtitle = `${area.location ?? 'Unknown Location'} • Real-time data unavailable`
+					subtitle = `${area.locationLabel ?? 'Unknown Location'} • Real-time data unavailable`
 					return (
 						<Card key={area.id + idx} flexDirection="column" elevation={0}>
 							<CardItem
-								title={area.name ?? area.key ?? 'Unnamed Area'}
+								title={area.friendlyName ?? area.key ?? 'Unnamed Area'}
 								subtitle={subtitle}
 								icon="map-marker-off"
 								statusColor={
@@ -421,7 +400,7 @@ export default function AreaTabScreen() {
 					},
 				]
 
-				const location = area.location || 'Unknown Location'
+				const location = area.locationLabel || 'Unknown Location'
 
 				subtitle = `${location} • ${stationCount} station${stationCount !== 1 ? 's' : ''} • ${unclassifiedCount} unclassified`
 				console.log('subtitle', subtitle, 'lastUpdatedStr', lastUpdatedStr)
@@ -431,7 +410,7 @@ export default function AreaTabScreen() {
 				return (
 					<Card key={area.id + idx} flexDirection="column" elevation={0}>
 						<AreaCardItem
-							title={area.name ?? area.key ?? 'Unnamed Area'}
+							title={area.friendlyName ?? area.key ?? 'Unnamed Area'}
 							subtitle={subtitle}
 							online={isOnline}
 							activeSolenoid={activeSolenoid}

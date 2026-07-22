@@ -28,6 +28,9 @@ export const errorCodes = {
 	// MQTT
 	MQTT_ERROR: 'MQTT_ERROR',
 
+	// STORAGE
+	FILE_UPLOAD_FAILED: 'FILE_UPLOAD_FAILED',
+
 	// Others
 	NETWORK_ERROR: 'NETWORK_ERROR',
 	UNKNOWN_ERROR: 'UNKNOWN_ERROR',
@@ -54,6 +57,7 @@ export const tanstackKeys = {
 	AREA_UPDATE: ['areaUpdate'] as const,
 	EMAIL_UPDATE: ['emailUpdate'] as const,
 	PASSWORD_UPDATE: ['passwordUpdate'] as const,
+	FILE_UPLOAD: ['fileUpload'] as const,
 } as const
 
 export type TanstackKey = (typeof tanstackKeys)[keyof typeof tanstackKeys]

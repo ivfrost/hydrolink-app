@@ -30,6 +30,7 @@ type PickerProps<T> = {
 	onRequestClose?: () => void
 	maxHeight?: number
 	isLoading?: boolean
+	disabled?: boolean
 }
 
 export function Picker<T extends string | number>({
@@ -42,6 +43,7 @@ export function Picker<T extends string | number>({
 	onRequestClose,
 	maxHeight = 260,
 	isLoading = false,
+	disabled = false,
 }: PickerProps<T>) {
 	const theme = useTheme()
 	const anchorRef = useRef(null)
@@ -148,10 +150,10 @@ export function Picker<T extends string | number>({
 					modifier={['outlined', 'small']}
 					variant="tertiary"
 					onPress={toggle}
-					activeOpacity={0.85}
+					activeOpacity={0.9}
 					label={displayLabel}
 					loading={isLoading}
-					disabled={isLoading}
+					disabled={isLoading || disabled}
 					iconPosition="right"
 					icon={
 						<MaterialCommunityIcons
@@ -166,7 +168,7 @@ export function Picker<T extends string | number>({
 			{open && anchorLayout && (
 				<Portal>
 					<TouchableOpacity
-						activeOpacity={1}
+						activeOpacity={0.9}
 						onPress={close}
 						style={{
 							position: 'absolute',
@@ -202,7 +204,7 @@ export function Picker<T extends string | number>({
 								return (
 									<TouchableOpacity
 										key={String(option.value)}
-										activeOpacity={0.75}
+										activeOpacity={0.9}
 										onPress={() => {
 											onValueChange(option.value)
 											close()

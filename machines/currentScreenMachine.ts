@@ -6,7 +6,14 @@ import { MqttContextType } from '@/context/MqttContext'
 import { areaUpdateMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
 import { AppError } from '@/types/api'
-import { Area, AreaUpdatePayload } from '@/types/area'
+import { AreaDbData, AreaUpdatePayload } from '@/types/area'
+
+const fieldToContextKey = {
+	type: 'pendingStationTypeChange',
+	name: 'pendingStationNameChange',
+	description: 'pendingStationDescriptionChange',
+	imageUrl: 'pendingStationImageUrlChange',
+} as const
 
 export const currentScreenMachine = setup({
 	types: {
@@ -17,10 +24,14 @@ export const currentScreenMachine = setup({
 		context: {} as {
 			queryClient: QueryClient
 			mqtt: MqttContextType
-			areas: Area[] | undefined
+			areas: AreaDbData[] | undefined
 			error: AppError | null
 			pendingSave: Partial<AreaUpdatePayload> | null
 			pendingStationTypeChange: Record<number, string | undefined>
+			pendingStationNameChange: Record<number, string | undefined>
+			pendingStationDescriptionChange: Record<number, string | undefined>
+			pendingStationImageUrlChange: Record<number, string | undefined>
+			pendingStationActions: Record<number, { targetState: 'Running' | 'Idle' }>
 		},
 		events: {} as
 			| { type: 'LOAD' }
@@ -28,12 +39,36 @@ export const currentScreenMachine = setup({
 			| { type: 'DISCARD' }
 			| { type: 'RETRY' }
 			| { type: 'RETRY_MQTT' }
-			| { type: 'SET_TYPE_STATION'; stationId: number; newType: string }
-			| { type: 'STATION_STATUS_UPDATE'; stationId: number; newType: string },
+			// Request to set a station field, sent from the UI to the state machine
+			// context and then to the MQTT context.
+			| {
+					type: 'SET_STATION_FIELD'
+					field: 'type' | 'name' | 'description' | 'imageUrl'
+					stationId: number
+					newValue: string
+			  }
+			// Confirmation from ESP that a station field has been updated, used to
+			// clear pending changes from the state machine context.
+			| {
+					type: 'STATION_STATUS_UPDATE'
+					field: 'type' | 'name' | 'description' | 'imageUrl'
+					stationId: number
+					newValue: string
+			  }
+			| {
+					type: 'INITIATE_STATION_ACTION'
+					stationId: number
+					targetState: 'Running' | 'Idle'
+			  }
+			// Fired when MQTT receives actual hardware state confirmation from ESP
+			| {
+					type: 'STATION_STATE_CONFIRMED'
+					stationId: number
+					state: 'Running' | 'Idle'
+			  },
 	},
-
 	actors: {
-		fetchAreas: fromPromise<Area[], { queryClient: QueryClient }>(
+		fetchAreas: fromPromise<AreaDbData[], { queryClient: QueryClient }>(
 			async ({ input }) => {
 				return input.queryClient.fetchQuery({
 					queryKey: tanstackKeys.AREAS,
@@ -50,12 +85,13 @@ export const currentScreenMachine = setup({
 			},
 		),
 		saveArea: fromPromise<
-			Area,
+			AreaDbData,
 			{ queryClient: QueryClient; payload: Partial<AreaUpdatePayload> }
 		>(async ({ input }) => {
 			const result = await areaUpdateMutationFn(input.payload)
 			await input.queryClient.invalidateQueries({
 				queryKey: [tanstackKeys.AREAS],
+				refetchType: 'all',
 			})
 			return result
 		}),
@@ -74,6 +110,10 @@ export const currentScreenMachine = setup({
 		error: null,
 		pendingSave: null,
 		pendingStationTypeChange: {},
+		pendingStationNameChange: {},
+		pendingStationDescriptionChange: {},
+		pendingStationImageUrlChange: {},
+		pendingStationActions: {},
 	}),
 	states: {
 		loading: {
@@ -133,27 +173,50 @@ export const currentScreenMachine = setup({
 				DISCARD: { actions: 'resetAreaState' },
 				RETRY: { target: 'loading' },
 				RETRY_MQTT: { target: 'requestMqttData' },
-				SET_TYPE_STATION: {
-					actions: assign({
-						pendingStationTypeChange: ({ context, event }) => ({
-							...context.pendingStationTypeChange,
-							[event.stationId]: event.newType,
-						}),
+				INITIATE_STATION_ACTION: {
+					actions: assign(({ context, event }) => ({
+						pendingStationActions: {
+							...context.pendingStationActions,
+							[event.stationId]: { targetState: event.targetState },
+						},
+					})),
+				},
+				// Triggered when MQTT listener receives confirmed status from the ESP device
+				STATION_STATE_CONFIRMED: {
+					actions: assign(({ context, event }) => {
+						const pending = context.pendingStationActions[event.stationId]
+
+						// Clear loading/pending state once confirmed state matches expected target state
+						if (pending && pending.targetState === event.state) {
+							const { [event.stationId]: _, ...rest } =
+								context.pendingStationActions
+							return { pendingStationActions: rest }
+						}
+
+						return {}
+					}),
+				},
+				SET_STATION_FIELD: {
+					actions: assign(({ context, event }) => {
+						const key = fieldToContextKey[event.field]
+						const currentMap = context[key]
+						if (currentMap[event.stationId] === event.newValue) return {}
+						return {
+							[key]: { ...currentMap, [event.stationId]: event.newValue },
+						}
 					}),
 				},
 				STATION_STATUS_UPDATE: {
-					actions: assign({
-						pendingStationTypeChange: ({ context, event }) => {
-							const requestedType =
-								context.pendingStationTypeChange[event.stationId]
-							// only clear if ESP type matches what we requested
-							if (requestedType && requestedType === event.newType) {
-								const { [event.stationId]: _, ...rest } =
-									context.pendingStationTypeChange
-								return rest
-							}
-							return context.pendingStationTypeChange
-						},
+					actions: assign(({ context, event }) => {
+						const key = fieldToContextKey[event.field]
+						const currentMap = context[key]
+						const requestedValue = currentMap[event.stationId]
+
+						if (requestedValue && requestedValue === event.newValue) {
+							const { [event.stationId]: _, ...rest } = currentMap
+							return { [key]: rest }
+						}
+						return {}
 					}),
 				},
 			},
@@ -166,7 +229,7 @@ export const currentScreenMachine = setup({
 					payload: context.pendingSave!,
 				}),
 				onDone: {
-					target: 'ready',
+					target: 'syncingDevice',
 					actions: assign({
 						areas: ({ context, event }) =>
 							context.areas?.map((a) =>
@@ -183,6 +246,36 @@ export const currentScreenMachine = setup({
 						pendingSave: () => null,
 					}),
 				},
+			},
+		},
+		syncingDevice: {
+			on: {
+				// Keep listening for updates from the ESP until all pending changes
+				// have been cleared, then go back to ready state
+				STATION_STATUS_UPDATE: {
+					actions: assign(({ context, event }) => {
+						const currentMap = context[
+							fieldToContextKey[event.field]
+						] as Record<number, string | undefined>
+						const requestedValue = currentMap[event.stationId]
+
+						if (requestedValue && requestedValue === event.newValue) {
+							const { [event.stationId]: _, ...rest } = currentMap
+							return { [fieldToContextKey[event.field]]: rest }
+						}
+						return {}
+					}),
+				},
+			},
+			// First check if there are any pending changes for station fields, if
+			// there are, wait for them to be cleared before going back to ready state
+			always: {
+				target: 'ready',
+				guard: ({ context }) =>
+					Object.keys(context.pendingStationTypeChange).length === 0 &&
+					Object.keys(context.pendingStationNameChange).length === 0 &&
+					Object.keys(context.pendingStationDescriptionChange).length === 0 &&
+					Object.keys(context.pendingStationImageUrlChange).length === 0,
 			},
 		},
 		failure: {

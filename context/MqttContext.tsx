@@ -13,10 +13,26 @@ export interface MqttContextType {
 	publishableTopics: string[]
 	reconnect: () => void
 	requestStatusSnapshot: () => void
+	rebootArea: (areaKey: string) => void
 	setTypeForAreaStation: (
 		areaKey: string,
 		stationId: number,
 		type: StationType,
+	) => void
+	setNameForAreaStation: (
+		areaKey: string,
+		stationId: number,
+		name: string,
+	) => void
+	setDescriptionForAreaStation: (
+		areaKey: string,
+		stationId: number,
+		description: string,
+	) => void
+	setImageUrlForAreaStation: (
+		areaKey: string,
+		stationId: number,
+		imageUrl: string,
 	) => void
 }
 const MqttContext = createContext<MqttContextType | undefined>(undefined)
@@ -32,8 +48,10 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 	const clearAreas = useAreaStore((state) => state.clearAreas)
 
 	useEffect(() => {
-		setStatus('CONNECTING')
-
+		const init = async () => {
+			setStatus('CONNECTING')
+		}
+		init()
 		let cleanupListeners: (() => void) | undefined
 
 		initMqtt()
@@ -46,7 +64,7 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 					const handleMessage = (topic: string, payload: any) => {
 						const rawMessage = payload.toString()
 						// The area store parses the message and updates areas accordingly
-						useAreaStore.getState().handleIcomingMqtt(topic, rawMessage)
+						useAreaStore.getState().handleIncomingMqtt(topic, rawMessage)
 					}
 					const handleClose = () => setStatus('DISCONNECTED')
 					const handleConnect = () => setStatus('CONNECTED')
@@ -90,7 +108,7 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 			// Clear areas on unmount to avoid stale data
 			clearAreas()
 		}
-	}, [connectAttempt])
+	}, [connectAttempt, clearAreas])
 
 	// Function to publish messages to the MQTT broker
 	// Expects message to be a JSON stringified MqttCommand object
@@ -131,6 +149,33 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	}
 
+	// Function to reboot a specific area
+	const rebootArea = (areaKey: string) => {
+		if (!mqttClient || !mqttClient.connected) {
+			console.warn('Cannot reboot area, MQTT client is not connected.')
+			return
+		}
+
+		const topic = publishableTopics.find(
+			(t) => t.includes(`/${areaKey}/`) && t.endsWith('/#'),
+		)
+
+		if (!topic) {
+			console.warn(`Cannot reboot area: no MQTT topic for area ${areaKey}`)
+			return
+		}
+
+		const commandTopic = getCommandTopic(topic)
+
+		const cmd: MqttCommand = {
+			action: 'Reboot',
+			stationId: -1,
+			cause: 'Manual',
+		}
+		console.log(`Publishing Reboot command to ${commandTopic}:`, cmd)
+		publish(commandTopic, JSON.stringify(cmd))
+	}
+
 	// Function to set the type of a specific station in a specific area
 	const setTypeForAreaStation = (
 		areaKey: string,
@@ -148,15 +193,102 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 			return
 		}
 
-		const commandTopic = topic.replace(/\/#$/, '/command')
+		const commandTopic = getCommandTopic(topic)
 
 		const cmd: MqttCommand = {
 			action: 'SetType',
 			stationId,
-			newStationType: type,
+			type,
 			cause: 'Manual',
 		}
 		console.log(`Publishing SetType command to ${commandTopic}:`, cmd)
+		publish(commandTopic, JSON.stringify(cmd))
+	}
+
+	// Function to set the name of a specific station in a specific area
+	const setNameForAreaStation = (
+		areaKey: string,
+		stationId: number,
+		name: string,
+	) => {
+		if (!mqttClient || !mqttClient.connected) return
+
+		const topic = publishableTopics.find(
+			(t) => t.includes(`/${areaKey}/`) && t.endsWith('/#'),
+		)
+
+		if (!topic) {
+			console.warn(`Cannot set name: no MQTT topic for area ${areaKey}`)
+			return
+		}
+
+		const commandTopic = getCommandTopic(topic)
+
+		const cmd: MqttCommand = {
+			action: 'SetName',
+			stationId,
+			name,
+			cause: 'Manual',
+		}
+		console.log(`Publishing SetName command to ${commandTopic}:`, cmd)
+		publish(commandTopic, JSON.stringify(cmd))
+	}
+
+	// Function to set the description of a specific station in a specific area
+	const setDescriptionForAreaStation = (
+		areaKey: string,
+		stationId: number,
+		description: string,
+	) => {
+		if (!mqttClient || !mqttClient.connected) return
+
+		const topic = publishableTopics.find(
+			(t) => t.includes(`/${areaKey}/`) && t.endsWith('/#'),
+		)
+
+		if (!topic) {
+			console.warn(`Cannot set description: no MQTT topic for area ${areaKey}`)
+			return
+		}
+
+		const commandTopic = getCommandTopic(topic)
+
+		const cmd: MqttCommand = {
+			action: 'SetDescription',
+			stationId,
+			description,
+			cause: 'Manual',
+		}
+		console.log(`Publishing SetDescription command to ${commandTopic}:`, cmd)
+		publish(commandTopic, JSON.stringify(cmd))
+	}
+
+	// Function to set the image URL of a specific station in a specific area
+	const setImageUrlForAreaStation = (
+		areaKey: string,
+		stationId: number,
+		imageUrl: string,
+	) => {
+		if (!mqttClient || !mqttClient.connected) return
+
+		const topic = publishableTopics.find(
+			(t) => t.includes(`/${areaKey}/`) && t.endsWith('/#'),
+		)
+
+		if (!topic) {
+			console.warn(`Cannot set image URL: no MQTT topic for area ${areaKey}`)
+			return
+		}
+
+		const commandTopic = getCommandTopic(topic)
+
+		const cmd: MqttCommand = {
+			action: 'SetImageUrl',
+			stationId,
+			imageUrl,
+			cause: 'Manual',
+		}
+		console.log(`Publishing SetImageUrl command to ${commandTopic}:`, cmd)
 		publish(commandTopic, JSON.stringify(cmd))
 	}
 
@@ -169,7 +301,11 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 				publishableTopics: publishableTopicState,
 				reconnect,
 				requestStatusSnapshot,
+				rebootArea,
 				setTypeForAreaStation,
+				setNameForAreaStation,
+				setDescriptionForAreaStation,
+				setImageUrlForAreaStation,
 			}}
 		>
 			{children}

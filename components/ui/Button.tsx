@@ -9,6 +9,7 @@ import {
 	ViewStyle,
 } from 'react-native'
 
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '@/context/ThemeContext'
@@ -17,13 +18,27 @@ export interface ButtonProps extends TouchableOpacityProps {
 	ref?: React.Ref<View>
 	label?: string
 	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
-	modifier?: ('tall' | 'full' | 'fab' | 'iconOnly' | 'small' | 'outlined')[]
-	icon?: React.ReactNode
+	modifier?: (
+		| 'tall'
+		| 'full'
+		| 'fab'
+		| 'iconOnly'
+		| 'small'
+		| 'outlined'
+		| 'overImage'
+	)[]
+	icon?:
+		| React.ReactNode
+		| keyof typeof MaterialCommunityIcons
+		| keyof typeof MaterialIcons
+	iconColor?: string
+	iconSize?: number
 	loading?: boolean
 	disabled?: boolean
 	onPress?: () => void
 	iconPosition?: 'left' | 'right'
 	extraStyles?: StyleProp<ViewStyle>
+	hapticFeedback?: boolean
 }
 
 export default function Button({
@@ -33,10 +48,13 @@ export default function Button({
 	modifier,
 	loading = false,
 	icon,
+	iconColor,
+	iconSize,
 	disabled = false,
 	iconPosition = 'left',
 	extraStyles,
 	onPress,
+	hapticFeedback = true,
 }: ButtonProps) {
 	const isTall = modifier?.includes('tall') ?? false
 	const isFull = modifier?.includes('full') ?? false
@@ -44,11 +62,12 @@ export default function Button({
 	const isFab = modifier?.includes('fab') ?? false
 	const isFabOrIconOnly = isFab || isIconOnly
 	const isSmall = modifier?.includes('small') ?? false
+	const isOverImage = modifier?.includes('overImage') ?? false
 	const theme = useTheme()
 	const handlePress = () => {
 		if (disabled || loading) return
 
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+		hapticFeedback && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 		onPress?.()
 	}
 
@@ -101,8 +120,9 @@ export default function Button({
 				: isTall
 					? theme.space.tallButtonSize
 					: theme.space.buttonSize,
-			backgroundColor:
-				disabled || loading
+			backgroundColor: isOverImage
+				? theme.colors.textBoxBackground
+				: disabled || loading
 					? theme.colors.buttonDisabledBg
 					: variant === 'primary'
 						? theme.colors.buttonPrimaryBg
@@ -143,7 +163,7 @@ export default function Button({
 			gap: isSmall ? theme.space.xs : theme.space.sm,
 		},
 		buttonText: {
-			fontSize: theme.font.base,
+			fontSize: isSmall ? theme.font.sm : theme.font.base,
 			fontWeight: '500',
 			textAlign: 'center',
 			flexShrink: 1,
@@ -168,7 +188,7 @@ export default function Button({
 			onPress={handlePress}
 			disabled={disabled}
 			activeOpacity={0.9}
-			hitSlop={10}
+			hitSlop={20}
 		>
 			{iconPosition === 'left' && icon ? (
 				loading ? (
@@ -180,8 +200,22 @@ export default function Button({
 						}
 						size="small"
 					/>
+				) : typeof icon === 'string' &&
+				  icon in MaterialCommunityIcons.glyphMap ? (
+					<MaterialCommunityIcons
+						name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
+						size={iconSize || theme.space.iconSize}
+						color={iconColor || theme.colors.textPrimary}
+					/>
+				) : typeof icon === 'string' && icon in MaterialIcons.glyphMap ? (
+					<MaterialIcons
+						name={icon as keyof typeof MaterialIcons.glyphMap}
+						size={isSmall ? theme.space.iconSizeSm : theme.space.iconSize}
+						color={iconColor || theme.colors.textPrimary}
+					/>
 				) : (
-					icon
+					// fallback if icon is already a ReactNode
+					(icon as React.ReactNode)
 				)
 			) : null}
 			{!isFabOrIconOnly && label ? (

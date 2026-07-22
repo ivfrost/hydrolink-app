@@ -105,7 +105,12 @@ export default function SettingTabScreen() {
 					paddingHorizontal: 20,
 				}}
 			>
-				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={onRefresh}
+					progressViewOffset={20}
+					colors={[theme.colors.accentBlue]}
+				/>
 
 				<Text
 					style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
@@ -175,6 +180,7 @@ export default function SettingTabScreen() {
 					refreshing={isRefreshing}
 					progressViewOffset={headerHeight}
 					onRefresh={onRefresh}
+					colors={[theme.colors.accentBlue]}
 				/>
 			}
 		>

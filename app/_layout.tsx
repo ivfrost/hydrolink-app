@@ -83,7 +83,7 @@ function AppContent() {
 												>
 													<Ionicons
 														name="close"
-														size={26}
+														size={24}
 														color={theme.colors.textPrimary}
 													/>
 												</TouchableOpacity>
@@ -108,7 +108,7 @@ function AppContent() {
 												>
 													<Ionicons
 														name="close"
-														size={26}
+														size={24}
 														color={theme.colors.textPrimary}
 													/>
 												</TouchableOpacity>

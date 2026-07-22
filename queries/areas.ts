@@ -1,10 +1,10 @@
 import { AppError } from '@/types/api'
-import { Area } from '@/types/area'
+import { AreaDbData } from '@/types/area'
 import apiFetch from '@/utils/apiFetch'
 import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
-export const areasQueryFn = async (): Promise<Area[]> => {
-	const data = await apiFetch<Area[]>('/me/devices')
+export const areasQueryFn = async (): Promise<AreaDbData[]> => {
+	const data = await apiFetch<AreaDbData[]>('/me/devices')
 
 	if (data.code !== null) {
 		if (isKnownErrorCode(data.code)) {

@@ -1,5 +1,6 @@
 import { router } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
+import { fetch } from 'expo/fetch'
 
 import { API_BASE_URL, ErrorCode } from '@/constants'
 import { useAuth } from '@/stores/authStore'

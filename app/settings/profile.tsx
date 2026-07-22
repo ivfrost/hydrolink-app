@@ -9,8 +9,6 @@ import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import { useDebounce } from 'use-debounce'
 
-import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
-import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
 import Card from '@/components/layout/Card'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
@@ -116,30 +114,46 @@ export default function ProfileScreen() {
 		if (Platform.OS === 'web') {
 			return
 		}
-		const result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: 'images',
-			allowsEditing: true,
-			aspect: [1, 1],
-			quality: 0.8,
-		})
-		if (!result.canceled) {
-			const imageUri = result.assets[0].uri
-			const filename = imageUri.split('/').pop() || 'profile.jpg'
-			const match = /\.(\w+)$/.exec(filename)
-			const type = match ? `image/${match[1]}` : 'image/jpeg'
+		try {
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: 'images',
+				allowsEditing: true,
+				aspect: [1, 1],
+				quality: 0.8,
+			})
+			if (!result.canceled && result.assets.length > 0) {
+				if (result.assets.length > 1) {
+					Burnt.alert({
+						title: 'Multiple Images Selected',
+						message: 'Please select only one image for your profile picture.',
+					})
+					return
+				}
+				const imageUri = result.assets[0].uri
+				const filename = imageUri.split('/').pop() || 'profile.jpg'
+				const match = /\.(\w+)$/.exec(filename)
+				const type = match ? `image/${match[1]}` : 'image/jpeg'
 
-			setInputState((prev) => ({
-				...prev,
-				profilePictureFile: {
-					uri: imageUri,
-					name: filename,
-					type,
-				},
-			}))
-		} else {
+				setInputState((prev) => ({
+					...prev,
+					profilePictureFile: {
+						uri: imageUri,
+						name: filename,
+						type,
+					},
+				}))
+			} else {
+				Burnt.alert({
+					title: 'Image Selection Cancelled',
+					message: 'No image was selected.',
+				})
+			}
+		} catch (error) {
+			console.error('Error picking image:', error)
 			Burnt.alert({
-				title: 'Image Selection Cancelled',
-				message: 'No image was selected.',
+				title: 'Image Selection Error',
+				message:
+					'An error occurred while selecting an image. Please try again.',
 			})
 		}
 	}
@@ -318,13 +332,7 @@ export default function ProfileScreen() {
 	if (profileLoadError) {
 		return (
 			<StatusScreen
-				image={
-					<ServerFailureIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="network-error"
 				title="Profile Unavailable"
 				subtitle="Your profile couldn’t be loaded."
 				hint="Local features are still available, but some cloud functionality 
@@ -339,13 +347,7 @@ export default function ProfileScreen() {
 	if (!profile) {
 		return (
 			<StatusScreen
-				image={
-					<FilesMissingIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="missing-data"
 				title="Profile Data Unavailable"
 				subtitle="Some profile data couldn’t be loaded."
 				hint="Local features are still available, but some cloud functionality 
@@ -363,7 +365,12 @@ export default function ProfileScreen() {
 					paddingTop: theme.space.lg,
 				}}
 				refreshControl={
-					<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+					<RefreshControl
+						refreshing={isRefreshing}
+						onRefresh={onRefresh}
+						progressViewOffset={theme.space.x2l}
+						colors={[theme.colors.accentBlue]}
+					/>
 				}
 			>
 				<ProfileHeader

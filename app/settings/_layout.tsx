@@ -25,7 +25,7 @@ export default function SettingsLayout() {
 				options={{
 					headerTitle: '',
 					presentation: 'modal',
-					animation: 'slide_from_right',
+					animation: 'slide_from_bottom',
 				}}
 			/>
 			<Stack.Screen
@@ -33,7 +33,7 @@ export default function SettingsLayout() {
 				options={{
 					headerTitle: '',
 					presentation: 'modal',
-					animation: 'slide_from_right',
+					animation: 'slide_from_bottom',
 				}}
 			/>
 		</Stack>

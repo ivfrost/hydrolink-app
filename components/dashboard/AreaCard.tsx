@@ -1,4 +1,3 @@
-import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -6,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useTheme } from '@/context/ThemeContext'
 import { AreaAction } from '@/types/card'
 import {
-	formatRelativeTime,
+	formatRelativeFromEpochStr,
 	isRelativeTimeInFuture,
 } from '@/utils/formatRelativeTime'
 
@@ -95,7 +94,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 									/>
 								)}
 								<Text style={[styles.timeBadgeText, { color: accentColor }]}>
-									{formatRelativeTime(station.time)}
+									{formatRelativeFromEpochStr(station.time)}
 								</Text>
 							</View>
 						}

@@ -29,7 +29,7 @@ export default function CompoundListItem({
 	const theme = useTheme()
 
 	const ContainerElement = onPress ? TouchableOpacity : View
-	const containerProps = onPress ? { onPress, activeOpacity: 0.7 } : {}
+	const containerProps = onPress ? { onPress, activeOpacity: 0.9 } : {}
 
 	const styles = StyleSheet.create({
 		container: {

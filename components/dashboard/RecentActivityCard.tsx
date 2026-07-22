@@ -1,9 +1,8 @@
-import React from 'react'
 import { Text } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
 import { RecentActivityEvent } from '@/types/card'
-import { formatRelativeTime } from '@/utils/formatRelativeTime'
+import { formatRelativeFromEpochStr } from '@/utils/formatRelativeTime'
 
 import Card from '../layout/Card'
 import CardItem from '../ui/CardItem'
@@ -53,7 +52,7 @@ export default function RecentActivityCard({
 									fontWeight: '500',
 								}}
 							>
-								{formatRelativeTime(event.time)}
+								{formatRelativeFromEpochStr(event.time)}
 							</Text>
 						}
 					/>

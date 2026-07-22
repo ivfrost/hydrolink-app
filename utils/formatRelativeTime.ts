@@ -1,4 +1,4 @@
-export function formatRelativeTime(isoString: string) {
+export function formatRelativeFromEpochStr(isoString: string) {
 	const safeTime = isNaN(Number(new Date(isoString)))
 		? 0
 		: Number(new Date(isoString))

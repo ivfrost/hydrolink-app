@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge'
 import CardItem from '@/components/ui/CardItem'
 import { useTheme } from '@/context/ThemeContext'
 import { Station, StationSchedule } from '@/types/area'
-import { formatRelativeTime } from '@/utils/formatRelativeTime'
+import { formatRelativeFromEpochStr } from '@/utils/formatRelativeTime'
 
 export interface AreaCardItemProps {
 	title: string
@@ -121,7 +121,7 @@ export default function AreaCardItem({
 												? 'Scheduled'
 												: 'Unknown Cause'}
 									{activeSolenoid.schedules[1]?.start
-										? ` • ${formatRelativeTime(activeSolenoid.schedules[1].start)}`
+										? ` • ${formatRelativeFromEpochStr(activeSolenoid.schedules[1].start)}`
 										: ' • Active Now'}
 								</Text>
 							</View>
@@ -177,7 +177,7 @@ export default function AreaCardItem({
 								>
 									Last Schedule:{' '}
 									{pastSchedule.start
-										? `${formatRelativeTime(pastSchedule.start)} - ${formatRelativeTime(
+										? `${formatRelativeFromEpochStr(pastSchedule.start)} - ${formatRelativeFromEpochStr(
 												pastSchedule.end,
 											)}`
 										: 'Unknown'}
@@ -202,9 +202,9 @@ export default function AreaCardItem({
 								>
 									Current Schedule:{' '}
 									{currentSchedule.start
-										? `${formatRelativeTime(
+										? `${formatRelativeFromEpochStr(
 												currentSchedule.start,
-											)} - ${formatRelativeTime(currentSchedule.end)}`
+											)} - ${formatRelativeFromEpochStr(currentSchedule.end)}`
 										: 'Unknown'}
 								</Text>
 							</View>
@@ -227,9 +227,9 @@ export default function AreaCardItem({
 								>
 									Next Schedule:{' '}
 									{futureSchedule.start
-										? `${formatRelativeTime(
+										? `${formatRelativeFromEpochStr(
 												futureSchedule.start,
-											)} - ${formatRelativeTime(futureSchedule.end)}`
+											)} - ${formatRelativeFromEpochStr(futureSchedule.end)}`
 										: 'Unknown'}
 								</Text>
 							</View>

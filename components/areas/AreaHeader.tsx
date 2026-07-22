@@ -1,55 +1,103 @@
-import { Image, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 
-import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
-import { Area } from '@/types/area'
+import { AreaDbData } from '@/types/area'
+import resolveImageUrl from '@/utils/resolveImageUrl'
 
+import Badge from '../ui/Badge'
+import Button from '../ui/Button'
 import { CircleMedia } from '../ui/CircleMedia'
+import { RectangularMedia } from '../ui/RectangularMedia'
+import Subtitle from '../ui/Subtitle'
 
 export interface AreaHeaderProps {
-	area: Area
+	dbArea: AreaDbData
 	online: boolean
-	location?: string
-	lastUpdatedStr: string
 }
 
-export default function AreaHeader({
-	area,
-	online,
-	location,
-	lastUpdatedStr,
-}: AreaHeaderProps) {
+export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 	const theme = useTheme()
+	const router = useRouter()
 
 	return (
 		<View style={{ gap: theme.space.x2l, flexDirection: 'column' }}>
 			<View
 				style={{
 					alignItems: 'center',
-					gap: theme.space.md,
+					gap: theme.space.xl,
 				}}
 			>
-				<CircleMedia
-					size={64}
-					onPress={() => {}}
-					ringColor={online ? theme.colors.online : theme.colors.fault}
-				>
-					{area.imageUrl ? (
+				{dbArea.imageUrl ? (
+					<RectangularMedia
+						onPress={() => router.push(`/areas/edit/${dbArea.key}`)}
+						aspectRatio={16 / 9}
+						isFullWidth
+						ringColor={theme.colors.border}
+						elevation={0}
+					>
 						<Image
-							source={{ uri: area.imageUrl }}
-							style={{ width: 64, height: 64, borderRadius: 32 }}
+							source={{ uri: resolveImageUrl(dbArea.imageUrl) }}
+							style={StyleSheet.absoluteFill}
 							resizeMode="cover"
+							onError={(e) =>
+								console.log(
+									'Failed to load image from URI:',
+									resolveImageUrl(dbArea.imageUrl),
+									e.nativeEvent.error,
+								)
+							}
 						/>
-					) : (
+
+						<View
+							style={{
+								position: 'absolute',
+								bottom: 0,
+								left: 0,
+								margin: theme.space.sm,
+							}}
+						>
+							<Badge
+								text={online ? 'Online' : 'Offline'}
+								icon="circle"
+								iconSize={8}
+								color={online ? theme.colors.online : theme.colors.fault}
+								backgroundColor={
+									online ? theme.colors.onlineBg : theme.colors.faultBg
+								}
+							/>
+						</View>
+						<View
+							style={{
+								position: 'absolute',
+								top: 0,
+								right: 0,
+								margin: theme.space.sm,
+							}}
+						>
+							<Button
+								icon="cog"
+								label="Edit Area"
+								variant="secondary"
+								modifier={['small']}
+								onPress={() => router.push(`/areas/edit/${dbArea.key}`)}
+							/>
+						</View>
+					</RectangularMedia>
+				) : (
+					<CircleMedia
+						size={68}
+						onPress={() => {}}
+						ringColor={online ? theme.colors.online : theme.colors.fault}
+					>
 						<View
 							style={{
 								backgroundColor: online
 									? theme.colors.onlineBg
 									: theme.colors.faultBg,
-								borderRadius: 32,
 								width: '100%',
 								height: '100%',
 								justifyContent: 'center',
@@ -62,11 +110,22 @@ export default function AreaHeader({
 								color={online ? theme.colors.online : theme.colors.fault}
 							/>
 						</View>
-					)}
-				</CircleMedia>
-				<View style={{ alignItems: 'center', gap: theme.space.x2s }}>
-					<Title text={area.name ?? area.key ?? 'Unnamed Area'} />
-					<Subtitle text={location} />
+					</CircleMedia>
+				)}
+
+				<View
+					style={{
+						flexDirection: 'row',
+						alignItems: 'center',
+						width: '85%',
+						paddingHorizontal: theme.space.md,
+						justifyContent: 'center',
+					}}
+				>
+					<View style={{ alignItems: 'center', flex: 1, gap: theme.space.x3s }}>
+						<Title text={dbArea.friendlyName ?? dbArea.key ?? 'Unnamed Area'} />
+						<Subtitle text={dbArea.locationLabel || 'Unknown Location'} />
+					</View>
 				</View>
 			</View>
 		</View>

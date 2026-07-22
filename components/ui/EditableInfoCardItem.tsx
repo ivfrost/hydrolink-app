@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import React, { useRef } from 'react'
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
@@ -6,8 +6,9 @@ import { useTheme } from '@/context/ThemeContext'
 interface EditableInfoCardItemProps extends TextInputProps {
 	label: string
 	text: string
-	error: string | undefined
+	error?: string
 	icon: React.ReactNode
+	renderBottom?: () => React.ReactNode
 }
 
 export default function EditableInfoCardItem({
@@ -15,12 +16,16 @@ export default function EditableInfoCardItem({
 	text,
 	error,
 	icon,
+	renderBottom,
 	...props
 }: EditableInfoCardItemProps) {
 	const theme = useTheme()
 	const inputRef = useRef<TextInput>(null)
 
 	const styles = StyleSheet.create({
+		cardContainer: {
+			width: '100%',
+		},
 		row: {
 			flexDirection: 'row',
 			alignItems: 'center',
@@ -35,7 +40,7 @@ export default function EditableInfoCardItem({
 			justifyContent: 'center',
 			alignItems: 'center',
 		},
-		textContainer: {
+		inputMetaGroup: {
 			flex: 1,
 			gap: 2,
 		},
@@ -56,34 +61,45 @@ export default function EditableInfoCardItem({
 			borderBottomColor: theme.colors.border,
 			paddingBottom: 4,
 		},
+		bottomContainer: {
+			width: '100%',
+		},
 	})
 
 	return (
-		<View style={styles.row}>
-			<View style={styles.iconWrapper}>{icon}</View>
-			<View style={styles.textContainer}>
-				<Text style={styles.label}>{label}</Text>
-				{props.editable ? (
-					<>
-						<TextInput
-							ref={inputRef}
-							value={text}
-							style={[styles.text, styles.input]}
-							placeholderTextColor={theme.colors.textMuted}
-							{...props}
-						/>
-						{error && (
-							<Text
-								style={{ color: theme.colors.fault, fontSize: theme.font.xs }}
-							>
-								{error}
-							</Text>
-						)}
-					</>
-				) : (
-					<Text style={styles.text}>{text}</Text>
-				)}
+		<View style={styles.cardContainer}>
+			{/* Upper Input Row */}
+			<View style={styles.row}>
+				<View style={styles.iconWrapper}>{icon}</View>
+				<View style={styles.inputMetaGroup}>
+					<Text style={styles.label}>{label}</Text>
+					{props.editable ? (
+						<>
+							<TextInput
+								ref={inputRef}
+								value={text}
+								style={[styles.text, styles.input]}
+								placeholderTextColor={theme.colors.textMuted}
+								{...props}
+							/>
+							{error && (
+								<Text
+									style={{ color: theme.colors.fault, fontSize: theme.font.xs }}
+								>
+									{error}
+								</Text>
+							)}
+						</>
+					) : (
+						<Text style={styles.text}>{text}</Text>
+					)}
+				</View>
 			</View>
+
+			{/* Full-width Bottom Container */}
+			{renderBottom && (
+				<View style={styles.bottomContainer}>{renderBottom()}</View>
+			)}
 		</View>
 	)
 }
