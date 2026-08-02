@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Text, View, ActivityIndicator } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import BottomSheet from '@gorhom/bottom-sheet'
@@ -155,7 +155,7 @@ export default function OnboardingStep4() {
 						) : (
 							<MaterialIcons
 								name="add"
-								size={24}
+								size={theme.space.iconSize}
 								color={
 									fetchAreasPending
 										? theme.colors.buttonDisabledText
@@ -179,7 +179,7 @@ export default function OnboardingStep4() {
 					icon={
 						<MaterialIcons
 							name="qr-code-scanner"
-							size={24}
+							size={theme.space.iconSize}
 							color={theme.colors.buttonPrimaryText}
 						/>
 					}
@@ -233,7 +233,7 @@ export default function OnboardingStep4() {
 						icon={
 							<MaterialIcons
 								name="arrow-forward"
-								size={24}
+								size={theme.space.iconSize}
 								color={
 									linkCode.length !== 32 || linkPending
 										? theme.colors.buttonDisabledText

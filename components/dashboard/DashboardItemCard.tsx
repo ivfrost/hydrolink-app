@@ -61,7 +61,7 @@ export default function DashboardItemCard({ items }: DashboardItemCardProps) {
 			default:
 				return {
 					color: theme.colors.textMuted,
-					bg: theme.colors.buttonSecondaryBg,
+					bg: theme.colors.buttonSecondary,
 				}
 		}
 	}

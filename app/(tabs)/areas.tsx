@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 import { RefreshControl } from 'react-native-gesture-handler'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
@@ -15,7 +14,7 @@ import { useHeaderHeight } from 'expo-router/build/react-navigation'
 import AreaCardItem from '@/components/areas/AreaCardItem'
 import BottomSheet from '@/components/layout/BottomSheet'
 import Card from '@/components/layout/Card'
-import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
+import ScrollView from '@/components/layout/ScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
 import BottomSheetInput from '@/components/ui/BottomSheetInput'
 import Button from '@/components/ui/Button'
@@ -32,7 +31,6 @@ export default function AreaTabScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const bottomSheetRef = useRef<BottomSheetMethods>(null)
-	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const [linkCode, setLinkCode] = useState('')
 	const [isRefreshing, setIsRefreshing] = useState(false)
@@ -199,7 +197,7 @@ export default function AreaTabScreen() {
 					buttonIcon={
 						<MaterialCommunityIcons
 							name="link-plus"
-							size={24}
+							size={theme.space.iconSize}
 							color={theme.colors.buttonPrimaryText}
 						/>
 					}
@@ -215,7 +213,7 @@ export default function AreaTabScreen() {
 							icon={
 								<MaterialIcons
 									name="qr-code-scanner"
-									size={24}
+									size={theme.space.iconSize}
 									color={theme.colors.buttonPrimaryText}
 								/>
 							}
@@ -266,7 +264,7 @@ export default function AreaTabScreen() {
 								icon={
 									<MaterialIcons
 										name="arrow-forward"
-										size={24}
+										size={theme.space.iconSize}
 										color={
 											linkCode.length !== 32 || linkPending
 												? theme.colors.textMuted
@@ -284,7 +282,25 @@ export default function AreaTabScreen() {
 
 	// Main content rendering when areas already linked and available
 	return (
-		<KeyboardAwareScrollView
+		<ScrollView
+			fab={
+				<Button
+					modifier={['fab']}
+					icon={
+						<MaterialIcons
+							name="add"
+							size={26}
+							color={theme.colors.buttonPrimaryText}
+						/>
+					}
+					extraStyles={{
+						position: 'absolute',
+						right: 20,
+						bottom: 28,
+					}}
+					onPress={() => bottomSheetRef.current?.expand()}
+				/>
+			}
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
@@ -292,13 +308,6 @@ export default function AreaTabScreen() {
 					progressViewOffset={headerHeight}
 				/>
 			}
-			contentContainerStyle={{
-				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight,
-				paddingBottom: insets.bottom + theme.space.lg,
-				gap: theme.space.x2l,
-				flexGrow: 1,
-			}}
 		>
 			{areas.map((area, idx) => {
 				// Retrieve the corresponding MQTT data for the area using its key
@@ -323,7 +332,7 @@ export default function AreaTabScreen() {
 							<CardItem
 								title={area.friendlyName ?? area.key ?? 'Unnamed Area'}
 								subtitle={subtitle}
-								icon="map-marker-off"
+								icon="map-marker-off-outline"
 								statusColor={
 									!online ? theme.colors.offline : theme.colors.online
 								}
@@ -340,13 +349,11 @@ export default function AreaTabScreen() {
 											flex: 1,
 										}}
 									>
-										<TouchableOpacity>
-											<MaterialIcons
-												name="chevron-right"
-												size={24}
-												color={theme.colors.textMuted}
-											/>
-										</TouchableOpacity>
+										<MaterialIcons
+											name="chevron-right"
+											size={theme.space.iconSize}
+											color={theme.colors.textMuted}
+										/>
 									</View>
 								}
 							/>
@@ -376,9 +383,6 @@ export default function AreaTabScreen() {
 					solenoids.length + pumps.length + fertilizers.length
 				const unclassifiedCount = unclassified.length
 
-				const allSchedules = allStations.flatMap(
-					(station) => station.schedules || [],
-				)
 				const mockSchedules = [
 					{
 						start: '2024-06-01T08:00:00Z',
@@ -432,7 +436,7 @@ export default function AreaTabScreen() {
 						icon={
 							<MaterialIcons
 								name="qr-code-scanner"
-								size={24}
+								size={theme.space.iconSize}
 								color={theme.colors.buttonPrimaryText}
 							/>
 						}
@@ -483,7 +487,7 @@ export default function AreaTabScreen() {
 							icon={
 								<MaterialIcons
 									name="arrow-forward"
-									size={24}
+									size={theme.space.iconSize}
 									color={
 										linkCode.length !== 32 || linkPending
 											? theme.colors.textMuted
@@ -495,23 +499,6 @@ export default function AreaTabScreen() {
 					</View>
 				</BottomSheet>
 			</Portal>
-			<Button
-				label={''}
-				modifier={['fab']}
-				icon={
-					<MaterialIcons
-						name="add"
-						size={26}
-						color={theme.colors.buttonPrimaryText}
-					/>
-				}
-				extraStyles={{
-					position: 'absolute',
-					right: 20,
-					bottom: 28,
-				}}
-				onPress={() => bottomSheetRef.current?.expand()}
-			/>
-		</KeyboardAwareScrollView>
+		</ScrollView>
 	)
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native'
+import { Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
@@ -7,6 +7,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { AreaUpdatePayload } from '@/types/area'
 import { getFormattedGPSCoordinates } from '@/utils/getFormattedGPSCoordinates'
 
+import Button from '../ui/Button'
 import EditableInfoCardItem from '../ui/EditableInfoCardItem'
 
 interface EditableAreaInfoCardProps {
@@ -46,43 +47,28 @@ export function EditableAreaInfoCard({
 				elevation: 0,
 			}}
 		>
-			{/* Friendly Name */}
 			{friendlyName !== undefined && (
 				<EditableInfoCardItem
 					label="Area Name"
 					text={friendlyName}
 					onChangeText={(value) => onInfoChange('friendlyName', value)}
 					editable
-					icon={
-						<MaterialCommunityIcons
-							name="label-outline"
-							size={18}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="label-outline"
 					error={undefined}
 				/>
 			)}
 
-			{/* Description */}
 			{description !== undefined && (
 				<EditableInfoCardItem
 					label="Area Description"
 					text={description}
 					onChangeText={(value) => onInfoChange('description', value)}
 					editable
-					icon={
-						<MaterialCommunityIcons
-							name="text-box-outline"
-							size={18}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="text-box-outline"
 					error={undefined}
 				/>
 			)}
 
-			{/* Location Input with Bottom-Right GPS Action */}
 			{locationLabel !== undefined && (
 				<View style={{ width: '100%' }}>
 					<EditableInfoCardItem
@@ -90,75 +76,87 @@ export function EditableAreaInfoCard({
 						text={locationLabel}
 						onChangeText={(value) => onInfoChange('locationLabel', value)}
 						editable
-						icon={
-							<MaterialCommunityIcons
-								name="map-marker-outline"
-								size={18}
-								color={theme.colors.accentBlue}
-							/>
-						}
+						icon="map-marker-outline"
 						error={undefined}
-						renderBottom={() => (
+					/>
+
+					<View
+						style={{
+							marginVertical: theme.space.md,
+							backgroundColor: theme.colors.border,
+							height: 1,
+						}}
+					/>
+
+					{locationCoordinates ? (
+						<View
+							style={{
+								flexDirection: 'row',
+								alignItems: 'center',
+								justifyContent: 'space-between',
+								gap: theme.space.x3s,
+								paddingHorizontal: theme.space.md,
+								paddingLeft: theme.space.lg,
+								paddingBottom: theme.space.md,
+							}}
+						>
 							<View
 								style={{
 									flexDirection: 'row',
-									justifyContent: 'flex-end',
 									alignItems: 'center',
-									gap: theme.space.sm,
-									paddingHorizontal: theme.space.xl,
-									paddingBottom: theme.space.md,
+									gap: theme.space.xs,
 								}}
 							>
-								{locationCoordinates && (
-									<Text
-										style={{
-											fontSize: 12,
-											color: theme.colors.textMuted,
-											marginRight: theme.space.xs,
-										}}
-									>
-										{locationCoordinates}
-									</Text>
-								)}
-								<TouchableOpacity
-									onPress={handleCaptureLocation}
-									disabled={isFetchingLocation}
-									hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+								<MaterialCommunityIcons
+									name="pin"
+									size={theme.space.iconSizeSm}
+									color={theme.colors.textMuted}
+								/>
+								<Text
 									style={{
-										flexDirection: 'row',
-										alignItems: 'center',
-										gap: 4,
-										paddingVertical: 2,
+										fontSize: theme.font.sm,
+										color: theme.colors.textMuted,
 									}}
 								>
-									{isFetchingLocation ? (
-										<ActivityIndicator
-											size="small"
-											style={{ maxHeight: 14 }}
-											color={theme.colors.accentBlue}
-										/>
-									) : (
-										<MaterialCommunityIcons
-											name="crosshairs-gps"
-											size={14}
-											color={theme.colors.accentBlue}
-										/>
-									)}
-									<Text
-										style={{
-											fontSize: 12,
-											fontWeight: '600',
-											color: theme.colors.accentBlue,
-										}}
-									>
-										{isFetchingLocation
-											? 'Acquiring GPS...'
-											: 'Set Current Coordinates'}
-									</Text>
-								</TouchableOpacity>
+									{locationCoordinates}
+								</Text>
 							</View>
-						)}
-					/>
+
+							<Button
+								variant="tertiary"
+								modifier={['outlined', 'small']}
+								icon="crosshairs-gps"
+								iconSize={theme.space.iconSizeSm}
+								label="Pin Location"
+								loading={isFetchingLocation}
+								onPress={handleCaptureLocation}
+							/>
+						</View>
+					) : (
+						<View
+							style={{
+								flexDirection: 'row',
+								justifyContent: 'flex-end',
+								alignItems: 'center',
+								paddingHorizontal: theme.space.md,
+								paddingBottom: theme.space.md,
+							}}
+						>
+							<Button
+								variant="tertiary"
+								modifier={['outlined', 'small']}
+								icon="crosshairs-gps"
+								iconSize={theme.space.iconSizeSm}
+								label={
+									isFetchingLocation
+										? 'Acquiring GPS...'
+										: 'Set Current Coordinates'
+								}
+								loading={isFetchingLocation}
+								onPress={handleCaptureLocation}
+							/>
+						</View>
+					)}
 				</View>
 			)}
 		</View>

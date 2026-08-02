@@ -30,7 +30,7 @@ export const areaUnlinkMutationFn = async (areaKey: string): Promise<void> => {
 	if (data.code !== null) {
 		if (isKnownErrorCode(data.code)) {
 			if (data.code === 'DEVICE_NOT_FOUND') {
-				throw new AppError(data.code, data.message, { areaKey })
+				throw new AppError(data.code, `${data.message} (areaKey: ${areaKey})`)
 			}
 			throw new AppError(data.code, data.message)
 		}
@@ -41,11 +41,11 @@ export const areaUnlinkMutationFn = async (areaKey: string): Promise<void> => {
 export const areaUpdateMutationFn = async (
 	updates: Partial<AreaUpdatePayload>,
 ): Promise<AreaDbData> => {
-	const areaId = updates.id
-	if (!areaId) {
-		throw new AppError('VALIDATION_FAILED', 'Area ID is required for updates.')
+	const areaKey = updates.key
+	if (!areaKey) {
+		throw new AppError('VALIDATION_FAILED', 'Area key is required for updates.')
 	}
-	const data = await apiFetch<AreaDbData>(`/me/devices/${areaId}`, {
+	const data = await apiFetch<AreaDbData>(`/me/devices/${areaKey}`, {
 		method: 'PATCH',
 		body: JSON.stringify(updates),
 	})

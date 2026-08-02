@@ -206,7 +206,7 @@ export default function SignIn() {
 					icon={
 						<MaterialIcons
 							name="arrow-forward"
-							size={24}
+							size={theme.space.iconSize}
 							color={theme.colors.buttonPrimaryText}
 						/>
 					}

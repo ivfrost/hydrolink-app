@@ -3,7 +3,7 @@ import { View } from 'react-native'
 import StationCardItem, { StationCardItemProps } from './StationCardItem'
 
 export default function EditableStationCardItem({
-	isMqttEditable: boolean,
+	isMqttEditable,
 	...props
 }: StationCardItemProps & { isMqttEditable: boolean }) {
 	return (
@@ -16,7 +16,7 @@ export default function EditableStationCardItem({
 			}}
 		>
 			<View style={{ flex: 1 }}>
-				<StationCardItem {...props} isEditable isMqttEditable />
+				<StationCardItem {...props} isMqttEditable={isMqttEditable} />
 			</View>
 		</View>
 	)

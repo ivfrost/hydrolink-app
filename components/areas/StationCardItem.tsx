@@ -5,27 +5,28 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 import { STATION_PICKER_OPTIONS } from '@/data/area'
-import { AreaMqttData, ManualOverride, StationType } from '@/types/area'
+import { ManualOverride, Station, StationType } from '@/types/area'
 
 import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import CardItem from '../ui/CardItem'
 import DurationControl from '../ui/DurationControl'
+import Input from '../ui/Input'
 import { Picker } from '../ui/Picker'
 
 export const STATION_TYPE_ICON: Record<
 	StationType,
 	React.ComponentProps<typeof MaterialCommunityIcons>['name']
 > = {
-	Unknown: 'help-circle',
+	Unknown: 'help-circle-outline',
 	Solenoid: 'valve',
-	Pump: 'water-pump',
-	Fertilizer: 'sprout',
+	Pump: 'engine-outline',
+	Fertilizer: 'sprout-outline',
 	Sensor: 'thermometer-lines',
 }
 
 export interface StationCardItemProps {
-	station: AreaMqttData['stations'][number]
+	station: Station
 	isActive?: boolean
 	isLoading: boolean
 	isActionDisabled?: boolean
@@ -51,7 +52,6 @@ export default function StationCardItem({
 	onDrag,
 	onActionPress,
 	onDataChange,
-	isEditable = false,
 	isMqttEditable = false,
 	newLeadingIcon,
 }: StationCardItemProps) {
@@ -60,6 +60,7 @@ export default function StationCardItem({
 	const [selectedStationType, setSelectedStationType] = useState<StationType>(
 		station.type,
 	)
+
 	const handleTypeChange = (newType: StationType) => {
 		setSelectedStationType(newType)
 		onDataChange?.('type', station.id, newType)
@@ -72,29 +73,33 @@ export default function StationCardItem({
 	const actionIcon = station.status.state === 'Running' ? 'stop' : 'play'
 	const headingIcon = newLeadingIcon ?? STATION_TYPE_ICON[station.type]
 
+	const stationLabel = `Station ${station.id + 1}`
+
 	return (
 		<View style={{ elevation: isActive ? 20 : 0, overflow: 'visible' }}>
 			<TouchableOpacity
-				onLongPress={onDrag ? onDrag : undefined}
+				onLongPress={onDrag}
 				disabled={isActive}
 				activeOpacity={0.9}
 				style={{
 					flexDirection: 'row',
-					alignItems: 'center',
+					alignItems: 'flex-start',
 					marginLeft: onDrag ? -theme.space.xs : 0,
-					gap: theme.space.xs,
+					gap: theme.space.sm,
 				}}
 			>
 				{!!onDrag && (
 					<MaterialIcons
-						name="drag-handle"
-						size={28}
-						color={theme.colors.textMuted}
+						name="drag-indicator"
+						size={24}
+						color="gray"
+						style={{ marginRight: 2, marginTop: theme.space.x2l }}
 					/>
 				)}
 				<CardItem
-					title={station.name ?? `Station ${station.id}`}
-					subtitle={!isEditable ? station.status.state : ''}
+					title={station.name ?? stationLabel}
+					titleFontWeight="600"
+					subtitle={!isMqttEditable ? station.status.state : ''}
 					icon={headingIcon}
 					statusColor={
 						station.status.state === 'Running'
@@ -106,17 +111,10 @@ export default function StationCardItem({
 							? theme.colors.activeBg
 							: theme.colors.offlineBg
 					}
+					// CardItem's built-in editable title input
+					isEditable={isMqttEditable}
 					rightElement={
-						isEditable ? (
-							<Picker
-								label="Station Role"
-								options={STATION_PICKER_OPTIONS}
-								selectedValue={selectedStationType}
-								onValueChange={handleTypeChange}
-								isLoading={isLoading}
-								disabled={!isMqttEditable}
-							/>
-						) : (
+						(!isMqttEditable && (
 							<Button
 								modifier={['iconOnly']}
 								variant={buttonVariant}
@@ -131,16 +129,37 @@ export default function StationCardItem({
 								}
 								onPress={() => onActionPress?.(minutes * 60 * 1000)}
 							/>
+						)) || (
+							<Picker
+								label="Station Role"
+								options={STATION_PICKER_OPTIONS}
+								selectedValue={selectedStationType}
+								onValueChange={handleTypeChange}
+								isLoading={isLoading}
+								disabled={!isMqttEditable}
+							/>
 						)
 					}
 					bottomElement={
-						!isEditable && (
+						isMqttEditable ? (
+							<View style={{ gap: theme.space.md }}>
+								<Input
+									label="Name"
+									value={station.name ?? ''}
+									labelBackground={theme.colors.card}
+									onChangeText={(text) =>
+										onDataChange?.('name', station.id, text)
+									}
+								/>
+							</View>
+						) : (
 							<View
 								style={{
 									flexDirection: 'row',
 									alignItems: 'flex-end',
-									gap: theme.space.sm,
 									justifyContent: 'space-between',
+									minHeight: theme.space.smallButtonSize,
+									gap: theme.space.sm,
 								}}
 							>
 								<Badge
@@ -149,6 +168,7 @@ export default function StationCardItem({
 									backgroundColor={''}
 									borderColor={theme.colors.border}
 								/>
+
 								{!isActionDisabled && (
 									<DurationControl
 										endTimestamp={

@@ -1,7 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
 
 import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
@@ -9,7 +8,6 @@ import { AreaDbData } from '@/types/area'
 import resolveImageUrl from '@/utils/resolveImageUrl'
 
 import Badge from '../ui/Badge'
-import Button from '../ui/Button'
 import { CircleMedia } from '../ui/CircleMedia'
 import { RectangularMedia } from '../ui/RectangularMedia'
 import Subtitle from '../ui/Subtitle'
@@ -21,19 +19,17 @@ export interface AreaHeaderProps {
 
 export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 	const theme = useTheme()
-	const router = useRouter()
 
 	return (
 		<View style={{ gap: theme.space.x2l, flexDirection: 'column' }}>
 			<View
 				style={{
 					alignItems: 'center',
-					gap: theme.space.xl,
+					gap: theme.space.lg,
 				}}
 			>
 				{dbArea.imageUrl ? (
 					<RectangularMedia
-						onPress={() => router.push(`/areas/edit/${dbArea.key}`)}
 						aspectRatio={16 / 9}
 						isFullWidth
 						ringColor={theme.colors.border}
@@ -55,8 +51,8 @@ export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 						<View
 							style={{
 								position: 'absolute',
-								bottom: 0,
-								left: 0,
+								top: 0,
+								right: 0,
 								margin: theme.space.sm,
 							}}
 						>
@@ -68,22 +64,6 @@ export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 								backgroundColor={
 									online ? theme.colors.onlineBg : theme.colors.faultBg
 								}
-							/>
-						</View>
-						<View
-							style={{
-								position: 'absolute',
-								top: 0,
-								right: 0,
-								margin: theme.space.sm,
-							}}
-						>
-							<Button
-								icon="cog"
-								label="Edit Area"
-								variant="secondary"
-								modifier={['small']}
-								onPress={() => router.push(`/areas/edit/${dbArea.key}`)}
 							/>
 						</View>
 					</RectangularMedia>

@@ -15,11 +15,13 @@ export interface CardItemProps {
 	icon:
 		| keyof typeof MaterialCommunityIcons.glyphMap
 		| keyof typeof MaterialIcons.glyphMap
+	iconSize?: number
 	statusColor: string
 	statusBg: string
 	onPress?: () => void
 	rightElement?: React.ReactNode
 	bottomElement?: React.ReactNode
+	isEditable?: boolean
 }
 
 export default function CardItem({
@@ -28,6 +30,7 @@ export default function CardItem({
 	titleColor,
 	subtitle,
 	icon,
+	iconSize,
 	statusColor,
 	statusBg,
 	onPress,
@@ -36,37 +39,34 @@ export default function CardItem({
 }: CardItemProps) {
 	const theme = useTheme()
 
-	const ContainerElement = onPress ? TouchableOpacity : View
-	const containerProps = onPress ? { onPress, activeOpacity: 0.9 } : {}
-
 	return (
-		<ContainerElement
-			{...containerProps}
+		<TouchableOpacity
+			onPress={onPress}
+			disabled={!onPress}
+			activeOpacity={!!onPress ? 0.9 : 1}
 			style={{
 				flex: 1,
 				width: '100%',
 				paddingVertical: theme.space.xl,
-				backgroundColor: theme.colors.card,
-				gap: theme.space.md,
+				gap: theme.space.xl,
 			}}
 		>
 			<View
 				style={{
 					flexDirection: 'row',
-					gap: theme.space.lg,
+					gap: theme.space.md,
 					alignItems: 'center',
 				}}
 			>
-				{/* Heading Icon */}
 				{icon && (
 					<HeadingIcon
 						icon={icon}
+						iconSize={iconSize}
 						statusColor={statusColor}
 						statusBg={statusBg}
 					/>
 				)}
 
-				{/* Content Body */}
 				<View
 					style={{
 						flex: 1,
@@ -75,7 +75,7 @@ export default function CardItem({
 						alignItems: 'center',
 					}}
 				>
-					<View style={{ flex: 1, gap: theme.space.x2s }}>
+					<View style={{ flex: 1 }}>
 						<Text
 							style={{
 								fontSize: theme.font.base,
@@ -102,13 +102,13 @@ export default function CardItem({
 						)}
 					</View>
 
-					{/* Right Slot */}
 					{rightElement && (
 						<View
 							style={{
 								alignItems: 'center',
 								justifyContent: 'center',
 								overflow: 'hidden',
+								paddingLeft: theme.space.md,
 							}}
 						>
 							{rightElement}
@@ -117,8 +117,7 @@ export default function CardItem({
 				</View>
 			</View>
 
-			{/* Bottom Slot */}
 			{bottomElement && <View style={{ width: '100%' }}>{bottomElement}</View>}
-		</ContainerElement>
+		</TouchableOpacity>
 	)
 }

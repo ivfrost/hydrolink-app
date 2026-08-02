@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { RefreshControl, ScrollView, Text, View } from 'react-native'
+import { RefreshControl, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -8,9 +8,9 @@ import { useMachine } from '@xstate/react'
 import { useLocalSearchParams } from 'expo-router'
 
 import AreaHeader from '@/components/areas/AreaHeader'
-import AreaSummaryCard from '@/components/areas/AreaSummaryCard'
 import StationCardItem from '@/components/areas/StationCardItem'
 import Card from '@/components/layout/Card'
+import ScrollView from '@/components/layout/ScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
@@ -36,8 +36,11 @@ export default function AreaInfoScreen() {
 	)
 
 	// State machine derived area state (API data)
-	const { areas: dbAreas, pendingStationTypeChange } =
-		currentScreenState.context
+	const {
+		areas: dbAreas,
+		pendingStationTypeChange,
+		pendingStationNameChange,
+	} = currentScreenState.context
 	const dbArea = useMemo(
 		() => dbAreas?.find((a) => a.key === key),
 		[dbAreas, key],
@@ -129,10 +132,10 @@ export default function AreaInfoScreen() {
 						<View
 							style={{
 								flexDirection: 'row',
-								marginHorizontal: theme.space.sm,
 								alignItems: 'center',
 								gap: theme.space.sm,
 								marginVertical: theme.space.sm,
+								paddingHorizontal: theme.space.sm,
 							}}
 						>
 							<MaterialCommunityIcons
@@ -168,9 +171,8 @@ export default function AreaInfoScreen() {
 			dbArea,
 			isAreaOnline,
 			theme.colors.textMuted,
-			theme.space.sm,
-			theme.space.x2l,
 			theme.font.xs,
+			theme.space.x2l,
 		],
 	)
 
@@ -183,13 +185,18 @@ export default function AreaInfoScreen() {
 				isTypeChangePending || isStationActionPending(station.id)
 
 			const manualOverride = manualOverrides(dbArea.key, station.id)
-			// The ESP always publishes the state of manual overrides
 			if (!manualOverride) return null
+
+			// Merge optimistic/pending changes so the UI reflects a save
+			// immediately, instead of waiting for the device to echo it back.
+			const pendingName = pendingStationNameChange[station.id]
+			const mergedStation =
+				pendingName !== undefined ? { ...station, name: pendingName } : station
 
 			return (
 				<Card key={station.id}>
 					<StationCardItem
-						station={station}
+						station={mergedStation}
 						isActionDisabled={isActionButtonDisabled(station.id)}
 						isLoading={isStationLoading}
 						manualOverride={manualOverride}
@@ -204,6 +211,7 @@ export default function AreaInfoScreen() {
 		[
 			dbArea,
 			pendingStationTypeChange,
+			pendingStationNameChange,
 			isStationActionPending,
 			isActionButtonDisabled,
 			toggleAction,
@@ -224,22 +232,19 @@ export default function AreaInfoScreen() {
 		// On MQTT error, show API data as fallback if available
 		if (error?.code === 'MQTT_ERROR') {
 			return (
-				<ScrollView
-					refreshControl={
-						<RefreshControl
-							refreshing={currentScreenState.matches('loading')}
-							onRefresh={() => send({ type: 'RETRY' })}
-							progressViewOffset={theme.space.x3l}
-							colors={[theme.colors.accentBlue]}
-						/>
-					}
-					contentContainerStyle={{
-						paddingTop: theme.space.x3l,
-						paddingBottom: insets.bottom + theme.space.x3l,
-						marginHorizontal: theme.space.md,
-					}}
-				>
-					{renderApiData(true)}
+				<ScrollView flexDirection="column">
+					<ScrollView
+						refreshControl={
+							<RefreshControl
+								refreshing={currentScreenState.matches('loading')}
+								onRefresh={() => send({ type: 'RETRY' })}
+								progressViewOffset={theme.space.x3l}
+								colors={[theme.colors.accentBlue]}
+							/>
+						}
+					>
+						{renderApiData(true)}
+					</ScrollView>
 				</ScrollView>
 			)
 		}
@@ -278,11 +283,15 @@ export default function AreaInfoScreen() {
 
 		return (
 			<ScrollView
-				contentContainerStyle={{
-					paddingTop: theme.space.x3l,
-					paddingBottom: insets.bottom + theme.space.x3l,
-					marginHorizontal: theme.space.md,
-				}}
+				flexDirection="column"
+				refreshControl={
+					<RefreshControl
+						refreshing={currentScreenState.matches('loading')}
+						onRefresh={() => send({ type: 'RETRY' })}
+						progressViewOffset={theme.space.x3l}
+						colors={[theme.colors.accentBlue]}
+					/>
+				}
 			>
 				<View
 					style={{
@@ -312,6 +321,7 @@ export default function AreaInfoScreen() {
 			)
 		}
 
+		// Area is offline, show API data only
 		if (!isAreaOnline) {
 			return (
 				<ScrollView
@@ -323,11 +333,6 @@ export default function AreaInfoScreen() {
 							colors={[theme.colors.accentBlue]}
 						/>
 					}
-					contentContainerStyle={{
-						paddingTop: theme.space.x3l,
-						paddingBottom: insets.bottom + theme.space.x3l,
-						marginHorizontal: theme.space.md,
-					}}
 				>
 					{renderApiData()}
 					<View style={{ gap: theme.space.x2l }}>
@@ -382,24 +387,18 @@ export default function AreaInfoScreen() {
 						colors={[theme.colors.accentBlue]}
 					/>
 				}
-				contentContainerStyle={{
-					paddingTop: theme.space.x3l,
-					paddingBottom: insets.bottom + theme.space.x3l,
-					marginHorizontal: theme.space.md,
-				}}
 			>
 				{renderApiData()}
-				<AreaSummaryCard
+				{/* <AreaSummaryCard
 					solenoidCount={solenoids.length}
 					pumpCount={pumps.length}
 					fertilizerCount={fertilizers.length}
 					sensorCount={sensors.length}
 					unclassifiedCount={unclassified.length}
 					lastUpdatedStr={lastUpdatedStr}
-				/>
-				<View style={{ marginVertical: theme.space.xl }} />
+				/> */}
+				{/* <View style={{ marginVertical: theme.space.xl }} /> */}
 				<SectionTitle text="Stations & Roles" />
-
 				{allStations.map((station, idx) => (
 					<View key={`station-${station.id}`}>
 						{renderStation(station)}

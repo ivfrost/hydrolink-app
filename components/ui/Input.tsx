@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Animated, TextInput, TextInputProps, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
@@ -15,6 +15,7 @@ export default function Input({
 }: InputProps) {
 	const theme = useTheme()
 	const [focused, setFocused] = useState(false)
+
 	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
 
 	const animate = (toValue: number) => {
@@ -24,6 +25,13 @@ export default function Input({
 			useNativeDriver: false,
 		}).start()
 	}
+
+	// 🔥 FIX: float label when value becomes non-empty
+	useEffect(() => {
+		if (props.value && !focused) {
+			animate(1)
+		}
+	}, [props.value])
 
 	const handleFocus = (e: any) => {
 		setFocused(true)
@@ -41,10 +49,12 @@ export default function Input({
 		inputRange: [0, 1],
 		outputRange: [14, -10],
 	})
+
 	const labelSize = labelAnim.interpolate({
 		inputRange: [0, 1],
 		outputRange: [16, 12],
 	})
+
 	const labelColor = focused ? theme.colors.accentBlue : theme.colors.textMuted
 
 	return (
@@ -64,12 +74,13 @@ export default function Input({
 						top: labelTop,
 						fontSize: labelSize,
 						color: labelColor,
-						backgroundColor: labelBackground ?? theme.colors.background,
+						backgroundColor: labelBackground ?? theme.colors.card,
 						paddingHorizontal: 4,
 					}}
 				>
 					{label}
 				</Animated.Text>
+
 				<TextInput
 					onFocus={handleFocus}
 					onBlur={handleBlur}

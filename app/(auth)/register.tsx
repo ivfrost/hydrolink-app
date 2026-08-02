@@ -320,7 +320,7 @@ export default function Register() {
 					icon={
 						<MaterialIcons
 							name="arrow-forward"
-							size={24}
+							size={theme.space.iconSize}
 							color={
 								isButtonDisabled
 									? theme.colors.buttonDisabledText

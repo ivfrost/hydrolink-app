@@ -54,7 +54,7 @@ export function StickyActionButtons({
 				icon={
 					<MaterialCommunityIcons
 						name="undo-variant"
-						size={24}
+						size={theme.space.iconSize}
 						color={discardColor}
 					/>
 				}
@@ -64,8 +64,8 @@ export function StickyActionButtons({
 					justifyContent: 'center',
 					alignItems: 'center',
 					backgroundColor: !disabled
-						? theme.colors.buttonSecondaryBg
-						: theme.colors.buttonDisabledBg,
+						? theme.colors.buttonSecondary
+						: theme.colors.buttonDisabled,
 					opacity: !disabled ? 1 : 0.4,
 				}}
 				disabled={disabled || isLoading}
@@ -78,7 +78,7 @@ export function StickyActionButtons({
 				icon={
 					<MaterialCommunityIcons
 						name="content-save-outline"
-						size={24}
+						size={theme.space.iconSize}
 						color={saveColor}
 					/>
 				}
@@ -86,8 +86,8 @@ export function StickyActionButtons({
 					flex: 1,
 					height: 54,
 					backgroundColor: !disabled
-						? theme.colors.buttonPrimaryBg
-						: theme.colors.buttonDisabledBg,
+						? theme.colors.buttonPrimary
+						: theme.colors.buttonDisabled,
 					opacity: !disabled ? 1 : 0.4,
 				}}
 				disabled={disabled}

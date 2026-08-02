@@ -112,7 +112,7 @@ export default function AreaSummaryCard({
 								style={{
 									width: theme.space.x3l,
 									height: theme.space.x3l,
-									borderRadius: theme.radius.fab,
+									borderRadius: theme.radius.headingIcon,
 									backgroundColor: stat.bg,
 									justifyContent: 'center',
 									alignItems: 'center',

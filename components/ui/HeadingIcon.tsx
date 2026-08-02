@@ -18,15 +18,20 @@ export default function HeadingIcon({
 	icon,
 	statusColor,
 	statusBg,
-	iconSize = 20,
+	iconSize,
 	rounded = false,
 }: HeadingIconProps) {
 	const theme = useTheme()
 	return (
 		<View
 			style={{
-				padding: iconSize > 20 ? theme.space.md : theme.space.sm,
-				borderRadius: rounded ? theme.radius.pill : theme.radius.fab,
+				padding:
+					statusBg === 'transparent'
+						? 0
+						: iconSize && iconSize > 20
+							? theme.space.md
+							: theme.space.sm,
+				borderRadius: rounded ? theme.radius.pill : theme.radius.headingIcon,
 				backgroundColor: statusBg,
 				justifyContent: 'center',
 				alignItems: 'center',
@@ -39,7 +44,7 @@ export default function HeadingIcon({
 					return (
 						<MaterialCommunityIcons
 							name={iconName as any}
-							size={iconSize}
+							size={iconSize ?? theme.space.iconSize}
 							color={statusColor}
 						/>
 					)
@@ -47,7 +52,7 @@ export default function HeadingIcon({
 					return (
 						<MaterialIcons
 							name={iconName as any}
-							size={iconSize}
+							size={iconSize ?? theme.space.iconSize}
 							color={statusColor}
 						/>
 					)

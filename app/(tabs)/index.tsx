@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
-import { ScrollView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
-import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
-import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
 import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
+import ScrollView from '@/components/layout/ScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
 import { tanstackKeys } from '@/constants'
@@ -222,13 +220,7 @@ export default function DashboardTabScreen() {
 
 		return (
 			<StatusScreen
-				image={
-					<ServerFailureIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="network-error"
 				title="Dashboard Unavailable"
 				subtitle="We couldn’t reach the server to load your dashboard data."
 				hint="Local device features are still available, but cloud functionality won’t work until the connection is restored."
@@ -241,13 +233,7 @@ export default function DashboardTabScreen() {
 	if (!profile || !areas) {
 		return (
 			<StatusScreen
-				image={
-					<FilesMissingIllustration
-						width={200}
-						height={220}
-						color={theme.colors.accentBlue}
-					/>
-				}
+				variant="missing-data"
 				title="Dashboard Data Unavailable"
 				subtitle="Some dashboard data couldn’t be loaded."
 				hint="Local device features are still available, but some cloud functionality may be limited."
@@ -259,19 +245,15 @@ export default function DashboardTabScreen() {
 
 	return (
 		<ScrollView
-			contentContainerStyle={{
-				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight,
-				paddingBottom: insets.bottom + theme.space.lg,
-				gap: theme.space.x2l,
-			}}
+			refreshControl={
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={onRefresh}
+					progressViewOffset={20}
+					colors={[theme.colors.accentBlue]}
+				/>
+			}
 		>
-			<RefreshControl
-				refreshing={isRefreshing}
-				onRefresh={onRefresh}
-				progressViewOffset={20}
-				colors={[theme.colors.accentBlue]}
-			/>
 			<View>
 				<View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 					<SectionTitle text="Active Now" />

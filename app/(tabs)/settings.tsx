@@ -1,20 +1,13 @@
 import { useState } from 'react'
-import {
-	ActivityIndicator,
-	RefreshControl,
-	ScrollView,
-	Text,
-	View,
-} from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
-import { useHeaderHeight } from 'expo-router/build/react-navigation'
 import * as SecureStore from 'expo-secure-store'
 
 import Card from '@/components/layout/Card'
+import ScrollView from '@/components/layout/ScrollView'
 import { UserCard } from '@/components/profile/UserCard'
 import Button from '@/components/ui/Button'
 import SectionTitle from '@/components/ui/SectionTitle'
@@ -40,7 +33,6 @@ export default function SettingTabScreen() {
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const router = useRouter()
 	const theme = useTheme()
-	const insets = useSafeAreaInsets()
 	const [isRefreshing, setIsRefreshing] = useState(false)
 
 	const logout = async () => {
@@ -65,8 +57,6 @@ export default function SettingTabScreen() {
 			setIsRefreshing(false)
 		}
 	}
-
-	const headerHeight = useHeaderHeight()
 
 	const {
 		data: profile,
@@ -169,16 +159,9 @@ export default function SettingTabScreen() {
 
 	return (
 		<ScrollView
-			contentContainerStyle={{
-				paddingHorizontal: theme.space.lg,
-				paddingTop: headerHeight,
-				paddingBottom: insets.bottom + theme.space.lg,
-				gap: theme.space.x2l,
-			}}
 			refreshControl={
 				<RefreshControl
 					refreshing={isRefreshing}
-					progressViewOffset={headerHeight}
 					onRefresh={onRefresh}
 					colors={[theme.colors.accentBlue]}
 				/>

@@ -28,9 +28,10 @@ export default function Badge({
 			style={{
 				flexDirection: 'row',
 				alignItems: 'center',
-				gap: theme.space.xs,
-				paddingHorizontal: 9,
-				paddingVertical: 3,
+				justifyContent: 'center',
+				gap: theme.space.x2s,
+				paddingHorizontal: theme.space.sm + theme.space.x3s,
+				paddingVertical: theme.space.x2s,
 				borderRadius: theme.radius.pill,
 				backgroundColor: backgroundColor,
 				borderWidth: borderColor ? 1 : 0,
@@ -44,7 +45,7 @@ export default function Badge({
 				<Text
 					style={{
 						fontSize: theme.font.xs,
-						fontWeight: '600',
+						fontWeight: '700',
 						color: color,
 					}}
 				>

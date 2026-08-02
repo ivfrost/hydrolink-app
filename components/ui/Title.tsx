@@ -7,9 +7,10 @@ export default function Title({ text }: { text: string }) {
 	return (
 		<Text
 			style={{
-				fontSize: theme.font.lg,
-				fontWeight: '500',
-				paddingHorizontal: theme.space.md,
+				fontSize: theme.font.xl,
+				fontWeight: '600',
+				letterSpacing: -0.25,
+				paddingHorizontal: theme.space.base,
 				color: theme.colors.textPrimary,
 				textAlign: 'center',
 			}}

@@ -158,7 +158,7 @@ export function Picker<T extends string | number>({
 					icon={
 						<MaterialCommunityIcons
 							name={open ? 'chevron-up' : 'chevron-down'}
-							size={20}
+							size={theme.space.iconSize}
 							color={theme.colors.textSecondary}
 						/>
 					}
@@ -222,11 +222,11 @@ export function Picker<T extends string | number>({
 									>
 										<Text
 											style={{
-												fontSize: 14,
-												fontWeight: isSelected ? '600' : '400',
+												fontSize: theme.font.base,
+												fontWeight: isSelected ? '600' : '500',
 												color: isSelected
 													? theme.colors.accentBlue
-													: theme.colors.textPrimary,
+													: theme.colors.textSecondary,
 												flex: 1,
 											}}
 										>

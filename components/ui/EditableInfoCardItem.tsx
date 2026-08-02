@@ -1,13 +1,19 @@
 import React, { useRef } from 'react'
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
 
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+
 import { useTheme } from '@/context/ThemeContext'
+
+import HeadingIcon from './HeadingIcon'
 
 interface EditableInfoCardItemProps extends TextInputProps {
 	label: string
 	text: string
 	error?: string
-	icon: React.ReactNode
+	icon:
+		| keyof typeof MaterialCommunityIcons.glyphMap
+		| keyof typeof MaterialIcons.glyphMap
 	renderBottom?: () => React.ReactNode
 }
 
@@ -31,14 +37,6 @@ export default function EditableInfoCardItem({
 			alignItems: 'center',
 			gap: theme.space.lg,
 			padding: theme.space.lg,
-		},
-		iconWrapper: {
-			width: theme.space.x3l,
-			height: theme.space.x3l,
-			borderRadius: theme.radius.fab,
-			backgroundColor: theme.colors.accentBlueLight,
-			justifyContent: 'center',
-			alignItems: 'center',
 		},
 		inputMetaGroup: {
 			flex: 1,
@@ -70,7 +68,11 @@ export default function EditableInfoCardItem({
 		<View style={styles.cardContainer}>
 			{/* Upper Input Row */}
 			<View style={styles.row}>
-				<View style={styles.iconWrapper}>{icon}</View>
+				<HeadingIcon
+					icon={icon}
+					statusColor={theme.colors.accentBlue}
+					statusBg={theme.colors.accentBlueLight}
+				/>
 				<View style={styles.inputMetaGroup}>
 					<Text style={styles.label}>{label}</Text>
 					{props.editable ? (

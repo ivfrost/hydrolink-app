@@ -1,7 +1,5 @@
 import { View } from 'react-native'
 
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-
 import { useTheme } from '@/context/ThemeContext'
 import { ProfileUpdatePayload } from '@/types/user'
 
@@ -51,13 +49,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('fullName', value)}
 					editable
 					error={errorState?.fullName}
-					icon={
-						<MaterialCommunityIcons
-							name="account-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="account-outline"
 				/>
 			)}
 
@@ -69,13 +61,7 @@ export function EditableProfileInfoCard({
 					autoCapitalize="none"
 					editable
 					error={errorState?.username}
-					icon={
-						<MaterialCommunityIcons
-							name="at"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="at"
 				/>
 			)}
 
@@ -88,13 +74,7 @@ export function EditableProfileInfoCard({
 					autoCapitalize="none"
 					editable
 					error={errorState?.email}
-					icon={
-						<MaterialCommunityIcons
-							name="email-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="email-outline"
 				/>
 			)}
 
@@ -109,13 +89,7 @@ export function EditableProfileInfoCard({
 					autoComplete="current-password"
 					textContentType="password"
 					error={errorState?.password}
-					icon={
-						<MaterialCommunityIcons
-							name="lock-plus-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="lock-plus-outline"
 				/>
 			)}
 
@@ -130,13 +104,7 @@ export function EditableProfileInfoCard({
 					autoComplete="current-password"
 					textContentType="password"
 					error={errorState?.currentPassword}
-					icon={
-						<MaterialCommunityIcons
-							name="shield-lock-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="shield-lock-outline"
 				/>
 			)}
 
@@ -148,13 +116,7 @@ export function EditableProfileInfoCard({
 					keyboardType="phone-pad"
 					editable
 					error={errorState?.phoneNumber}
-					icon={
-						<MaterialCommunityIcons
-							name="phone-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="phone-outline"
 				/>
 			)}
 
@@ -165,13 +127,7 @@ export function EditableProfileInfoCard({
 					onChangeText={(value) => onInfoChange('address', value)}
 					editable
 					error={errorState?.address}
-					icon={
-						<MaterialCommunityIcons
-							name="map-marker-outline"
-							size={19}
-							color={theme.colors.accentBlue}
-						/>
-					}
+					icon="map-marker-outline"
 				/>
 			)}
 		</View>

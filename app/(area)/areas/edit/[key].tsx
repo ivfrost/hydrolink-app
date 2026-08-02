@@ -3,7 +3,6 @@ import {
 	ActivityIndicator,
 	Image,
 	RefreshControl,
-	ScrollView,
 	StyleSheet,
 	Text,
 	View,
@@ -12,7 +11,6 @@ import DraggableFlatList, {
 	RenderItemParams,
 	ScaleDecorator,
 } from 'react-native-draggable-flatlist'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
@@ -20,12 +18,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMachine } from '@xstate/react'
 import * as Burnt from 'burnt'
 import * as ImagePicker from 'expo-image-picker'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { EditableAreaInfoCard } from '@/components/areas/EditableAreaInfoCard'
 import EditableStationCardItem from '@/components/areas/EditableStationCardItem'
 import { STATION_TYPE_ICON } from '@/components/areas/StationCardItem'
 import Card from '@/components/layout/Card'
+import ScrollView from '@/components/layout/ScrollView'
 import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 import StatusScreen from '@/components/status/StatusScreen'
 import Button from '@/components/ui/Button'
@@ -51,6 +50,7 @@ export default function EditAreaScreen() {
 	const { key } = useLocalSearchParams() as { key: string }
 	const insets = useSafeAreaInsets()
 	const initializedRef = useRef(false)
+	const router = useRouter()
 	const [localAreaImage, setLocalAreaImage] = useState({
 		uri: '',
 		name: '',
@@ -209,7 +209,7 @@ export default function EditAreaScreen() {
 			stations: allStations.map((station) => ({
 				id: station.id,
 				type: station.type,
-				name: station.name || '',
+				name: station.name || 'Station ' + (station.id + 1),
 				description: station.description || '',
 				imageUrl: station.imageUrl || '',
 			})),
@@ -443,12 +443,12 @@ export default function EditAreaScreen() {
 			return (
 				<View style={{ flex: 1 }}>
 					<View>
-						<SectionTitle text="Edit area image" />
 						<RectangularMedia
 							aspectRatio={16 / 9}
 							isFullWidth
 							ringColor={theme.colors.border}
 							elevation={0}
+							borderRadius={theme.radius.card}
 						>
 							{displayUri ? (
 								<Image
@@ -486,7 +486,7 @@ export default function EditAreaScreen() {
 									>
 										<MaterialCommunityIcons
 											name="file-image-plus"
-											size={24}
+											size={theme.space.iconSize}
 											color={theme.colors.textPrimary}
 										/>
 										<Text
@@ -536,7 +536,11 @@ export default function EditAreaScreen() {
 							variant="secondary"
 							modifier={['small']}
 							onPress={handleChooseImage}
-							extraStyles={{ position: 'absolute', bottom: 8, right: 8 }}
+							extraStyles={{
+								position: 'absolute',
+								bottom: theme.space.sm,
+								right: theme.space.sm,
+							}}
 						/>
 					</View>
 					<View style={{ marginVertical: theme.space.x2l }} />
@@ -554,7 +558,6 @@ export default function EditAreaScreen() {
 						<View
 							style={{
 								flexDirection: 'row',
-								marginHorizontal: theme.space.sm,
 								alignItems: 'center',
 								gap: theme.space.sm,
 								marginVertical: theme.space.sm,
@@ -607,6 +610,7 @@ export default function EditAreaScreen() {
 			const localStateMatch = areaFormState.stations.find(
 				(s) => s.id === station.id,
 			)
+			const mergedStation = { ...station, ...localStateMatch }
 
 			return (
 				<ScaleDecorator>
@@ -618,7 +622,7 @@ export default function EditAreaScreen() {
 					<View style={{ marginBottom: theme.space.md }}>
 						<Card>
 							<EditableStationCardItem
-								station={station}
+								station={mergedStation}
 								isActive={isActive}
 								isLoading={isStationLoading}
 								manualOverride={manualOverride}
@@ -665,13 +669,15 @@ export default function EditAreaScreen() {
 
 		return (
 			<ScrollView
-				contentContainerStyle={{
-					paddingTop: theme.space.x3l,
-					paddingBottom: insets.bottom + theme.space.x3l,
-					marginHorizontal: theme.space.md,
-				}}
+				refreshControl={
+					<RefreshControl
+						refreshing={currentScreenState.matches('loading')}
+						onRefresh={() => send({ type: 'RETRY' })}
+						progressViewOffset={theme.space.xl}
+						colors={[theme.colors.accentBlue]}
+					/>
+				}
 			>
-				<SectionTitle text="Edit area image" />
 				<LoadingScreen label="Connecting to MQTT..." />
 			</ScrollView>
 		)
@@ -696,25 +702,18 @@ export default function EditAreaScreen() {
 		if (error?.code === 'MQTT_ERROR') {
 			return (
 				<>
-					<View style={{ flex: 1 }}>
-						<ScrollView
-							refreshControl={
-								<RefreshControl
-									refreshing={currentScreenState.matches('loading')}
-									onRefresh={() => send({ type: 'RETRY' })}
-									progressViewOffset={theme.space.xl}
-									colors={[theme.colors.accentBlue]}
-								/>
-							}
-							contentContainerStyle={{
-								paddingTop: theme.space.x3l,
-								paddingBottom: insets.bottom + theme.space.x3l,
-								marginHorizontal: theme.space.md,
-							}}
-						>
-							{renderApiEditableData(true)}
-						</ScrollView>
-					</View>
+					<ScrollView
+						refreshControl={
+							<RefreshControl
+								refreshing={currentScreenState.matches('loading')}
+								onRefresh={() => send({ type: 'RETRY' })}
+								progressViewOffset={theme.space.xl}
+								colors={[theme.colors.accentBlue]}
+							/>
+						}
+					>
+						{renderApiEditableData(true)}
+					</ScrollView>
 					<StickyActionButtons
 						disabled={isButtonDisabled}
 						onSave={handleSave}
@@ -772,25 +771,18 @@ export default function EditAreaScreen() {
 		if (!isAreaOnline) {
 			return (
 				<>
-					<View style={{ flex: 1 }}>
-						<ScrollView
-							refreshControl={
-								<RefreshControl
-									refreshing={currentScreenState.matches('loading')}
-									onRefresh={() => send({ type: 'RETRY' })}
-									progressViewOffset={theme.space.xl}
-									colors={[theme.colors.accentBlue]}
-								/>
-							}
-							contentContainerStyle={{
-								paddingTop: theme.space.x3l,
-								paddingBottom: insets.bottom + theme.space.x3l,
-								marginHorizontal: theme.space.md,
-							}}
-						>
-							{renderApiEditableData(true)}
-						</ScrollView>
-					</View>
+					<ScrollView
+						refreshControl={
+							<RefreshControl
+								refreshing={currentScreenState.matches('loading')}
+								onRefresh={() => send({ type: 'RETRY' })}
+								progressViewOffset={theme.space.xl}
+								colors={[theme.colors.accentBlue]}
+							/>
+						}
+					>
+						{renderApiEditableData(true)}
+					</ScrollView>
 					<StickyActionButtons
 						disabled={isButtonDisabled}
 						onSave={handleSave}
@@ -808,11 +800,19 @@ export default function EditAreaScreen() {
 		// Normal area UI
 		return (
 			<>
-				<GestureHandlerRootView style={{ flex: 1 }}>
+				<View
+					style={{
+						gap: theme.space.sm,
+						marginVertical: theme.space.sm,
+						marginHorizontal: theme.space.md,
+						flex: 1,
+					}}
+				>
 					<DraggableFlatList
 						data={allStations}
 						keyExtractor={(item) => item.id.toString()}
 						renderItem={renderStation}
+						contentInsetAdjustmentBehavior="automatic"
 						ListHeaderComponent={
 							<>
 								{renderApiEditableData()}
@@ -827,7 +827,6 @@ export default function EditAreaScreen() {
 										flexDirection: 'row',
 										alignItems: 'center',
 										gap: theme.space.md,
-										marginVertical: theme.space.sm,
 										paddingHorizontal: theme.space.sm,
 									}}
 								>
@@ -858,18 +857,13 @@ export default function EditAreaScreen() {
 								colors={[theme.colors.accentBlue]}
 							/>
 						}
-						contentContainerStyle={{
-							paddingTop: theme.space.x3l,
-							paddingBottom: insets.bottom + theme.space.x3l,
-							marginHorizontal: theme.space.md,
-						}}
 						onDragEnd={({ data }) =>
 							handleStationReorder(data.map((s) => s.id))
 						}
 						removeClippedSubviews={false}
 						windowSize={5}
 					/>
-				</GestureHandlerRootView>
+				</View>
 				<StickyActionButtons
 					disabled={isButtonDisabled}
 					onSave={handleSave}

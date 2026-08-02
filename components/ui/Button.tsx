@@ -1,9 +1,9 @@
 import {
 	ActivityIndicator,
+	Pressable,
 	StyleProp,
 	StyleSheet,
 	Text,
-	TouchableOpacity,
 	TouchableOpacityProps,
 	View,
 	ViewStyle,
@@ -18,24 +18,19 @@ export interface ButtonProps extends TouchableOpacityProps {
 	ref?: React.Ref<View>
 	label?: string
 	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
-	modifier?: (
-		| 'tall'
-		| 'full'
-		| 'fab'
-		| 'iconOnly'
-		| 'small'
-		| 'outlined'
-		| 'overImage'
-	)[]
+	modifier?: ('tall' | 'full' | 'fab' | 'iconOnly' | 'small' | 'outlined')[]
 	icon?:
 		| React.ReactNode
 		| keyof typeof MaterialCommunityIcons
 		| keyof typeof MaterialIcons
 	iconColor?: string
 	iconSize?: number
+	outlineColor?: string
+	outlineWidth?: number
 	loading?: boolean
 	disabled?: boolean
 	onPress?: () => void
+	isSubmenuOpen?: boolean
 	iconPosition?: 'left' | 'right'
 	extraStyles?: StyleProp<ViewStyle>
 	hapticFeedback?: boolean
@@ -50,89 +45,132 @@ export default function Button({
 	icon,
 	iconColor,
 	iconSize,
+	outlineColor,
+	outlineWidth,
 	disabled = false,
 	iconPosition = 'left',
 	extraStyles,
 	onPress,
+	isSubmenuOpen = false,
 	hapticFeedback = true,
 }: ButtonProps) {
+	const theme = useTheme()
+
 	const isTall = modifier?.includes('tall') ?? false
 	const isFull = modifier?.includes('full') ?? false
 	const isIconOnly = modifier?.includes('iconOnly') ?? false
 	const isFab = modifier?.includes('fab') ?? false
-	const isFabOrIconOnly = isFab || isIconOnly
 	const isSmall = modifier?.includes('small') ?? false
-	const isOverImage = modifier?.includes('overImage') ?? false
-	const theme = useTheme()
-	const handlePress = () => {
-		if (disabled || loading) return
+	const isOutlined = modifier?.includes('outlined') ?? false
 
+	const isMuted = disabled || loading
+
+	const handlePress = () => {
+		if (isMuted) return
 		hapticFeedback && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 		onPress?.()
 	}
 
-	const styles = StyleSheet.create({
+	// --- Color lookups: single source of truth per variant ---
+	const bgColorByVariant = {
+		primary: {
+			base: theme.colors.buttonPrimary,
+			pressed: theme.colors.buttonPrimaryPressed,
+		},
+		secondary: {
+			base: theme.colors.buttonSecondary,
+			pressed: theme.colors.buttonSecondaryPressed,
+		},
+		tertiary: {
+			base: 'transparent',
+			pressed: theme.colors.buttonTertiaryPressed,
+		},
+		destructive: {
+			base: theme.colors.buttonDestructive,
+			pressed: theme.colors.buttonDestructivePressed,
+		},
+	} as const
+
+	const textColorByVariant = {
+		primary: theme.colors.buttonPrimaryText,
+		secondary: theme.colors.buttonSecondaryText,
+		tertiary: theme.colors.textSecondary,
+		destructive: theme.colors.buttonPrimaryText,
+	} as const
+
+	const sizeConfig = (() => {
+		if (isFab) {
+			const size = isSmall
+				? theme.space.smallButtonSize
+				: theme.space.fabButtonSize
+			return {
+				width: size,
+				height: size,
+				paddingVertical: 0,
+				paddingHorizontal: 0,
+				iconSize: isSmall ? theme.space.iconSizeSm : theme.space.iconSize,
+			}
+		}
+
+		if (isIconOnly) {
+			const size = isSmall
+				? theme.space.smallButtonSize
+				: theme.space.iconOnlyButtonSize
+			return {
+				width: size,
+				height: size,
+				paddingVertical: 0,
+				paddingHorizontal: 0,
+				iconSize: isSmall ? theme.space.iconSizeSm : theme.space.iconSize,
+			}
+		}
+
+		if (isSmall) {
+			return {
+				width: isFull ? ('100%' as const) : ('auto' as const),
+				height: theme.space.smallButtonSize,
+				paddingVertical: theme.space.smallButtonVerticalPadding,
+				paddingHorizontal: theme.space.smallButtonHorizontalPadding,
+				iconSize: theme.space.iconSize,
+			}
+		}
+
+		if (isTall) {
+			return {
+				width: isFull ? ('100%' as const) : ('auto' as const),
+				height: theme.space.tallButtonSize,
+				paddingVertical: theme.space.tallButtonVerticalPadding,
+				paddingHorizontal: theme.space.tallButtonHorizontalPadding,
+				iconSize: theme.space.iconSize,
+			}
+		}
+
+		return {
+			width: isFull ? ('100%' as const) : ('auto' as const),
+			height: theme.space.buttonSize,
+			paddingVertical: theme.space.buttonVerticalPadding,
+			paddingHorizontal: theme.space.buttonHorizontalPadding,
+			iconSize: theme.space.iconSize,
+		}
+	})()
+
+	const baseStyles = StyleSheet.create({
 		button: {
-			borderRadius: isFabOrIconOnly ? theme.radius.fab : theme.radius.button,
-			paddingVertical: isFabOrIconOnly
-				? 0
-				: isSmall
-					? 0
-					: isTall
-						? theme.space.tallButtonVerticalPadding
-						: theme.space.buttonVerticalPadding,
-			paddingHorizontal: isFabOrIconOnly
-				? 0
-				: isSmall
-					? 0
-					: isTall
-						? theme.space.tallButtonHorizontalPadding
-						: theme.space.buttonHorizontalPadding,
-			paddingLeft: isFabOrIconOnly
-				? 0
-				: icon && iconPosition === 'left'
-					? isSmall
-						? theme.space.smallButtonHorizontalPadding
-						: theme.space.lg
-					: theme.space.buttonHorizontalPadding,
-			paddingRight: isFabOrIconOnly
-				? 0
-				: icon && iconPosition === 'right'
-					? theme.space.lg
-					: isSmall
-						? theme.space.smallButtonHorizontalPadding
-						: theme.space.buttonHorizontalPadding,
+			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			minWidth: isFab
-				? theme.space.fabButtonSize
-				: isTall
-					? theme.space.tallButtonSize
-					: isSmall
-						? theme.space.smallButtonSize
-						: isFull
-							? '100%'
-							: 'auto',
-			width: isFab ? theme.space.fabButtonSize : 'auto',
-
-			height: isFab
-				? theme.space.fabButtonSize
-				: isTall
-					? theme.space.tallButtonSize
-					: theme.space.buttonSize,
-			backgroundColor: isOverImage
-				? theme.colors.textBoxBackground
-				: disabled || loading
-					? theme.colors.buttonDisabledBg
-					: variant === 'primary'
-						? theme.colors.buttonPrimaryBg
-						: variant === 'secondary'
-							? theme.colors.buttonSecondaryBg
-							: variant === 'tertiary'
-								? 'transparent'
-								: variant === 'destructive'
-									? theme.colors.buttonDestructiveBg
-									: theme.colors.buttonPrimaryBg,
+			gap: isSmall ? theme.space.xs : theme.space.sm,
+			borderRadius: isFab
+				? theme.radius.fab
+				: isIconOnly
+					? theme.radius.headingIcon
+					: theme.radius.button,
+			borderWidth:
+				variant === 'tertiary' && isOutlined ? (outlineWidth ?? 1) : 0,
+			borderColor:
+				variant === 'tertiary' && isOutlined
+					? (outlineColor ?? theme.colors.border)
+					: 'transparent',
 			...(isFab && {
 				shadowColor: '#000',
 				shadowOffset: { width: 0, height: 2 },
@@ -140,101 +178,96 @@ export default function Button({
 				shadowRadius: 4,
 				elevation: 6,
 			}),
-			...(isIconOnly && {
-				width: theme.space.iconOnlyButtonSize,
-				height: theme.space.iconOnlyButtonSize,
-			}),
-			...(isSmall && {
-				paddingVertical: theme.space.smallButtonVerticalPadding,
-				paddingHorizontal: theme.space.smallButtonHorizontalPadding,
-				width: 'auto',
-				height: theme.space.smallButtonSize,
-			}),
-			borderWidth:
-				variant === 'tertiary' && modifier?.includes('outlined') ? 1 : 0,
-			borderColor:
-				variant === 'tertiary' && modifier?.includes('outlined')
-					? theme.colors.border
-					: 'transparent',
 		},
-		buttonWithIcon: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: isSmall ? theme.space.xs : theme.space.sm,
-		},
-		buttonText: {
+		text: {
 			fontSize: isSmall ? theme.font.sm : theme.font.base,
 			fontWeight: '500',
 			textAlign: 'center',
 			flexShrink: 1,
-			color:
-				disabled || loading
-					? theme.colors.buttonDisabledText
-					: variant === 'primary'
-						? theme.colors.buttonPrimaryText
-						: variant === 'secondary'
-							? theme.colors.buttonSecondaryText
-							: variant === 'tertiary'
-								? theme.colors.textSecondary
-								: variant === 'destructive'
-									? theme.colors.buttonPrimaryText
-									: theme.colors.buttonPrimaryText,
+			color: isMuted
+				? theme.colors.buttonDisabledText
+				: textColorByVariant[variant],
 		},
 	})
-	return (
-		<TouchableOpacity
-			ref={ref}
-			style={[styles.button, icon ? styles.buttonWithIcon : null, extraStyles]}
-			onPress={handlePress}
-			disabled={disabled}
-			activeOpacity={0.9}
-			hitSlop={20}
-		>
-			{iconPosition === 'left' && icon ? (
-				loading ? (
-					<ActivityIndicator
-						color={
-							variant === 'primary' || variant === 'destructive'
-								? theme.colors.buttonDisabledText
-								: theme.colors.buttonSecondaryText
-						}
-						size="small"
-					/>
-				) : typeof icon === 'string' &&
-				  icon in MaterialCommunityIcons.glyphMap ? (
+
+	const resolveIcon = () => {
+		if (loading) {
+			return (
+				<ActivityIndicator
+					color={
+						variant === 'primary' || variant === 'destructive'
+							? theme.colors.buttonDisabledText
+							: theme.colors.buttonSecondaryText
+					}
+					size="small"
+				/>
+			)
+		}
+
+		if (typeof icon === 'string') {
+			const resolvedSize = iconSize || sizeConfig.iconSize
+			const resolvedColor = iconColor || theme.colors.textPrimary
+
+			if (icon in MaterialCommunityIcons.glyphMap) {
+				return (
 					<MaterialCommunityIcons
 						name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
-						size={iconSize || theme.space.iconSize}
-						color={iconColor || theme.colors.textPrimary}
+						size={resolvedSize}
+						color={resolvedColor}
 					/>
-				) : typeof icon === 'string' && icon in MaterialIcons.glyphMap ? (
+				)
+			}
+
+			if (icon in MaterialIcons.glyphMap) {
+				return (
 					<MaterialIcons
 						name={icon as keyof typeof MaterialIcons.glyphMap}
-						size={isSmall ? theme.space.iconSizeSm : theme.space.iconSize}
-						color={iconColor || theme.colors.textPrimary}
+						size={resolvedSize}
+						color={resolvedColor}
 					/>
-				) : (
-					// fallback if icon is already a ReactNode
-					(icon as React.ReactNode)
 				)
-			) : null}
-			{!isFabOrIconOnly && label ? (
-				<Text style={styles.buttonText}>{label}</Text>
-			) : null}
-			{iconPosition === 'right' && icon ? (
-				loading ? (
-					<ActivityIndicator
-						color={
-							variant === 'primary' || variant === 'destructive'
-								? theme.colors.buttonDisabledText
-								: theme.colors.buttonSecondaryText
-						}
-						size="small"
-					/>
-				) : (
-					icon
-				)
-			) : null}
-		</TouchableOpacity>
+			}
+		}
+
+		return icon as React.ReactNode
+	}
+
+	return (
+		<Pressable
+			ref={ref}
+			onPress={handlePress}
+			disabled={disabled}
+			hitSlop={20}
+			style={({ pressed }) => {
+				const isPressed = pressed && !isMuted
+
+				const bgColor = isMuted
+					? variant === 'tertiary'
+						? 'transparent'
+						: theme.colors.buttonDisabled
+					: isPressed || isSubmenuOpen
+						? bgColorByVariant[variant].pressed
+						: bgColorByVariant[variant].base
+
+				return [
+					baseStyles.button,
+					extraStyles,
+					{
+						width: sizeConfig.width,
+						height: sizeConfig.height,
+						paddingVertical: sizeConfig.paddingVertical,
+						paddingHorizontal: sizeConfig.paddingHorizontal,
+						transform: [{ scale: isPressed ? 0.97 : 1 }],
+						backgroundColor: bgColor,
+					},
+				]
+			}}
+		>
+			{iconPosition === 'left' && icon && resolveIcon()}
+			{!isIconOnly && !isFab && label && (
+				<Text style={baseStyles.text}>{label}</Text>
+			)}
+			{iconPosition === 'right' && icon && resolveIcon()}
+		</Pressable>
 	)
 }

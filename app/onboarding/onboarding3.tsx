@@ -1,4 +1,4 @@
-import { View, Alert, Text } from 'react-native'
+import { Alert, Text, View } from 'react-native'
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import * as Burnt from 'burnt'
@@ -157,7 +157,7 @@ export default function OnboardingStep3() {
 						icon={
 							<MaterialIcons
 								name="download"
-								size={24}
+								size={theme.space.iconSize}
 								color={theme.colors.buttonPrimaryText}
 							/>
 						}
@@ -173,7 +173,7 @@ export default function OnboardingStep3() {
 					icon={
 						<MaterialIcons
 							name="arrow-forward"
-							size={24}
+							size={theme.space.iconSize}
 							color={theme.colors.buttonSecondaryText}
 						/>
 					}

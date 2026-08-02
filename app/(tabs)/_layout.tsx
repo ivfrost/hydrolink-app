@@ -20,7 +20,6 @@ export default function TabsLayout() {
 	return (
 		<Tabs
 			screenOptions={{
-				headerTransparent: true,
 				sceneStyle: {
 					backgroundColor: theme.colors.background,
 				},
@@ -56,7 +55,7 @@ export default function TabsLayout() {
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons
 								name={focused ? 'view-dashboard' : 'view-dashboard-outline'}
-								size={22}
+								size={theme.space.iconSize}
 								color={color}
 							/>
 						</View>
@@ -71,7 +70,7 @@ export default function TabsLayout() {
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons
 								name={focused ? 'calendar-blank' : 'calendar-blank-outline'}
-								size={22}
+								size={theme.space.iconSize}
 								color={color}
 							/>
 						</View>
@@ -88,7 +87,7 @@ export default function TabsLayout() {
 								name={
 									focused ? 'map-marker-radius' : 'map-marker-radius-outline'
 								}
-								size={22}
+								size={theme.space.iconSize}
 								color={color}
 							/>
 						</View>
@@ -103,7 +102,7 @@ export default function TabsLayout() {
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons
 								name={focused ? 'cog' : 'cog-outline'}
-								size={22}
+								size={theme.space.iconSize}
 								color={color}
 							/>
 						</View>

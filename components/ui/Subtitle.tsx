@@ -16,10 +16,10 @@ export default function Subtitle({
 		<Text
 			style={{
 				fontSize: theme.font.base,
+				fontWeight: '400',
 				color: theme.colors.textSecondary,
 				textAlign: textAlign,
 				paddingHorizontal: theme.space.x2s,
-				lineHeight: theme.lineHeight.paragraph,
 			}}
 		>
 			{children ?? text}

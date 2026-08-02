@@ -44,7 +44,7 @@ export default function SimpleCardItem({
 			rightElement={
 				<MaterialCommunityIcons
 					name="chevron-right"
-					size={20}
+					size={theme.space.iconSize}
 					color={theme.colors.textMuted}
 				/>
 			}

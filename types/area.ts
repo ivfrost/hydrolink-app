@@ -82,7 +82,7 @@ export const stationUpdateSchema = stationSchema.omit({
 // Combined area data structure for editing
 export const areaUpdatePayloadSchema = z.object({
 	// API side fields
-	id: z.number().positive(),
+	key: z.string(),
 	friendlyName: z.string().optional(),
 	locationLabel: z.string().optional(),
 	locationCoordinates: z.string().optional(),
