@@ -108,10 +108,16 @@ export const initMqtt = async (): Promise<void> => {
 				await mqttClient.subscribeAsync(topicsToSubscribe, { qos: 1 })
 				console.log(`Subscribed to topics: ${topicsToSubscribe.join(', ')}`)
 			}
+			// Broker connection timeout or other network issues
 		} catch (error) {
-			console.error('Failed to initialize MQTT:', error)
+			const errorStr: string =
+				error instanceof Error ? error.message : String(error)
+			if (errorStr.includes('Failed to connect')) {
+				console.error(
+					'Failed to initialize MQTT client: Connection timeout or network issue.',
+				)
+			}
 			mqttClient = null
-			throw error
 		} finally {
 			activeRun = null
 		}

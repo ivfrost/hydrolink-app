@@ -58,6 +58,8 @@ export const tanstackKeys = {
 	EMAIL_UPDATE: ['emailUpdate'] as const,
 	PASSWORD_UPDATE: ['passwordUpdate'] as const,
 	FILE_UPLOAD: ['fileUpload'] as const,
+	AREA_IMAGE_UPLOAD: ['areaImageUpload'] as const,
+	PROFILE_IMAGE_UPLOAD: ['profileImageUpload'] as const,
 } as const
 
 export type TanstackKey = (typeof tanstackKeys)[keyof typeof tanstackKeys]

@@ -43,16 +43,16 @@ export default function StatusScreen({
 				paddingBottom: theme.space.x3l,
 				justifyContent: 'center',
 				alignItems: 'center',
-				gap: theme.space.x2l,
+				gap: theme.space.lg,
 			}}
 			refreshControl={
 				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
 			}
 		>
 			{variant === 'network-error' ? (
-				<ServerFailureIllustration width={200} height={220} />
+				<ServerFailureIllustration width={180} height={180} />
 			) : (
-				<FilesMissingIllustration width={200} height={220} />
+				<FilesMissingIllustration width={180} height={180} />
 			)}
 
 			<View
@@ -71,6 +71,7 @@ export default function StatusScreen({
 								color: theme.colors.textMuted,
 								textAlign: 'center',
 								marginBottom: theme.space.md,
+								fontWeight: '400',
 							}}
 						>
 							{hint}

@@ -39,15 +39,17 @@ export default function ScrollView({
 				{...props}
 				refreshControl={refreshControl}
 				contentInsetAdjustmentBehavior="automatic"
-				contentContainerStyle={{
-					gap: theme.space.sm,
-					marginVertical: theme.space.sm,
-					marginHorizontal: theme.space.md,
-					paddingTop: headerTransparent ? headerHeight : 0,
-					flexGrow: 1,
-					flexDirection,
-					...extraStyles,
-				}}
+				contentContainerStyle={[
+					{
+						gap: theme.space.xl,
+						marginHorizontal: theme.space.lg,
+						paddingBottom: theme.space.xl + theme.space.stickyBarHeight,
+						paddingTop: headerTransparent ? headerHeight + theme.space.x3l : 0,
+						flexGrow: 1,
+						flexDirection,
+					},
+					extraStyles,
+				]}
 			>
 				{children}
 			</RNScrollView>

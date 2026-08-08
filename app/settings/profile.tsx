@@ -20,11 +20,13 @@ import SimpleCardItem from '@/components/ui/SimpleRowCard'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
 import { profileUpdateFn } from '@/mutations/profile'
+import { profileFileUploadFn } from '@/mutations/storage'
 import { checkAvailabilityFn } from '@/queries/auth'
 import { profileQueryFn } from '@/queries/profile'
 import { AppError } from '@/types/api'
-import { registerSchema } from '@/types/auth'
+import type { UploadProfileImageVariables } from '@/types/storage'
 import { ProfileUpdatePayload, profileUpdateSchema, User } from '@/types/user'
+import resolveImageUrl from '@/utils/resolveImageUrl'
 
 type ErrorState = Partial<Record<keyof ProfileUpdatePayload, string>>
 
@@ -35,13 +37,21 @@ export default function ProfileScreen() {
 	const [isRefreshing, setIsRefreshing] = useState(false)
 	const insets = useSafeAreaInsets()
 	const [errorState, setErrorState] = useState<ErrorState>({})
-	const [inputState, setInputState] = useState<Partial<ProfileUpdatePayload>>({
+	const [profileFormState, setProfileFormState] = useState<
+		Partial<ProfileUpdatePayload>
+	>({
 		fullName: '',
 		username: '',
 		phoneNumber: '',
 		address: '',
+		imageUrl: '',
 	})
-	const [debouncedUsername] = useDebounce(inputState.username ?? '', 400)
+	const [localImageFile, setLocalImageFile] = useState<{
+		uri: string
+		name: string
+		type: string
+	} | null>(null)
+	const [debouncedUsername] = useDebounce(profileFormState.username ?? '', 400)
 
 	// Query for fetching user's profile data to preserve unchanged fields on save
 	const {
@@ -57,13 +67,61 @@ export default function ProfileScreen() {
 	const { data: isUsernameAvailable, isPending: usernameChecking } = useQuery({
 		queryKey: ['validEmailUsername', debouncedUsername],
 		queryFn: () => checkAvailabilityFn(debouncedUsername),
-		// Only run check if username changed from profile and passes basic format
-		// validation
-		enabled:
-			!!profile?.username &&
-			debouncedUsername !== profile.username &&
-			registerSchema.shape.username.safeParse(debouncedUsername).success,
+		// Only run check when profile exists, username changed, and the
+		// debounced username meets basic length constraints.
+		enabled: Boolean(
+			profile?.username &&
+			debouncedUsername !== profile?.username &&
+			debouncedUsername.length >= 5 &&
+			debouncedUsername.length <= 20,
+		),
 	})
+
+	// Mutation for uploading profile image to the API
+	const { mutateAsync: uploadProfileImageAsync, isPending: isUploadingImage } =
+		useMutation({
+			mutationKey: tanstackKeys.PROFILE_IMAGE_UPLOAD,
+			mutationFn: ({ payload, userId }: UploadProfileImageVariables) =>
+				profileFileUploadFn(payload, userId),
+			onError: (error: AppError) => {
+				Burnt.toast({
+					title:
+						error.code === 'UNKNOWN_ERROR'
+							? 'An unknown error occurred while uploading your profile picture.'
+							: error.message,
+					preset: 'error',
+				})
+			},
+			onSuccess: async (data) => {
+				setProfileFormState((prev) => ({
+					...prev,
+					imageUrl: data.fileUrl,
+				}))
+
+				// Persist the returned file URL to the user's profile automatically
+				try {
+					if (profile?.id) {
+						const fullUrl = resolveImageUrl(data.fileUrl) || data.fileUrl
+						const updated = await profileUpdateFn({ imageUrl: fullUrl } as any)
+						// Inject sent imageUrl into cache so UI shows it immediately
+						queryClient.setQueryData(['profile'], {
+							...updated,
+							imageUrl: fullUrl,
+						})
+
+						Burnt.toast({ title: 'Profile picture saved', preset: 'done' })
+					}
+				} catch (err: any) {
+					console.error('Error saving profile image URL:', err)
+					// Let user know saving failed
+					Burnt.toast({
+						title: 'Failed to save profile picture',
+						message: err?.message || 'Please try again',
+						preset: 'error',
+					})
+				}
+			},
+		})
 
 	// Mutation for updating the user's profile data
 	const { mutate, isPending: isProfileUpdating } = useMutation({
@@ -78,12 +136,17 @@ export default function ProfileScreen() {
 				preset: 'error',
 			})
 		},
-		onSuccess: async (updatedUser: User) => {
+		onSuccess: async (updatedUser: User, variables?: any) => {
 			Burnt.toast({
 				title: 'Profile updated successfully',
 				preset: 'done',
 			})
-			queryClient.setQueryData(['profile'], updatedUser)
+			const injectedImageUrl = variables?.imageUrl || updatedUser.imageUrl
+			queryClient.setQueryData(['profile'], {
+				...updatedUser,
+				imageUrl: injectedImageUrl,
+			})
+
 			router.back()
 		},
 	})
@@ -93,7 +156,7 @@ export default function ProfileScreen() {
 		field: keyof ProfileUpdatePayload,
 		value: string,
 	) => {
-		setInputState((prev) => ({ ...prev, [field]: value }))
+		setProfileFormState((prev) => ({ ...prev, [field]: value }))
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
 
@@ -134,14 +197,7 @@ export default function ProfileScreen() {
 				const match = /\.(\w+)$/.exec(filename)
 				const type = match ? `image/${match[1]}` : 'image/jpeg'
 
-				setInputState((prev) => ({
-					...prev,
-					profilePictureFile: {
-						uri: imageUri,
-						name: filename,
-						type,
-					},
-				}))
+				setLocalImageFile({ uri: imageUri, name: filename, type })
 			} else {
 				Burnt.alert({
 					title: 'Image Selection Cancelled',
@@ -159,15 +215,33 @@ export default function ProfileScreen() {
 	}
 
 	// Handlers for save and discard actions
-	const handleSave = () => {
-		const payload = {
-			fullName: inputState.fullName,
-			username: inputState.username,
-			phoneNumber: inputState.phoneNumber,
-			address: inputState.address,
+	const handleSave = async () => {
+		// Build base payload
+		const basePayload: any = {
+			fullName: profileFormState.fullName,
+			username: profileFormState.username,
+			phoneNumber: profileFormState.phoneNumber,
+			address: profileFormState.address,
 		}
 
-		const result = profileUpdateSchema.safeParse(payload)
+		// If there's a picked image file, upload it first and include the returned URL
+		try {
+			if (localImageFile && profile?.id) {
+				const uploadResult = await uploadProfileImageAsync({
+					payload: localImageFile as any,
+					userId: String(profile.id),
+				})
+				// Resolve file key to full URL
+				basePayload.imageUrl =
+					resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
+				setLocalImageFile(null)
+			}
+		} catch {
+			// uploadProfileImageAsync will have already shown a toast on error
+			return
+		}
+
+		const result = profileUpdateSchema.safeParse(basePayload)
 		if (!result.success) {
 			const formattedErrors: ErrorState = {}
 			result.error.issues.forEach((issue) => {
@@ -189,12 +263,12 @@ export default function ProfileScreen() {
 			return
 		}
 
-		mutate(payload)
+		mutate(basePayload)
 	}
 
 	const handleDiscard = () => {
 		if (!profile) return
-		setInputState({
+		setProfileFormState({
 			fullName: profile.fullName,
 			username: profile.username,
 			phoneNumber: profile.phoneNumber ?? '',
@@ -206,26 +280,29 @@ export default function ProfileScreen() {
 	useEffect(() => {
 		if (loadProfilePending || profileLoadError || !profile) return
 
-		setInputState({
-			fullName: profile.fullName,
-			username: profile.username,
-			phoneNumber: profile.phoneNumber ?? '',
-			address: profile.address ?? '',
-		})
+		// Defer setState to avoid synchronous state updates inside effects
+		setTimeout(() =>
+			setProfileFormState({
+				fullName: profile.fullName,
+				username: profile.username,
+				phoneNumber: profile.phoneNumber ?? '',
+				address: profile.address ?? '',
+			}),
+		)
 	}, [loadProfilePending, profileLoadError, profile])
 
 	// Effect to update error state based on availability checks and validation
 	// results
 	useEffect(() => {
 		// Hold off validation until profile loads and input state is initialized
-		if (!profile?.username || !inputState.username) return
-		if (inputState.username !== debouncedUsername) return
+		if (!profile?.username || !profileFormState.username) return
+		if (profileFormState.username !== debouncedUsername) return
 
 		const payload = {
-			fullName: inputState.fullName,
-			username: inputState.username,
-			phoneNumber: inputState.phoneNumber,
-			address: inputState.address,
+			fullName: profileFormState.fullName,
+			username: profileFormState.username,
+			phoneNumber: profileFormState.phoneNumber,
+			address: profileFormState.address,
 		}
 
 		const result = profileUpdateSchema.safeParse(payload)
@@ -237,14 +314,16 @@ export default function ProfileScreen() {
 					formattedErrors[field] = issue.message
 				}
 			})
-			setErrorState(formattedErrors)
+			// Defer setState to avoid synchronous state updates inside effects
+			setTimeout(() => setErrorState(formattedErrors))
 			return
 		}
 
 		// Check if the username has changed from the profile's username
 		const isUsernameChanged = profile.username !== debouncedUsername
 		if (!isUsernameChanged) {
-			setErrorState((prev) => ({ ...prev, username: '' }))
+			// Defer to avoid synchronous state update in effect
+			setTimeout(() => setErrorState((prev) => ({ ...prev, username: '' })))
 			return
 		}
 
@@ -253,36 +332,43 @@ export default function ProfileScreen() {
 			isUsernameAvailable === false &&
 			debouncedUsername !== profile.username
 		) {
-			setErrorState((prev) => ({
-				...prev,
-				username: 'Username is already taken',
-			}))
+			// Defer to avoid synchronous state update in effect
+			setTimeout(() =>
+				setErrorState((prev) => ({
+					...prev,
+					username: 'Username is already taken',
+				})),
+			)
 			return
 		} else {
-			setErrorState((prev) => ({ ...prev, username: '' }))
+			// Defer to avoid synchronous state update in effect
+			setTimeout(() => setErrorState((prev) => ({ ...prev, username: '' })))
 		}
 
 		// Validate the full name field
 		const { success: isValidFullName, error: fullNameError } =
-			profileUpdateSchema.shape.fullName.safeParse(inputState.fullName)
+			profileUpdateSchema.shape.fullName.safeParse(profileFormState.fullName)
 
 		if (!isValidFullName) {
-			setErrorState((prev) => ({
-				...prev,
-				fullName: fullNameError?.issues[0]?.message ?? 'Invalid full name',
-			}))
+			// Defer to avoid synchronous state update in effect
+			setTimeout(() =>
+				setErrorState((prev) => ({
+					...prev,
+					fullName: fullNameError?.issues[0]?.message ?? 'Invalid full name',
+				})),
+			)
 		} else {
-			setErrorState((prev) => ({ ...prev, fullName: '' }))
+			setTimeout(() => setErrorState((prev) => ({ ...prev, fullName: '' })))
 		}
 	}, [
 		isUsernameAvailable,
-		inputState.username,
+		profileFormState.username,
 		debouncedUsername,
 		profile?.username,
-		inputState.fullName,
+		profileFormState.fullName,
 		profile?.fullName,
-		inputState.phoneNumber,
-		inputState.address,
+		profileFormState.phoneNumber,
+		profileFormState.address,
 		profile?.phoneNumber,
 		profile?.address,
 	])
@@ -291,13 +377,15 @@ export default function ProfileScreen() {
 	const hasErrors = Object.values(errorState).some((message) => !!message)
 	const hasChanges =
 		profile &&
-		(inputState.fullName !== profile.fullName ||
-			inputState.username !== profile.username ||
-			inputState.phoneNumber !== (profile.phoneNumber ?? '') ||
-			inputState.address !== (profile.address ?? '') ||
-			!!inputState.profilePictureFile)
-	const hasMandatoryEmptyFields = !inputState.fullName || !inputState.username
-	const isUsernameInputDebouncing = inputState.username !== debouncedUsername
+		(profileFormState.fullName !== profile.fullName ||
+			profileFormState.username !== profile.username ||
+			profileFormState.phoneNumber !== (profile.phoneNumber ?? '') ||
+			profileFormState.address !== (profile.address ?? '') ||
+			!!localImageFile)
+	const hasMandatoryEmptyFields =
+		!profileFormState.fullName || !profileFormState.username
+	const isUsernameInputDebouncing =
+		profileFormState.username !== debouncedUsername
 
 	const isUsernameChecking =
 		usernameChecking && debouncedUsername !== profile?.username
@@ -334,9 +422,8 @@ export default function ProfileScreen() {
 			<StatusScreen
 				variant="network-error"
 				title="Profile Unavailable"
-				subtitle="Your profile couldn’t be loaded."
-				hint="Local features are still available, but some cloud functionality 
-				may be limited."
+				subtitle="We couldn't load your profile. Check your connection and try again."
+				hint="Only the local areas feature is available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -349,9 +436,8 @@ export default function ProfileScreen() {
 			<StatusScreen
 				variant="missing-data"
 				title="Profile Data Unavailable"
-				subtitle="Some profile data couldn’t be loaded."
-				hint="Local features are still available, but some cloud functionality 
-				may be limited."
+				subtitle="Some profile data couldn't be loaded."
+				hint="Only the local areas feature is available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -374,23 +460,28 @@ export default function ProfileScreen() {
 				}
 			>
 				<ProfileHeader
+					fullName={profile.fullName}
 					email={profile.email}
-					imageUrl={
-						inputState.profilePictureFile?.uri ??
-						profile.profilePictureUrl ??
-						undefined
-					}
+					imageUrl={localImageFile?.uri ?? profile.imageUrl ?? undefined}
 					handleChooseImage={handleChooseImage}
 				/>
+
+				{isUploadingImage && (
+					<View style={{ alignItems: 'center', marginTop: theme.space.sm }}>
+						<Text style={{ color: theme.colors.textSecondary }}>
+							Uploading image...
+						</Text>
+					</View>
+				)}
 
 				<View style={{ gap: theme.space.x2l }}>
 					<View>
 						<SectionTitle text="Profile" />
 						<EditableProfileInfoCard
-							fullName={inputState.fullName}
-							username={inputState.username}
-							phoneNumber={inputState.phoneNumber}
-							address={inputState.address}
+							fullName={profileFormState.fullName}
+							username={profileFormState.username}
+							phoneNumber={profileFormState.phoneNumber}
+							address={profileFormState.address}
 							onInfoChange={handleInputChange}
 							errorState={errorState}
 						/>
@@ -402,18 +493,24 @@ export default function ProfileScreen() {
 							<SimpleCardItem
 								label="Change email"
 								icon="email-outline"
-								onPress={() => router.push('/settings/change-email')}
+								onPress={() =>
+									router.push({ pathname: '/settings/change-email' } as any)
+								}
 							/>
 							<SimpleCardItem
 								label="Change password"
 								icon="lock-outline"
-								onPress={() => router.push('/settings/change-password')}
+								onPress={() =>
+									router.push({ pathname: '/settings/change-password' } as any)
+								}
 							/>
 							<SimpleCardItem
 								label="Delete account"
 								modifiers={['fault']}
 								icon="account-remove-outline"
-								onPress={() => router.push('/settings/delete-account')}
+								onPress={() =>
+									router.push({ pathname: '/settings/delete-account' } as any)
+								}
 							/>
 						</Card>
 					</View>

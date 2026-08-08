@@ -7,7 +7,7 @@ const themeTokens = {
 			card: '#ffffff',
 			modal: '#ffffff',
 			modalBackground: 'rgba(0,0,0,0.5)',
-			textPrimary: '#1b2a3b',
+			textPrimary: '#203247',
 			textSecondary: '#4d5a66',
 			textMuted: '#8a97a8',
 			textBoxBackground: '#f5f7fa',
@@ -141,7 +141,7 @@ const themeTokens = {
 	},
 
 	radius: {
-		card: 12,
+		card: 18,
 		boxInCard: 8,
 		dropdown: 6,
 		fab: 18,
@@ -157,7 +157,7 @@ const themeTokens = {
 		sm: 14,
 		base: 16,
 		md: 18,
-		lg: 22,
+		lg: 24,
 		xl: 28,
 	},
 

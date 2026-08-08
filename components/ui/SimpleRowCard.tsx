@@ -24,7 +24,7 @@ export default function SimpleCardItem({
 	return (
 		<CardItem
 			title={label}
-			titleFontWeight="400"
+			titleFontWeight="500"
 			titleColor={
 				modifiers?.includes('fault')
 					? theme.colors.fault

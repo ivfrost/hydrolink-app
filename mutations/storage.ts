@@ -5,6 +5,36 @@ import type { FileUploadPayload } from '@/types/storage'
 import apiFetch from '@/utils/apiFetch'
 import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
+// /storage/users/{userId}/upload
+export const profileFileUploadFn = async (
+	payload: FileUploadPayload,
+	userId: string,
+): Promise<{ fileUrl: string }> => {
+	const file = new File(payload.uri)
+
+	const formData = new FormData()
+	formData.append('file', file)
+
+	const data = await apiFetch<{ fileUrl: string }>(
+		`/storage/users/${encodeURIComponent(userId)}/upload`,
+		{
+			method: 'POST',
+			body: formData,
+		},
+	)
+
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		} else {
+			throw new AppError('UNKNOWN_ERROR', data.message)
+		}
+	}
+
+	return data.details as { fileUrl: string }
+}
+
+// /storage/areas/{areaId}/upload
 export const areaFileUploadFn = async (
 	payload: FileUploadPayload,
 	areaId: number,
@@ -35,6 +65,7 @@ export const areaFileUploadFn = async (
 	return data.details as { fileUrl: string }
 }
 
+// /storage/areas/{areaId}/stations/{stationId}/upload
 export const areaStationFileUploadFn = async (
 	payload: FileUploadPayload,
 	areaId: string,

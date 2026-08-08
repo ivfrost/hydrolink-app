@@ -6,12 +6,14 @@ import { UserAvatar } from '../ui/UserAvatar'
 
 interface ProfileHeaderProps {
 	email: string
+	fullName?: string
 	imageUrl?: string
 	handleChooseImage?: () => void
 }
 
 export function ProfileHeader({
 	email,
+	fullName,
 	imageUrl,
 	handleChooseImage,
 }: ProfileHeaderProps) {
@@ -21,9 +23,15 @@ export function ProfileHeader({
 			alignItems: 'center',
 			gap: theme.space.sm,
 		},
+		fullName: {
+			fontSize: theme.font.lg,
+			fontWeight: '600',
+			color: theme.colors.textPrimary,
+		},
 		email: {
 			fontSize: theme.font.sm,
-			fontWeight: '500',
+			fontWeight: '400',
+			color: theme.colors.textSecondary,
 		},
 	})
 
@@ -36,9 +44,8 @@ export function ProfileHeader({
 			>
 				<UserAvatar imageUrl={imageUrl} seed={email} size={86} />
 			</TouchableOpacity>
-			<Text style={[styles.email, { color: theme.colors.textSecondary }]}>
-				{email}
-			</Text>
+			{fullName && <Text style={styles.fullName}>{fullName}</Text>}
+			{email && <Text style={styles.email}>{email}</Text>}
 		</View>
 	)
 }

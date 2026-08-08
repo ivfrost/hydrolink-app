@@ -94,7 +94,7 @@ export default function EditAreaScreen() {
 				console.log('Area image uploaded successfully:', data)
 				setAreaFormState((prev) => ({
 					...prev,
-					imageUrl: data.fileUrl,
+					imageUrl: resolveImageUrl(data.fileUrl) || data.fileUrl,
 				}))
 			},
 		})
@@ -287,7 +287,8 @@ export default function EditAreaScreen() {
 					} as FileUploadPayload,
 					areaId: dbArea.id,
 				})
-				finalImageUrl = uploadResult.fileUrl
+				finalImageUrl =
+					resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
 			} catch {
 				// Image upload failed, halt save flow so DB payload isn't out of sync
 				return
@@ -734,6 +735,7 @@ export default function EditAreaScreen() {
 				variant="network-error"
 				title="Something went wrong"
 				subtitle={error?.message ?? 'Please try again.'}
+				hint="Only local area features are available."
 				onRefresh={() => send({ type: 'RETRY' })}
 				isRefreshing={isRefreshing}
 			/>
@@ -747,6 +749,7 @@ export default function EditAreaScreen() {
 				variant="missing-data"
 				title="No areas found"
 				subtitle="Try adding one."
+				hint="Only local area features are available."
 				onRefresh={() => send({ type: 'RETRY' })}
 				isRefreshing={false}
 			/>
@@ -761,7 +764,8 @@ export default function EditAreaScreen() {
 				<StatusScreen
 					variant="missing-data"
 					title="Area not found"
-					subtitle="The requested area could not be found."
+					subtitle="The requested area couldn't be found."
+					hint="Only local area features are available."
 					onRefresh={() => send({ type: 'RETRY' })}
 					isRefreshing={false}
 				/>

@@ -9,9 +9,9 @@ export default function SectionTitle({ text }: { text: string }) {
 		<Text
 			style={{
 				fontSize: theme.font.sm,
-				fontWeight: '500',
-				color: theme.colors.textPrimary,
-				marginBottom: theme.space.sm,
+				fontWeight: '600',
+				color: theme.colors.textSecondary,
+				marginBottom: theme.space.lg,
 				marginLeft: theme.space.x2s,
 			}}
 		>

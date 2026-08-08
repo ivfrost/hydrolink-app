@@ -45,12 +45,13 @@ export function UserCard({
 			flex: 1,
 		},
 		name: {
-			fontSize: theme.font.base,
+			fontSize: theme.font.md,
 			fontWeight: '600',
 			color: theme.colors.textPrimary,
 		},
 		email: {
 			fontSize: 13,
+			fontWeight: '400',
 			color: theme.colors.textSecondary,
 			marginTop: 2,
 		},

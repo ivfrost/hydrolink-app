@@ -255,6 +255,7 @@ export default function AreaInfoScreen() {
 				variant="network-error"
 				title="Something went wrong"
 				subtitle={error?.message ?? 'Please try again.'}
+				hint="Only local area features are available."
 				onRefresh={() => send({ type: 'RETRY' })}
 				isRefreshing={isRefreshing}
 			/>
@@ -268,6 +269,7 @@ export default function AreaInfoScreen() {
 				variant="missing-data"
 				title="No areas found"
 				subtitle="Try adding one."
+				hint="Only local area features are available."
 				onRefresh={() => send({ type: 'RETRY' })}
 				isRefreshing={false}
 			/>
@@ -314,7 +316,8 @@ export default function AreaInfoScreen() {
 				<StatusScreen
 					variant="missing-data"
 					title="Area not found"
-					subtitle="The requested area could not be found."
+					subtitle="The requested area couldn't be found."
+					hint="Only local area features are available."
 					onRefresh={() => send({ type: 'RETRY' })}
 					isRefreshing={false}
 				/>

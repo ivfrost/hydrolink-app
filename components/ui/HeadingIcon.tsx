@@ -28,7 +28,7 @@ export default function HeadingIcon({
 				padding:
 					statusBg === 'transparent'
 						? 0
-						: iconSize && iconSize > 20
+						: iconSize && iconSize > theme.space.iconSize
 							? theme.space.md
 							: theme.space.sm,
 				borderRadius: rounded ? theme.radius.pill : theme.radius.headingIcon,

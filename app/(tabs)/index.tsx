@@ -222,8 +222,8 @@ export default function DashboardTabScreen() {
 			<StatusScreen
 				variant="network-error"
 				title="Dashboard Unavailable"
-				subtitle="We couldn’t reach the server to load your dashboard data."
-				hint="Local device features are still available, but cloud functionality won’t work until the connection is restored."
+				subtitle="We couldn't load your dashboard data. Check your connection and try again."
+				hint="Only the local areas feature is available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -235,8 +235,8 @@ export default function DashboardTabScreen() {
 			<StatusScreen
 				variant="missing-data"
 				title="Dashboard Data Unavailable"
-				subtitle="Some dashboard data couldn’t be loaded."
-				hint="Local device features are still available, but some cloud functionality may be limited."
+				subtitle="Some dashboard data couldn't be loaded."
+				hint="Only the local areas feature is available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>

@@ -67,7 +67,7 @@ export function EditableProfileInfoCard({
 
 			{email !== undefined && (
 				<EditableInfoCardItem
-					label="Email address"
+					label="New Email"
 					text={email}
 					onChangeText={(value) => onInfoChange('email', value)}
 					textContentType="emailAddress"

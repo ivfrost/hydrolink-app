@@ -9,7 +9,7 @@ import * as SecureStore from 'expo-secure-store'
 import Card from '@/components/layout/Card'
 import ScrollView from '@/components/layout/ScrollView'
 import { UserCard } from '@/components/profile/UserCard'
-import Button from '@/components/ui/Button'
+import StatusScreen from '@/components/status/StatusScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
 import SimpleCardItem from '@/components/ui/SimpleRowCard'
 import { useTheme } from '@/context/ThemeContext'
@@ -87,39 +87,27 @@ export default function SettingTabScreen() {
 
 	if (error) {
 		return (
-			<View
-				style={{
-					flex: 1,
-					justifyContent: 'center',
-					alignItems: 'center',
-					paddingHorizontal: 20,
-				}}
-			>
-				<RefreshControl
-					refreshing={isRefreshing}
-					onRefresh={onRefresh}
-					progressViewOffset={20}
-					colors={[theme.colors.accentBlue]}
-				/>
-
-				<Text
-					style={{ color: theme.colors.textSecondary, textAlign: 'center' }}
-				>
-					Couldn't load your profile. Pull to retry or check your connection.
-				</Text>
-				<Button onPress={logout} label={'Logout'} />
-			</View>
+			<StatusScreen
+				variant="network-error"
+				title="Settings Unavailable"
+				subtitle="We couldn't load your profile. Check your connection and try again."
+				hint="Only local area features are available."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
 		)
 	}
 
 	if (!profile) {
 		return (
-			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-				<Text style={{ color: theme.colors.textSecondary }}>
-					No profile data found.
-				</Text>
-			</View>
+			<StatusScreen
+				variant="missing-data"
+				title="Profile Data Unavailable"
+				subtitle="Some profile data couldn't be loaded."
+				hint="Only local area features are available."
+				onRefresh={onRefresh}
+				isRefreshing={isRefreshing}
+			/>
 		)
 	}
 
@@ -170,6 +158,7 @@ export default function SettingTabScreen() {
 			<UserCard
 				name={profile.fullName}
 				email={profile.email}
+				imageUrl={profile.imageUrl}
 				avatarSize={62}
 				onPress={() => router.push('/settings/profile')}
 			/>

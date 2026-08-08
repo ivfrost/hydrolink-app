@@ -9,7 +9,7 @@ import { User, userSchema } from './user'
 export const registerSchema = userSchema
 	.omit({
 		id: true,
-		profilePictureUrl: true,
+		imageUrl: true,
 		settings: true,
 		address: true,
 		phoneNumber: true,

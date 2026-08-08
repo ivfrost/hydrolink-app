@@ -111,7 +111,8 @@ export default function Register() {
 	const { data: isUsernameAvailable, isFetching: usernameChecking } = useQuery({
 		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedUsername],
 		queryFn: () => checkAvailabilityFn(debouncedUsername),
-		enabled: registerSchema.shape.username.safeParse(debouncedUsername).success,
+		// Use a simple length check client-side instead of invoking the schema
+		enabled: debouncedUsername.length >= 5 && debouncedUsername.length <= 20,
 	})
 
 	// Handler for input value changes

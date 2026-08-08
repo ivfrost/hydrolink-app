@@ -15,12 +15,14 @@ export const userSchema = z.object({
 		.string()
 		.min(6, { message: 'Full name must be at least 6 characters long' })
 		.max(40, { message: 'Full name must be at most 40 characters long' }),
-	profilePictureUrl: z
+	imageUrl: z
 		.url()
 		.max(255, {
 			message: 'Profile picture URL must be at most 255 characters long',
 		})
-		.nullable(),
+		.nullable()
+		.optional(),
+
 	phoneNumber: z
 		.string()
 		.nullable()
@@ -50,7 +52,6 @@ export const profileUpdateSchema = userSchema
 		roles: true,
 		createdAt: true,
 		updatedAt: true,
-		profilePictureUrl: true,
 		settings: true,
 	})
 	.extend({
@@ -66,13 +67,6 @@ export const profileUpdateSchema = userSchema
 			})
 			.max(42, {
 				message: 'Current password must be at most 42 characters long',
-			})
-			.optional(),
-		profilePictureFile: z
-			.object({
-				uri: z.string(),
-				type: z.string(),
-				name: z.string(),
 			})
 			.optional(),
 	})

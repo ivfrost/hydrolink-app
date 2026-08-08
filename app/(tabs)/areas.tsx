@@ -143,8 +143,8 @@ export default function AreaTabScreen() {
 			<StatusScreen
 				variant="network-error"
 				title="Areas Unavailable"
-				subtitle="Your areas couldn’t be loaded."
-				hint="Local features are still available, but some cloud functionality may be limited."
+				subtitle="We couldn't load your areas. Check your connection and try again."
+				hint="Only local area features are available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -157,8 +157,8 @@ export default function AreaTabScreen() {
 			<StatusScreen
 				variant="missing-data"
 				title="Area Data Unavailable"
-				subtitle="Some area data couldn’t be loaded."
-				hint="Local features are still available, but some cloud functionality may be limited."
+				subtitle="Some area data couldn't be loaded."
+				hint="Only local area features are available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -193,7 +193,7 @@ export default function AreaTabScreen() {
 							</Text>
 						</Text>
 					}
-					buttonLabel="Link a Device"
+					buttonLabel="Link Area"
 					buttonIcon={
 						<MaterialCommunityIcons
 							name="link-plus"

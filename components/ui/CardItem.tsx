@@ -61,7 +61,7 @@ export default function CardItem({
 				{icon && (
 					<HeadingIcon
 						icon={icon}
-						iconSize={iconSize}
+						iconSize={iconSize ?? theme.space.iconSize}
 						statusColor={statusColor}
 						statusBg={statusBg}
 					/>
