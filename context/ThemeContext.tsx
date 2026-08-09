@@ -126,6 +126,7 @@ const themeTokens = {
 		iconSize: 22,
 		iconSizeSm: 14,
 		iconSizeLg: 26,
+		iconSizeXl: 36,
 		buttonSize: 50,
 		iconOnlyButtonSize: 46,
 		tallButtonSize: 62,

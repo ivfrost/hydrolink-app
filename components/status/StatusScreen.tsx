@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView, Text, View } from 'react-native'
 
-import FilesMissingIllustration from '@/assets/images/status/undraw_files-missing_ntwe.svg'
-import ServerFailureIllustration from '@/assets/images/status/undraw_server-failure_syqp.svg'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+
 import Button from '@/components/ui/Button'
 import { useTheme } from '@/context/ThemeContext'
 
@@ -50,11 +50,20 @@ export default function StatusScreen({
 			}
 		>
 			{variant === 'network-error' ? (
-				<ServerFailureIllustration width={180} height={180} />
+				<MaterialCommunityIcons
+					name="server-off"
+					size={theme.space.iconSizeXl}
+					color={theme.colors.textMuted}
+				/>
 			) : (
-				<FilesMissingIllustration width={180} height={180} />
+				variant === 'missing-data' && (
+					<MaterialCommunityIcons
+						name="database-off"
+						size={theme.space.iconSizeXl}
+						color={theme.colors.textMuted}
+					/>
+				)
 			)}
-
 			<View
 				style={{
 					alignItems: 'center',

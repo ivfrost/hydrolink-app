@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
@@ -73,74 +71,16 @@ interface AreaAction {
 	label: string
 	onPress: () => void
 }
-interface ActivityEvent {
-	id: string
-	title: string
-	description: string
-	time: string
-	status: 'success' | 'warning' | 'info' | 'fault'
-	icon: string
-}
 
 const mockIncomingActions: AreaAction[] = [
 	{ label: 'Start Now', onPress: () => console.log('Start Now pressed') },
 	{ label: 'Schedule', onPress: () => console.log('Schedule pressed') },
 ]
 
-function buildMockEvents(): ActivityEvent[] {
-	const now = Date.now()
-	const minutesAgo = (m: number) => new Date(now - m * 60000).toISOString()
-
-	return [
-		{
-			id: '1',
-			title: 'Irrigation completed',
-			description: 'Pago de las Viñas · Pozo de la Loma ran for 42 min',
-			time: minutesAgo(12),
-			status: 'success',
-			icon: 'check-circle-outline',
-		},
-		{
-			id: '2',
-			title: 'Low soil moisture',
-			description: 'Los Almendrales · Finca El Mirador below 20%',
-			time: minutesAgo(48),
-			status: 'warning',
-			icon: 'water-alert-outline',
-		},
-		{
-			id: '3',
-			title: 'Sensor reconnected',
-			description: 'Barranco del Acebuchal · Pozo del Camino back online',
-			time: minutesAgo(95),
-			status: 'info',
-			icon: 'access-point-check',
-		},
-		{
-			id: '4',
-			title: 'Valve fault detected',
-			description: 'Cortijo Justo · Pozo Llano did not respond',
-			time: minutesAgo(260),
-			status: 'fault',
-			icon: 'alert-circle-outline',
-		},
-		{
-			id: '5',
-			title: 'Schedule updated',
-			description: 'Cuesta Almachar · Finca Rogelio moved to 06:30',
-			time: minutesAgo(430),
-			status: 'info',
-			icon: 'calendar-edit',
-		},
-	]
-}
-
 export default function DashboardTabScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
-	const insets = useSafeAreaInsets()
 	const [isRefreshing, setIsRefreshing] = useState(false)
-	const headerHeight = useHeaderHeight()
 
 	// Queries for fetching areas and profile data
 	const {
@@ -159,19 +99,6 @@ export default function DashboardTabScreen() {
 		queryKey: tanstackKeys.PROFILE,
 		queryFn: profileQueryFn,
 	})
-
-	const areaCount = areas?.length || 0
-	// TODO: Send a command to linked devices to make them report their status
-	// and parse it to determine which areas are active
-	const activeAreaCount = 0
-	const onlineAreaCount =
-		areas?.filter(
-			// TODO: Replace this with online check over MQTT instead of DB flush timestamp
-			// 5 minutes
-			(area) => Date.now() - new Date(area.lastSeen).getTime() < 5 * 60 * 1000,
-		).length || 0
-	const recentEvents = buildMockEvents()
-	const firstName = profile?.fullName?.split(' ')[0]
 
 	// Handler to refresh areas and profile data on pull-to-refresh
 	const onRefresh = async () => {
@@ -222,8 +149,8 @@ export default function DashboardTabScreen() {
 			<StatusScreen
 				variant="network-error"
 				title="Dashboard Unavailable"
-				subtitle="We couldn't load your dashboard data. Check your connection and try again."
-				hint="Only the local areas feature is available."
+				subtitle="We couldn't load your dashboard. Check your connection and try again."
+				hint="Only local area features area available."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
