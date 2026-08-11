@@ -11,7 +11,7 @@ export interface CardItemProps {
 	title: string
 	titleFontWeight?: '400' | '500' | '600' | '700'
 	titleColor?: string
-	subtitle?: string
+	subtitle?: string | React.ReactNode
 	icon:
 		| keyof typeof MaterialCommunityIcons.glyphMap
 		| keyof typeof MaterialIcons.glyphMap
@@ -21,7 +21,7 @@ export interface CardItemProps {
 	onPress?: () => void
 	rightElement?: React.ReactNode
 	bottomElement?: React.ReactNode
-	isEditable?: boolean
+	disabled?: boolean
 }
 
 export default function CardItem({
@@ -36,19 +36,20 @@ export default function CardItem({
 	onPress,
 	rightElement,
 	bottomElement,
+	disabled = false,
 }: CardItemProps) {
 	const theme = useTheme()
 
 	return (
 		<TouchableOpacity
 			onPress={onPress}
-			disabled={!onPress}
+			disabled={!onPress || disabled}
 			activeOpacity={!!onPress ? 0.9 : 1}
 			style={{
 				flex: 1,
 				width: '100%',
 				paddingVertical: theme.space.xl,
-				gap: theme.space.xl,
+				gap: theme.space.md,
 			}}
 		>
 			<View
@@ -80,7 +81,9 @@ export default function CardItem({
 							style={{
 								fontSize: theme.font.base,
 								fontWeight: titleFontWeight,
-								color: titleColor ?? theme.colors.textPrimary,
+								color: disabled
+									? theme.colors.buttonDisabledText
+									: (titleColor ?? theme.colors.textPrimary),
 								lineHeight: theme.lineHeight.cardTextTitle,
 							}}
 							numberOfLines={1}

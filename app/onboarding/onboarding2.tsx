@@ -37,7 +37,7 @@ export default function OnboardingStep2() {
 				<LoginIllustration
 					width={260}
 					height={290}
-					color={theme.colors.accentBlue}
+					color={theme.colors.accent}
 				/>
 				<OnboardTextWrapper>
 					<Title text="Sign in to your account" />

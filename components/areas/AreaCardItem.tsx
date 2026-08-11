@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Animated, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
@@ -10,14 +11,174 @@ import { formatRelativeFromEpochStr } from '@/utils/formatRelativeTime'
 
 export interface AreaCardItemProps {
 	title: string
-	subtitle: string
+	subtitle: string | ReactNode
 	online: boolean
 	activeSolenoid?: Station | undefined
-	activePumps?: Station[] | undefined
 	activeFertilizers?: Station[] | undefined
 	sensors?: Station[] | undefined
 	schedules?: StationSchedule[] | undefined
 	onPress?: () => void
+	local?: boolean
+}
+
+// How often to refresh relative ("time ago") labels while the card is visible.
+const RELATIVE_TIME_REFRESH_MS = 30_000
+
+const STATION_NAME = (station: Station) =>
+	station.name?.trim() ? station.name : `Station ${station.id + 1}`
+
+// Formats an elapsed duration (ms) as a compact relative label ("12m",
+// "1h 5m", "less than a minute").
+function formatElapsedDuration(ms: number): string {
+	const totalMinutes = Math.floor(Math.max(0, ms) / 60000)
+	if (totalMinutes < 1) return 'less than a minute'
+	const days = Math.floor(totalMinutes / 1440)
+	const hours = Math.floor((totalMinutes % 1440) / 60)
+	const minutes = totalMinutes % 60
+	if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`
+	if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`
+	return `${minutes}m`
+}
+
+// How long the station has been running. Manual runs carry their own start
+// time; scheduled runs use the current schedule start. Returns null when no
+// start time is known so callers can omit the "Running for X" part.
+function runningDurationLabel(station: Station, now: number): string | null {
+	const manualStart = station.status.manualOverride?.start
+	if (manualStart) return formatElapsedDuration(now - manualStart)
+	const scheduleStart = station.schedules[1]?.start
+	if (scheduleStart) {
+		return formatElapsedDuration(now - new Date(scheduleStart).getTime())
+	}
+	return null
+}
+
+function causeLabel(station: Station): string {
+	switch (station.status.cause) {
+		case 'Manual':
+			return 'Manual Mode'
+		case 'Sensor':
+			return 'Sensor Triggered'
+		case 'Schedule':
+			return 'Scheduled'
+		default:
+			return 'Unknown Cause'
+	}
+}
+
+function formatScheduleRange(schedule: StationSchedule): string {
+	if (!schedule.start || !schedule.end) return 'Unknown'
+	return `${formatRelativeFromEpochStr(schedule.start)} - ${formatRelativeFromEpochStr(
+		schedule.end,
+	)}`
+}
+
+function ScheduleRow({
+	label,
+	icon,
+	schedule,
+	active = false,
+}: {
+	label: string
+	icon: keyof typeof MaterialCommunityIcons.glyphMap
+	schedule: StationSchedule
+	active?: boolean
+}) {
+	const theme = useTheme()
+	return (
+		<View
+			style={{
+				flexDirection: 'row',
+				alignItems: 'center',
+				gap: theme.space.sm,
+				marginTop: theme.space.md,
+				padding: theme.space.sm,
+				backgroundColor: active
+					? theme.colors.scheduleActiveBg
+					: theme.colors.card,
+				borderWidth: active ? 1 : 0,
+				borderColor: active ? theme.colors.scheduleActiveBorder : 'transparent',
+				borderRadius: theme.radius.boxInCard,
+			}}
+		>
+			<MaterialCommunityIcons
+				name={icon}
+				size={16}
+				color={active ? theme.colors.scheduleActive : theme.colors.textMuted}
+			/>
+			<Text
+				style={{
+					flex: 1,
+					color: active
+						? theme.colors.scheduleActive
+						: theme.colors.textSecondary,
+					fontSize: theme.font.sm,
+					fontWeight: active ? '600' : '400',
+				}}
+			>
+				{label}: {formatScheduleRange(schedule)}
+			</Text>
+		</View>
+	)
+}
+
+// Pulsing "Running" pill shown next to the active solenoid name.
+function RunningPill({
+	color,
+	borderColor,
+}: {
+	color: string
+	borderColor: string
+}) {
+	const theme = useTheme()
+	const [opacity] = useState(() => new Animated.Value(1))
+
+	useEffect(() => {
+		const loop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(opacity, {
+					toValue: 0.4,
+					duration: 700,
+					useNativeDriver: true,
+				}),
+				Animated.timing(opacity, {
+					toValue: 1,
+					duration: 700,
+					useNativeDriver: true,
+				}),
+			]),
+		)
+		loop.start()
+		return () => loop.stop()
+	}, [opacity])
+
+	return (
+		<Animated.View
+			style={{
+				opacity,
+				flexDirection: 'row',
+				alignItems: 'center',
+				gap: theme.space.x2s,
+				backgroundColor: theme.colors.card,
+				borderRadius: theme.radius.pill,
+				borderWidth: 1,
+				borderColor,
+				paddingHorizontal: theme.space.sm,
+				paddingVertical: theme.space.x2s,
+			}}
+		>
+			<MaterialCommunityIcons name="play" size={10} color={color} />
+			<Text
+				style={{
+					color,
+					fontSize: theme.font.xs,
+					fontWeight: '700',
+				}}
+			>
+				Running
+			</Text>
+		</Animated.View>
+	)
 }
 
 export default function AreaCardItem({
@@ -25,16 +186,74 @@ export default function AreaCardItem({
 	subtitle,
 	online,
 	activeSolenoid,
-	activePumps,
 	activeFertilizers,
 	sensors,
 	schedules,
 	onPress,
+	local = false,
 }: AreaCardItemProps) {
 	const theme = useTheme()
 	const currentSchedule = schedules?.[1]
 	const pastSchedule = schedules?.[0]
 	const futureSchedule = schedules?.[2]
+
+	// Keep a `now` timestamp updated on a timer so relative labels and the
+	// progress bar stay accurate while the card is visible. Updated inside
+	// callbacks (never synchronously in the effect body) so renders stay pure.
+	const [now, setNow] = useState(0)
+	useEffect(() => {
+		const initial = setTimeout(() => setNow(Date.now()), 0)
+		const id = setInterval(() => setNow(Date.now()), RELATIVE_TIME_REFRESH_MS)
+		return () => {
+			clearTimeout(initial)
+			clearInterval(id)
+		}
+	}, [])
+
+	// Accent colors follow the trigger cause so the "why" of a run is glanceable.
+	const accent =
+		activeSolenoid?.status.cause === 'Sensor'
+			? {
+					color: theme.colors.online,
+					bg: theme.colors.onlineBg,
+					border: theme.colors.onlineBorder,
+				}
+			: activeSolenoid?.status.cause === 'Schedule'
+				? {
+						color: theme.colors.scheduled,
+						bg: theme.colors.scheduledBg,
+						border: theme.colors.scheduledBorder,
+					}
+				: {
+						color: theme.colors.running,
+						bg: theme.colors.runningBg,
+						border: theme.colors.runningBorder,
+					}
+
+	// Manual runs carry a duration; derive progress + remaining for the bar.
+	const manualOverride = activeSolenoid?.status.manualOverride
+	const progressPct =
+		manualOverride?.start &&
+		manualOverride.end &&
+		manualOverride.end > manualOverride.start
+			? Math.min(
+					100,
+					Math.max(
+						0,
+						((now - manualOverride.start) /
+							(manualOverride.end - manualOverride.start)) *
+							100,
+					),
+				)
+			: 0
+	const remainingMs = manualOverride?.end
+		? Math.max(0, manualOverride.end - now)
+		: 0
+	// How long the running solenoid has been running, if a start time is known.
+	const runningFor = activeSolenoid
+		? runningDurationLabel(activeSolenoid, now)
+		: null
+
 	return (
 		<CardItem
 			title={title}
@@ -62,180 +281,140 @@ export default function AreaCardItem({
 				)
 			}
 			bottomElement={
-				activeSolenoid && (
+				activeSolenoid || pastSchedule || currentSchedule || futureSchedule ? (
 					<>
-						<View
-							style={{
-								flexDirection: 'row',
-								alignItems: 'center',
-								gap: theme.space.md,
-								borderRadius: theme.radius.boxInCard,
-								backgroundColor: theme.colors.activeBg,
-								padding: theme.space.lg,
-							}}
-						>
-							<View style={{ flex: 1 }}>
+						{activeSolenoid && (
+							<>
+								{/* Currently running solenoid */}
 								<View
 									style={{
-										flexDirection: 'row',
-										alignItems: 'center',
+										borderRadius: theme.radius.boxInCard,
+										backgroundColor: accent.bg,
+										padding: theme.space.lg,
 									}}
 								>
 									<View
 										style={{
 											flexDirection: 'row',
 											alignItems: 'center',
+											justifyContent: 'space-between',
 											gap: theme.space.sm,
 										}}
 									>
-										<MaterialCommunityIcons
-											name="valve-open"
-											size={18}
-											color={theme.colors.active}
-										/>
 										<Text
 											numberOfLines={1}
 											style={{
-												color: theme.colors.active,
+												color: accent.color,
 												fontSize: theme.font.base,
-												fontWeight: '500',
+												fontWeight: '600',
+												flexShrink: 1,
 											}}
 										>
-											{activeSolenoid.name}
+											{STATION_NAME(activeSolenoid)}
 										</Text>
+										<RunningPill
+											color={accent.color}
+											borderColor={accent.border}
+										/>
 									</View>
-								</View>
-								<Text
-									style={{
-										color: theme.colors.textSecondary,
-										fontSize: theme.font.sm,
-										fontWeight: '400',
-										marginTop: 2,
-									}}
-								>
-									{activeSolenoid.status.cause === 'Manual'
-										? 'Manual Mode'
-										: activeSolenoid.status.cause === 'Sensor'
-											? 'Sensor Triggered'
-											: activeSolenoid.status.cause === 'Schedule'
-												? 'Scheduled'
-												: 'Unknown Cause'}
-									{activeSolenoid.schedules[1]?.start
-										? ` • ${formatRelativeFromEpochStr(activeSolenoid.schedules[1].start)}`
-										: ' • Active Now'}
-								</Text>
-							</View>
-						</View>
-						{((activePumps && activePumps.length > 0) ||
-							(activeFertilizers && activeFertilizers.length > 0)) && (
-							<View
-								style={{
-									flexDirection: 'row',
-									flexWrap: 'wrap',
-									gap: theme.space.sm,
-									marginTop: theme.space.md,
-								}}
-							>
-								{activePumps?.map((pump) => (
-									<Badge
-										icon="water-pump"
-										key={pump.id}
-										text={pump.name}
-										color={theme.colors.textSecondary}
-										borderColor={theme.colors.accentBlueLight}
-										backgroundColor={theme.colors.card}
-									/>
-								))}
+									<Text
+										style={{
+											color: theme.colors.textSecondary,
+											fontSize: theme.font.sm,
+											fontWeight: '400',
+											marginTop: 2,
+										}}
+									>
+										{causeLabel(activeSolenoid)}
+										{runningFor ? ` • Running for ${runningFor}` : ''}
+									</Text>
 
-								{activeFertilizers?.map((fertilizer) => (
-									<Badge
-										icon="sprout"
-										key={fertilizer.id}
-										text={fertilizer.name}
-										color={theme.colors.textSecondary}
-										borderColor={theme.colors.accentBlueLight}
-										backgroundColor={theme.colors.card}
-									/>
-								))}
-							</View>
+									{manualOverride?.start &&
+										manualOverride.end &&
+										manualOverride.end > now && (
+											<View style={{ marginTop: theme.space.sm }}>
+												<View
+													style={{
+														height: 4,
+														borderRadius: 2,
+														backgroundColor: accent.border,
+														overflow: 'hidden',
+													}}
+												>
+													<View
+														style={{
+															width: `${progressPct}%`,
+															height: '100%',
+															borderRadius: 2,
+															backgroundColor: accent.color,
+														}}
+													/>
+												</View>
+												<Text
+													style={{
+														marginTop: theme.space.x2s,
+														fontSize: theme.font.xs,
+														color: theme.colors.textSecondary,
+													}}
+												>
+													Ends in {formatElapsedDuration(remainingMs)}
+												</Text>
+											</View>
+										)}
+								</View>
+								{/* Running fertilizers */}
+								{activeFertilizers && activeFertilizers.length > 0 && (
+									<View
+										style={{
+											flexDirection: 'row',
+											flexWrap: 'wrap',
+											gap: theme.space.sm,
+											marginTop: theme.space.md,
+										}}
+									>
+										{activeFertilizers?.map((fertilizer) => (
+											<Badge
+												icon="sprout"
+												key={`fertilizer-${fertilizer.id}`}
+												text={[
+													STATION_NAME(fertilizer),
+													runningDurationLabel(fertilizer, now),
+												]
+													.filter(Boolean)
+													.join(' · ')}
+												color={theme.colors.running}
+												borderColor={theme.colors.runningBorder}
+												backgroundColor={theme.colors.runningBg}
+											/>
+										))}
+									</View>
+								)}
+							</>
 						)}
 						{pastSchedule && (
-							<View
-								style={{
-									marginTop: theme.space.md,
-									padding: theme.space.sm,
-									backgroundColor: theme.colors.card,
-									borderRadius: theme.radius.boxInCard,
-								}}
-							>
-								<Text
-									style={{
-										color: theme.colors.textSecondary,
-										fontSize: theme.font.sm,
-										fontWeight: '400',
-									}}
-								>
-									Last Schedule:{' '}
-									{pastSchedule.start
-										? `${formatRelativeFromEpochStr(pastSchedule.start)} - ${formatRelativeFromEpochStr(
-												pastSchedule.end,
-											)}`
-										: 'Unknown'}
-								</Text>
-							</View>
+							<ScheduleRow
+								label="Last"
+								icon="history"
+								schedule={pastSchedule}
+							/>
 						)}
 						{currentSchedule && (
-							<View
-								style={{
-									marginTop: theme.space.md,
-									padding: theme.space.sm,
-									backgroundColor: theme.colors.card,
-									borderRadius: theme.radius.boxInCard,
-								}}
-							>
-								<Text
-									style={{
-										color: theme.colors.textSecondary,
-										fontSize: theme.font.sm,
-										fontWeight: '400',
-									}}
-								>
-									Current Schedule:{' '}
-									{currentSchedule.start
-										? `${formatRelativeFromEpochStr(
-												currentSchedule.start,
-											)} - ${formatRelativeFromEpochStr(currentSchedule.end)}`
-										: 'Unknown'}
-								</Text>
-							</View>
+							<ScheduleRow
+								label="Current"
+								icon="timer-play-outline"
+								schedule={currentSchedule}
+								active
+							/>
 						)}
 						{futureSchedule && (
-							<View
-								style={{
-									marginTop: theme.space.md,
-									padding: theme.space.sm,
-									backgroundColor: theme.colors.card,
-									borderRadius: theme.radius.boxInCard,
-								}}
-							>
-								<Text
-									style={{
-										color: theme.colors.textSecondary,
-										fontSize: theme.font.sm,
-										fontWeight: '400',
-									}}
-								>
-									Next Schedule:{' '}
-									{futureSchedule.start
-										? `${formatRelativeFromEpochStr(
-												futureSchedule.start,
-											)} - ${formatRelativeFromEpochStr(futureSchedule.end)}`
-										: 'Unknown'}
-								</Text>
-							</View>
+							<ScheduleRow
+								label="Next"
+								icon="calendar-clock-outline"
+								schedule={futureSchedule}
+							/>
 						)}
 					</>
-				)
+				) : null
 			}
 		></CardItem>
 	)

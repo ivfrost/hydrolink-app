@@ -49,8 +49,8 @@ export default function EditAreaScreen() {
 	const queryClient = useQueryClient()
 	const { key } = useLocalSearchParams() as { key: string }
 	const insets = useSafeAreaInsets()
-	const initializedRef = useRef(false)
 	const router = useRouter()
+	const initializedRef = useRef(false)
 	const [localAreaImage, setLocalAreaImage] = useState({
 		uri: '',
 		name: '',
@@ -296,7 +296,7 @@ export default function EditAreaScreen() {
 		}
 
 		const apiPayload: Partial<AreaUpdatePayload> = {
-			id: dbArea.id,
+			key: dbArea.key,
 			friendlyName: areaFormState.friendlyName ?? undefined,
 			locationLabel: areaFormState.locationLabel ?? undefined,
 			locationCoordinates: areaFormState.locationCoordinates ?? undefined,
@@ -321,6 +321,7 @@ export default function EditAreaScreen() {
 
 		// Then trigger the DB save -> saving -> syncingDevice -> ready
 		send({ type: 'SAVE', payload: apiPayload })
+		router.back()
 	}
 
 	// Handler for discarding changes and resetting local state to the last known
@@ -469,7 +470,7 @@ export default function EditAreaScreen() {
 									style={[
 										StyleSheet.absoluteFill,
 										{
-											backgroundColor: theme.colors.accentBlue + '15',
+											backgroundColor: theme.colors.accent + '15',
 											justifyContent: 'center',
 											alignItems: 'center',
 											gap: 8,
@@ -516,7 +517,7 @@ export default function EditAreaScreen() {
 									]}
 								>
 									<ActivityIndicator
-										color={theme.colors.accentBlue}
+										color={theme.colors.accent}
 										size="large"
 									/>
 									<Text
@@ -620,7 +621,7 @@ export default function EditAreaScreen() {
 						the spacer scales and animates atomically with the card, removing
 						layout recalculation pops.
           */}
-					<View style={{ marginBottom: theme.space.md }}>
+					<View style={{ marginBottom: theme.space.lg }}>
 						<Card>
 							<EditableStationCardItem
 								station={mergedStation}
@@ -633,11 +634,9 @@ export default function EditAreaScreen() {
 								newLeadingIcon={
 									localStateMatch?.type === 'Solenoid'
 										? STATION_TYPE_ICON.Solenoid
-										: localStateMatch?.type === 'Pump'
-											? STATION_TYPE_ICON.Pump
-											: localStateMatch?.type === 'Fertilizer'
-												? STATION_TYPE_ICON.Fertilizer
-												: STATION_TYPE_ICON.Unknown
+										: localStateMatch?.type === 'Fertilizer'
+											? STATION_TYPE_ICON.Fertilizer
+											: STATION_TYPE_ICON.Unknown
 								}
 							/>
 						</Card>
@@ -652,7 +651,7 @@ export default function EditAreaScreen() {
 			isStationActionPending,
 			pendingStationTypeChange,
 			handleStationDataChange,
-			theme.space.md,
+			theme.space.lg,
 			areaFormState.stations,
 		],
 	)
@@ -675,7 +674,7 @@ export default function EditAreaScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.xl}
-						colors={[theme.colors.accentBlue]}
+						colors={[theme.colors.accent]}
 					/>
 				}
 			>
@@ -709,7 +708,7 @@ export default function EditAreaScreen() {
 								refreshing={currentScreenState.matches('loading')}
 								onRefresh={() => send({ type: 'RETRY' })}
 								progressViewOffset={theme.space.xl}
-								colors={[theme.colors.accentBlue]}
+								colors={[theme.colors.accent]}
 							/>
 						}
 					>
@@ -781,7 +780,7 @@ export default function EditAreaScreen() {
 								refreshing={currentScreenState.matches('loading')}
 								onRefresh={() => send({ type: 'RETRY' })}
 								progressViewOffset={theme.space.xl}
-								colors={[theme.colors.accentBlue]}
+								colors={[theme.colors.accent]}
 							/>
 						}
 					>
@@ -858,7 +857,7 @@ export default function EditAreaScreen() {
 								refreshing={currentScreenState.matches('loading')}
 								onRefresh={() => send({ type: 'RETRY' })}
 								progressViewOffset={theme.space.xl}
-								colors={[theme.colors.accentBlue]}
+								colors={[theme.colors.accent]}
 							/>
 						}
 						onDragEnd={({ data }) =>

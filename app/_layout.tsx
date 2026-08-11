@@ -6,27 +6,18 @@ import Toast from 'react-native-toast-message'
 import { Ionicons } from '@expo/vector-icons'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalProvider } from '@gorhom/portal'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { Stack, useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 
 import { MqttProvider } from '@/context/MqttContext'
+import { NetworkProvider } from '@/context/NetworkContext'
 import { ThemeProvider, useTheme } from '@/context/ThemeContext'
+import { asyncStoragePersister, queryClient } from '@/queries/queryClient'
 
 export const unstable_settings = {
 	initialRouteName: '(tabs)',
 }
-
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			refetchOnMount: false,
-			refetchOnWindowFocus: false,
-			refetchOnReconnect: false,
-			retry: false,
-		},
-	},
-})
 
 export default function RootLayout() {
 	return (
@@ -42,87 +33,92 @@ function AppContent() {
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
-			<QueryClientProvider client={queryClient}>
+			<PersistQueryClientProvider
+				client={queryClient}
+				persistOptions={{ persister: asyncStoragePersister }}
+			>
 				<BottomSheetModalProvider>
-					<PortalProvider>
-						<KeyboardProvider>
-							<MqttProvider>
-								<Stack
-									screenOptions={{
-										contentStyle: {
-											backgroundColor: theme.colors.background,
-										},
-										headerStyle: { backgroundColor: theme.colors.card },
-										headerTintColor: theme.colors.textPrimary,
-										headerShown: false,
-									}}
-								>
-									<Stack.Screen
-										name="(tabs)"
-										options={{ headerShown: false, animation: 'fade' }}
-									/>
-									<Stack.Screen
-										name="onboarding"
-										options={{ headerShown: false }}
-									/>
-									<Stack.Screen
-										name="(auth)/signin"
-										options={{
-											headerBackVisible: false,
+					<NetworkProvider>
+						<PortalProvider>
+							<KeyboardProvider>
+								<MqttProvider>
+									<Stack
+										screenOptions={{
 											contentStyle: {
-												backgroundColor: theme.colors.card,
+												backgroundColor: theme.colors.background,
 											},
-											headerShown: true,
-											headerShadowVisible: false,
-											animation: 'slide_from_bottom',
-											headerTitle: '',
-											headerRight: () => (
-												<TouchableOpacity
-													hitSlop={40}
-													onPress={() => router.back()}
-												>
-													<Ionicons
-														name="close"
-														size={theme.space.iconSize}
-														color={theme.colors.textPrimary}
-													/>
-												</TouchableOpacity>
-											),
+											headerStyle: { backgroundColor: theme.colors.card },
+											headerTintColor: theme.colors.textPrimary,
+											headerShown: false,
 										}}
-									/>
-									<Stack.Screen
-										name="(auth)/register"
-										options={{
-											headerBackVisible: false,
-											contentStyle: {
-												backgroundColor: theme.colors.card,
-											},
-											headerShown: true,
-											headerShadowVisible: false,
-											animation: 'slide_from_bottom',
-											headerTitle: '',
-											headerRight: () => (
-												<TouchableOpacity
-													hitSlop={40}
-													onPress={() => router.back()}
-												>
-													<Ionicons
-														name="close"
-														size={theme.space.iconSize}
-														color={theme.colors.textPrimary}
-													/>
-												</TouchableOpacity>
-											),
-										}}
-									/>
-								</Stack>
-								<Toast />
-								<StatusBar style="dark" />
-							</MqttProvider>
-						</KeyboardProvider>
-					</PortalProvider>
+									>
+										<Stack.Screen
+											name="(tabs)"
+											options={{ headerShown: false, animation: 'fade' }}
+										/>
+										<Stack.Screen
+											name="onboarding"
+											options={{ headerShown: false }}
+										/>
+										<Stack.Screen
+											name="(auth)/signin"
+											options={{
+												headerBackVisible: false,
+												contentStyle: {
+													backgroundColor: theme.colors.card,
+												},
+												headerShown: true,
+												headerShadowVisible: false,
+												animation: 'slide_from_bottom',
+												headerTitle: '',
+												headerRight: () => (
+													<TouchableOpacity
+														hitSlop={40}
+														onPress={() => router.back()}
+													>
+														<Ionicons
+															name="close"
+															size={theme.space.iconSize}
+															color={theme.colors.textPrimary}
+														/>
+													</TouchableOpacity>
+												),
+											}}
+										/>
+										<Stack.Screen
+											name="(auth)/register"
+											options={{
+												headerBackVisible: false,
+												contentStyle: {
+													backgroundColor: theme.colors.card,
+												},
+												headerShown: true,
+												headerShadowVisible: false,
+												animation: 'slide_from_bottom',
+												headerTitle: '',
+												headerRight: () => (
+													<TouchableOpacity
+														hitSlop={40}
+														onPress={() => router.back()}
+													>
+														<Ionicons
+															name="close"
+															size={theme.space.iconSize}
+															color={theme.colors.textPrimary}
+														/>
+													</TouchableOpacity>
+												),
+											}}
+										/>
+									</Stack>
+									<Toast />
+									<StatusBar style="dark" />
+								</MqttProvider>
+							</KeyboardProvider>
+						</PortalProvider>
+					</NetworkProvider>
 				</BottomSheetModalProvider>
-			</QueryClientProvider>
+			</PersistQueryClientProvider>
 		</GestureHandlerRootView>
 	)
 }

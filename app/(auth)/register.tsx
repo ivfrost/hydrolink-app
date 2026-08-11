@@ -194,7 +194,7 @@ export default function Register() {
 				>
 					<View
 						style={{
-							backgroundColor: theme.colors.accentBlueLight,
+							backgroundColor: theme.colors.accentTint,
 							borderRadius: 18,
 							width: 68,
 							height: 68,
@@ -203,7 +203,7 @@ export default function Register() {
 							marginBottom: theme.space.md,
 						}}
 					>
-						<SpiralSvg width={36} height={36} color={theme.colors.accentBlue} />
+						<SpiralSvg width={36} height={36} color={theme.colors.accent} />
 					</View>
 					<Text
 						style={{

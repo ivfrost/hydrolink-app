@@ -40,7 +40,7 @@ export default function AreaQRScan() {
 						gap: theme.space.xl,
 					}}
 				>
-					<QrCodeIllustration height={240} color={theme.colors.accentBlue} />
+					<QrCodeIllustration height={240} color={theme.colors.accent} />
 					<OnboardTextWrapper>
 						<Title text="Camera access needed" />
 						<Subtitle text="We need access to your camera to scan the QR code on your device." />

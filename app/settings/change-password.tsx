@@ -157,7 +157,7 @@ export default function ChangePasswordScreen() {
 				>
 					<ChangePasswordIllustration
 						height={160}
-						color={theme.colors.accentBlue}
+						color={theme.colors.accent}
 					/>
 				</View>
 				<CredentialChangeHeader

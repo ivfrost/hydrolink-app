@@ -1,20 +1,14 @@
 import { Animated, StyleSheet, View } from 'react-native'
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { useQuery } from '@tanstack/react-query'
 import { Tabs } from 'expo-router'
 
-import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
-import { areasQueryFn } from '@/queries/areas'
-import { profileQueryFn } from '@/queries/profile'
+import { useLocalDiscovery } from '@/hooks/useLocalDiscovery'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
-
 export default function TabsLayout() {
-	useQuery({ queryKey: tanstackKeys.PROFILE, queryFn: profileQueryFn })
-	useQuery({ queryKey: tanstackKeys.AREAS, queryFn: areasQueryFn })
-
+	useLocalDiscovery()
 	const theme = useTheme()
 
 	return (
@@ -40,7 +34,7 @@ export default function TabsLayout() {
 					paddingHorizontal: theme.space.xs,
 					height: 90,
 				},
-				tabBarActiveTintColor: theme.colors.accentBlue,
+				tabBarActiveTintColor: theme.colors.accent,
 				tabBarInactiveTintColor: theme.colors.textMuted,
 				tabBarLabelStyle: {
 					fontSize: theme.font.xs,

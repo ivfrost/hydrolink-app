@@ -116,7 +116,7 @@ export default function OnboardingStep4() {
 				<CurrentLocationIllustration
 					width={300}
 					height={300}
-					color={theme.colors.accentBlue}
+					color={theme.colors.accent}
 				/>
 				<OnboardTextWrapper>
 					<Title text="Add your first area" />

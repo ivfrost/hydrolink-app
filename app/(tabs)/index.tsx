@@ -4,7 +4,6 @@ import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import AreaCard, { AreaCardProps } from '@/components/dashboard/AreaCard'
-import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
 import ScrollView from '@/components/layout/ScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
@@ -125,7 +124,7 @@ export default function DashboardTabScreen() {
 					gap: theme.space.md,
 				}}
 			>
-				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<ActivityIndicator size="large" color={theme.colors.accent} />
 				<Text style={{ color: theme.colors.textSecondary }}>
 					Loading dashboard…
 				</Text>
@@ -177,7 +176,7 @@ export default function DashboardTabScreen() {
 					refreshing={isRefreshing}
 					onRefresh={onRefresh}
 					progressViewOffset={20}
-					colors={[theme.colors.accentBlue]}
+					colors={[theme.colors.accent]}
 				/>
 			}
 		>
@@ -198,7 +197,6 @@ export default function DashboardTabScreen() {
 			</View>
 			<View>
 				<SectionTitle text="Recent" />
-				<RecentActivityCard events={recentEvents} />
 			</View>
 		</ScrollView>
 	)

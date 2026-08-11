@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
@@ -20,7 +20,6 @@ export const STATION_TYPE_ICON: Record<
 > = {
 	Unknown: 'help-circle-outline',
 	Solenoid: 'valve',
-	Pump: 'engine-outline',
 	Fertilizer: 'sprout-outline',
 	Sensor: 'thermometer-lines',
 }
@@ -67,6 +66,7 @@ export default function StationCardItem({
 	}
 
 	const isOverrideActive = !!(manualOverride?.active && manualOverride.end)
+	const isSensor = station.type === 'Sensor'
 
 	const buttonVariant =
 		station.status.state === 'Running' ? 'destructive' : 'primary'
@@ -97,24 +97,42 @@ export default function StationCardItem({
 					/>
 				)}
 				<CardItem
-					title={station.name ?? stationLabel}
+					title={station.name?.trim() ? station.name : stationLabel}
 					titleFontWeight="600"
 					subtitle={!isMqttEditable ? station.status.state : ''}
 					icon={headingIcon}
 					statusColor={
 						station.status.state === 'Running'
-							? theme.colors.active
+							? theme.colors.running
 							: theme.colors.offline
 					}
 					statusBg={
 						station.status.state === 'Running'
-							? theme.colors.activeBg
+							? theme.colors.runningBg
 							: theme.colors.offlineBg
 					}
-					// CardItem's built-in editable title input
-					isEditable={isMqttEditable}
 					rightElement={
-						(!isMqttEditable && (
+						isMqttEditable ? (
+							<Picker
+								label="Station Role"
+								options={STATION_PICKER_OPTIONS}
+								selectedValue={selectedStationType}
+								onValueChange={handleTypeChange}
+								isLoading={isLoading}
+								disabled={!isMqttEditable}
+							/>
+						) : isSensor ? (
+							// Sensors are read-only; a live reading will be
+							// shown here in the future.
+							<Text
+								style={{
+									color: theme.colors.textMuted,
+									fontSize: theme.font.sm,
+								}}
+							>
+								—
+							</Text>
+						) : (
 							<Button
 								modifier={['iconOnly']}
 								variant={buttonVariant}
@@ -128,15 +146,6 @@ export default function StationCardItem({
 									/>
 								}
 								onPress={() => onActionPress?.(minutes * 60 * 1000)}
-							/>
-						)) || (
-							<Picker
-								label="Station Role"
-								options={STATION_PICKER_OPTIONS}
-								selectedValue={selectedStationType}
-								onValueChange={handleTypeChange}
-								isLoading={isLoading}
-								disabled={!isMqttEditable}
 							/>
 						)
 					}
@@ -169,7 +178,7 @@ export default function StationCardItem({
 									borderColor={theme.colors.border}
 								/>
 
-								{!isActionDisabled && (
+								{!isSensor && !isActionDisabled && (
 									<DurationControl
 										endTimestamp={
 											isOverrideActive ? manualOverride.end : undefined

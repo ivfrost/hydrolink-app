@@ -33,7 +33,7 @@ export default function CardIcon({
 			<MaterialIcons
 				name={icon}
 				size={iconSize}
-				color={color ?? theme.colors.accentBlue}
+				color={color ?? theme.colors.accent}
 			/>
 		</View>
 	)

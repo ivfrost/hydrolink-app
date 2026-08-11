@@ -43,14 +43,14 @@ export default function BottomSheetInput({
 		inputRange: [0, 1],
 		outputRange: [16, 12],
 	})
-	const labelColor = focused ? theme.colors.accentBlue : theme.colors.textMuted
+	const labelColor = focused ? theme.colors.accent : theme.colors.textMuted
 
 	return (
 		<View
 			style={{
 				width: '100%',
 				borderWidth: 1.5,
-				borderColor: focused ? theme.colors.accentBlue : theme.colors.border,
+				borderColor: focused ? theme.colors.accent : theme.colors.border,
 				borderRadius: theme.radius.input,
 				paddingHorizontal: 14,
 				paddingTop: 18,

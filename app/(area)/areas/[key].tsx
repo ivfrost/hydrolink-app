@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { RefreshControl, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMachine } from '@xstate/react'
 import { useLocalSearchParams } from 'expo-router'
 
@@ -14,18 +13,19 @@ import ScrollView from '@/components/layout/ScrollView'
 import StatusScreen from '@/components/status/StatusScreen'
 import LoadingScreen from '@/components/ui/LoadingScreen'
 import SectionTitle from '@/components/ui/SectionTitle'
+import { tanstackKeys } from '@/constants'
 import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useAreaMqttData } from '@/hooks/useAreaMqttData'
 import useStationAction from '@/hooks/useStationAction'
 import { currentScreenMachine } from '@/machines/currentScreenMachine'
+import { areasQueryFn } from '@/queries/areas'
 import { Station, StationAction, StationStatus } from '@/types/area'
 
 export default function AreaInfoScreen() {
 	const theme = useTheme()
 	const queryClient = useQueryClient()
 	const { key } = useLocalSearchParams() as { key: string }
-	const insets = useSafeAreaInsets()
 
 	// State machine for managing screen states
 	const [currentScreenState, send] = useMachine(
@@ -41,22 +41,21 @@ export default function AreaInfoScreen() {
 		pendingStationTypeChange,
 		pendingStationNameChange,
 	} = currentScreenState.context
+	// Subscribe to the shared areas cache so this screen reflects server-side
+	// changes (e.g. renames saved on the edit screen) while it stays mounted.
+	// The machine context is a snapshot and doesn't update on its own.
+	const { data: liveAreas } = useQuery({
+		queryKey: tanstackKeys.AREAS,
+		queryFn: areasQueryFn,
+	})
 	const dbArea = useMemo(
-		() => dbAreas?.find((a) => a.key === key),
-		[dbAreas, key],
+		() =>
+			liveAreas?.find((a) => a.key === key) ??
+			dbAreas?.find((a) => a.key === key),
+		[liveAreas, dbAreas, key],
 	)
 	// Store derived area state (MQTT data)
-	const {
-		allStations,
-		solenoids,
-		pumps,
-		fertilizers,
-		sensors,
-		unclassified,
-		isAreaOnline,
-		lastUpdatedStr,
-		manualOverrides,
-	} = useAreaMqttData(key)
+	const { allStations, isAreaOnline, manualOverrides } = useAreaMqttData(key)
 
 	const {
 		isActionButtonDisabled,
@@ -173,6 +172,7 @@ export default function AreaInfoScreen() {
 			theme.colors.textMuted,
 			theme.font.xs,
 			theme.space.x2l,
+			theme.space.sm,
 		],
 	)
 
@@ -239,7 +239,7 @@ export default function AreaInfoScreen() {
 								refreshing={currentScreenState.matches('loading')}
 								onRefresh={() => send({ type: 'RETRY' })}
 								progressViewOffset={theme.space.x3l}
-								colors={[theme.colors.accentBlue]}
+								colors={[theme.colors.accent]}
 							/>
 						}
 					>
@@ -291,7 +291,7 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accentBlue]}
+						colors={[theme.colors.accent]}
 					/>
 				}
 			>
@@ -333,7 +333,7 @@ export default function AreaInfoScreen() {
 							refreshing={currentScreenState.matches('loading')}
 							onRefresh={() => send({ type: 'RETRY' })}
 							progressViewOffset={theme.space.x3l}
-							colors={[theme.colors.accentBlue]}
+							colors={[theme.colors.accent]}
 						/>
 					}
 				>
@@ -387,33 +387,25 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accentBlue]}
+						colors={[theme.colors.accent]}
 					/>
 				}
 			>
 				{renderApiData()}
 				{/* <AreaSummaryCard
 					solenoidCount={solenoids.length}
-					pumpCount={pumps.length}
 					fertilizerCount={fertilizers.length}
 					sensorCount={sensors.length}
 					unclassifiedCount={unclassified.length}
 					lastUpdatedStr={lastUpdatedStr}
 				/> */}
 				{/* <View style={{ marginVertical: theme.space.xl }} /> */}
-				<SectionTitle text="Stations & Roles" />
-				{allStations.map((station, idx) => (
-					<View key={`station-${station.id}`}>
-						{renderStation(station)}
-						{idx < allStations.length - 1 && (
-							<View
-								style={{
-									height: theme.space.md,
-								}}
-							/>
-						)}
-					</View>
-				))}
+				<View style={{ gap: theme.space.lg }}>
+					<SectionTitle text="Stations & Roles" style={{ marginBottom: 0 }} />
+					{allStations.map((station) => (
+						<View key={`station-${station.id}`}>{renderStation(station)}</View>
+					))}
+				</View>
 
 				<View style={{ gap: theme.space.x2l }}>
 					<View

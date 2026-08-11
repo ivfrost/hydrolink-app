@@ -78,7 +78,7 @@ export default function DashboardHeader({ name }: DashboardHeaderProps) {
 				<MaterialCommunityIcons
 					name={getGreetingIcon()}
 					size={28}
-					color={theme.colors.accentBlue}
+					color={theme.colors.accent}
 				/>
 			</View>
 		</LinearGradient>

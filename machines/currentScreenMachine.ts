@@ -90,7 +90,7 @@ export const currentScreenMachine = setup({
 		>(async ({ input }) => {
 			const result = await areaUpdateMutationFn(input.payload)
 			await input.queryClient.invalidateQueries({
-				queryKey: [tanstackKeys.AREAS],
+				queryKey: tanstackKeys.AREAS,
 				refetchType: 'all',
 			})
 			return result

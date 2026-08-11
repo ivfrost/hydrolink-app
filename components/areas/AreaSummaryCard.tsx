@@ -10,7 +10,6 @@ import Subtext from '../ui/Subtext'
 
 export interface AreaSummaryCardProps {
 	solenoidCount: number
-	pumpCount: number
 	fertilizerCount: number
 	sensorCount: number
 	unclassifiedCount: number
@@ -19,7 +18,6 @@ export interface AreaSummaryCardProps {
 
 export default function AreaSummaryCard({
 	solenoidCount,
-	pumpCount,
 	fertilizerCount,
 	sensorCount,
 	unclassifiedCount,
@@ -36,50 +34,38 @@ export default function AreaSummaryCard({
 	}[] = [
 		{
 			label: 'Total',
-			value:
-				solenoidCount +
-				pumpCount +
-				fertilizerCount +
-				sensorCount +
-				unclassifiedCount,
+			value: solenoidCount + fertilizerCount + sensorCount + unclassifiedCount,
 			icon: 'chart-box',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
+			color: theme.colors.accent,
+			bg: theme.colors.accentTint,
 		},
 		{
 			label: 'Solenoids',
 			value: solenoidCount,
 			icon: 'valve',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
-		},
-		{
-			label: 'Pumps',
-			value: pumpCount,
-			icon: 'water-pump',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
+			color: theme.colors.accent,
+			bg: theme.colors.accentTint,
 		},
 		{
 			label: 'Fertilizers',
 			value: fertilizerCount,
 			icon: 'sprout',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
+			color: theme.colors.accent,
+			bg: theme.colors.accentTint,
 		},
 		{
 			label: 'Sensors',
 			value: sensorCount,
 			icon: 'thermometer-lines',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
+			color: theme.colors.accent,
+			bg: theme.colors.accentTint,
 		},
 		{
 			label: 'Unclassified',
 			value: unclassifiedCount,
 			icon: 'help-circle',
-			color: theme.colors.accentBlue,
-			bg: theme.colors.accentBlueLight,
+			color: theme.colors.accent,
+			bg: theme.colors.accentTint,
 		},
 	]
 

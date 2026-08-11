@@ -213,7 +213,7 @@ export function Picker<T extends string | number>({
 											styles.optionItem,
 											{
 												backgroundColor: isSelected
-													? theme.colors.accentBlueLight
+													? theme.colors.accentTint
 													: 'transparent',
 												borderBottomWidth: idx === options.length - 1 ? 0 : 1,
 												borderBottomColor: theme.colors.border,
@@ -225,7 +225,7 @@ export function Picker<T extends string | number>({
 												fontSize: theme.font.base,
 												fontWeight: isSelected ? '600' : '500',
 												color: isSelected
-													? theme.colors.accentBlue
+													? theme.colors.accent
 													: theme.colors.textSecondary,
 												flex: 1,
 											}}
@@ -236,7 +236,7 @@ export function Picker<T extends string | number>({
 											<MaterialCommunityIcons
 												name="check"
 												size={18}
-												color={theme.colors.accentBlue}
+												color={theme.colors.accent}
 											/>
 										)}
 									</TouchableOpacity>

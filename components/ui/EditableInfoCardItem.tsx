@@ -70,8 +70,8 @@ export default function EditableInfoCardItem({
 			<View style={styles.row}>
 				<HeadingIcon
 					icon={icon}
-					statusColor={theme.colors.accentBlue}
-					statusBg={theme.colors.accentBlueLight}
+					statusColor={theme.colors.accent}
+					statusBg={theme.colors.accentTint}
 				/>
 				<View style={styles.inputMetaGroup}>
 					<Text style={styles.label}>{label}</Text>

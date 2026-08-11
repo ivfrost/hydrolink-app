@@ -93,6 +93,15 @@ export default function AreaLayout() {
 							style: 'destructive',
 							onPress: () => {
 								mqtt.rebootArea(areaKey)
+								// Refresh MQTT so the rebooting device shows as
+								// offline until it reconnects, then return to the
+								// areas list.
+								mqtt.reconnect()
+								if (router.canGoBack()) {
+									router.back()
+								} else {
+									router.dismissTo({ pathname: '/(tabs)/areas' })
+								}
 							},
 						},
 					],

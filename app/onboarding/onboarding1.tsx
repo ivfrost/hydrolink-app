@@ -48,7 +48,7 @@ export default function OnboardingStep1() {
 				<WebDevicesIllustration
 					width={300}
 					height={230}
-					color={theme.colors.accentBlue}
+					color={theme.colors.accent}
 				/>
 				<OnboardTextWrapper>
 					<Title text="All your valves, one app." />

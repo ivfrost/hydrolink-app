@@ -28,7 +28,7 @@ export function RectangularMedia({
 	const theme = useTheme()
 
 	const ringPadding = 4
-	const ringCol = ringColor || theme.colors.accentBlue
+	const ringCol = ringColor || theme.colors.accent
 
 	// Handle full-width calculation dynamically
 	const containerStyle = isFullWidth

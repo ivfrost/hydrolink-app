@@ -133,7 +133,7 @@ export default function OnboardingStep3() {
 								key={idx}
 								style={{
 									padding: theme.space.sm,
-									backgroundColor: '#f5f7fa',
+									backgroundColor: theme.colors.inputBackground,
 									borderRadius: 8,
 									alignItems: 'center',
 								}}

@@ -206,7 +206,9 @@ export default function Button({
 
 		if (typeof icon === 'string') {
 			const resolvedSize = iconSize || sizeConfig.iconSize
-			const resolvedColor = iconColor || theme.colors.textPrimary
+			const resolvedColor = isMuted
+				? theme.colors.buttonDisabledText
+				: iconColor || textColorByVariant[variant]
 
 			if (icon in MaterialCommunityIcons.glyphMap) {
 				return (

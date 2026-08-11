@@ -164,7 +164,22 @@ export const useAreaStore = create<AreaState>()(
 						const targetArray =
 							data && typeof data === 'object' ? data.stations : null
 
-						const validated = stationArrSchema.safeParse(targetArray)
+						// Older devices may still report "Pump" stations. The pump
+						// role is now represented by "Fertilizer", so normalize it
+						// before validating to keep legacy payloads working.
+						const normalizedStationsInput = Array.isArray(targetArray)
+							? targetArray.map((station: any) =>
+									station &&
+									typeof station === 'object' &&
+									station.type === 'Pump'
+										? { ...station, type: 'Fertilizer' }
+										: station,
+								)
+							: targetArray
+
+						const validated = stationArrSchema.safeParse(
+							normalizedStationsInput,
+						)
 						if (!validated.success) {
 							console.error(
 								'[areaStore] Invalid station data:',

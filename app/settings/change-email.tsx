@@ -205,7 +205,7 @@ export default function ChangeEmailScreen() {
 	if (loadProfilePending) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<ActivityIndicator size="large" color={theme.colors.accent} />
 				<Text style={{ color: theme.colors.textSecondary, marginTop: 12 }}>
 					Loading profile...
 				</Text>
@@ -225,7 +225,7 @@ export default function ChangeEmailScreen() {
 				>
 					<ChangeEmailIllustration
 						height={180}
-						color={theme.colors.accentBlue}
+						color={theme.colors.accent}
 					/>
 				</View>
 				<CredentialChangeHeader

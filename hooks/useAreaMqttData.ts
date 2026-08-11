@@ -41,7 +41,6 @@ export function useAreaMqttData(areaKey: string | undefined) {
 		() => ({
 			allStations: sortedStations,
 			solenoids: sortedStations.filter((s) => s.type === 'Solenoid'),
-			pumps: sortedStations.filter((s) => s.type === 'Pump'),
 			fertilizers: sortedStations.filter((s) => s.type === 'Fertilizer'),
 			sensors: sortedStations.filter((s) => s.type === 'Sensor'),
 			unclassified: sortedStations.filter((s) => s.type === 'Unknown'),

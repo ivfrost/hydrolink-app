@@ -26,8 +26,8 @@ export default function RecentActivityCard({
 				return { color: theme.colors.fault, bg: theme.colors.faultBg }
 			default:
 				return {
-					color: theme.colors.accentBlue,
-					bg: theme.colors.accentBlueLight,
+					color: theme.colors.accent,
+					bg: theme.colors.accentTint,
 				}
 		}
 	}

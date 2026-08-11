@@ -29,6 +29,17 @@ export default function useStationAction(
 	// Function to initiate a station action
 	const initiateStationAction = useCallback(
 		(stationId: number, action: StationAction) => {
+			// Ignore commands for a station that already has an in-flight
+			// action. This guards against rapid taps before the machine
+			// re-renders the pending state and keeps multiple quick starts
+			// from publishing overlapping commands.
+			if (stationId in pendingStationActions) {
+				console.warn(
+					`Station ${stationId} already has a pending action. Ignoring new action.`,
+				)
+				return
+			}
+
 			const currentStation = Array.isArray(allStations)
 				? allStations.find((s) => s.id === stationId)
 				: (allStations as Record<number, any>)[stationId]
@@ -86,7 +97,7 @@ export default function useStationAction(
 				preset: 'done',
 			})
 		},
-		[areaKey, publish, allStations, send],
+		[areaKey, publish, allStations, send, pendingStationActions],
 	)
 
 	// Helper for action button state management
@@ -99,18 +110,37 @@ export default function useStationAction(
 			const stationType = station?.type
 			const isPendingAction = isStationActionPending(stationId)
 
-			if (stationType === 'Unknown') return true
+			if (stationType === 'Unknown' || stationType === 'Sensor') return true
 			if (isPendingAction) return true
 
 			if (stationType === 'Solenoid') {
+				// Only one solenoid per area: block starting a solenoid while
+				// another one is running OR has a pending start (before the
+				// ESP confirms it).
+				const anotherSolenoidPendingStart = Object.entries(
+					pendingStationActions,
+				).some(([pendingId, pending]) => {
+					if (Number(pendingId) === stationId) return false
+					if (pending.targetState !== 'Running') return false
+					const pendingStation = Array.isArray(allStations)
+						? allStations.find((s) => s.id === Number(pendingId))
+						: (allStations as Record<number, any>)[Number(pendingId)]
+					return pendingStation?.type === 'Solenoid'
+				})
 				const isAnotherSolenoidActive =
-					activeSolenoid !== undefined && activeSolenoid.id !== stationId
+					(activeSolenoid !== undefined && activeSolenoid.id !== stationId) ||
+					anotherSolenoidPendingStart
 				if (isAnotherSolenoidActive) return true
 			}
 
 			return false
 		},
-		[allStations, activeSolenoid, isStationActionPending],
+		[
+			allStations,
+			activeSolenoid,
+			isStationActionPending,
+			pendingStationActions,
+		],
 	)
 
 	return {

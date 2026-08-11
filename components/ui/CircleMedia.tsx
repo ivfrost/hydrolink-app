@@ -18,7 +18,7 @@ export function CircleMedia({
 	const theme = useTheme()
 
 	const ringSize = size + 8
-	const ringCol = ringColor || theme.colors.accentBlue
+	const ringCol = ringColor || theme.colors.accent
 
 	const content = (
 		<View

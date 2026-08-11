@@ -233,7 +233,7 @@ export default function DropdownMenu({
 													}}
 													style={({ pressed }) => ({
 														backgroundColor: pressed
-															? theme.colors.buttonSecondary
+															? theme.colors.accentTint
 															: 'transparent',
 														paddingHorizontal: theme.space.xl,
 														height: theme.space.buttonSize,

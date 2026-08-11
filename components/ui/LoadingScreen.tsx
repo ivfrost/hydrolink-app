@@ -19,7 +19,7 @@ export default function LoadingScreen({
 				gap: theme.space.md,
 			}}
 		>
-			<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+			<ActivityIndicator size="large" color={theme.colors.accent} />
 			<Text
 				style={{
 					color: theme.colors.textSecondary,

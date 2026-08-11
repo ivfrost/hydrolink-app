@@ -1,32 +1,19 @@
 import { useState } from 'react'
-import { ActivityIndicator, RefreshControl, Text, View } from 'react-native'
+import { ActivityIndicator, Text, View } from 'react-native'
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
 
-import Card from '@/components/layout/Card'
-import ScrollView from '@/components/layout/ScrollView'
-import { UserCard } from '@/components/profile/UserCard'
+import SettingScreen, {
+	SettingSection,
+} from '@/components/settings/SettingScreen'
 import StatusScreen from '@/components/status/StatusScreen'
-import SectionTitle from '@/components/ui/SectionTitle'
-import SimpleCardItem from '@/components/ui/SimpleRowCard'
+import { useNetwork } from '@/context/NetworkContext'
 import { useTheme } from '@/context/ThemeContext'
 import { profileQueryFn } from '@/queries/profile'
 import { useAuth } from '@/stores/authStore'
 import { useOnboarding } from '@/stores/onboardingStore'
-
-interface SettingsRow {
-	label: string
-	icon: keyof typeof MaterialIcons.glyphMap
-	onPress?: () => void
-}
-
-interface SettingsSection {
-	title: string
-	rows: SettingsRow[]
-}
 
 export default function SettingTabScreen() {
 	const queryClient = useQueryClient()
@@ -34,6 +21,8 @@ export default function SettingTabScreen() {
 	const router = useRouter()
 	const theme = useTheme()
 	const [isRefreshing, setIsRefreshing] = useState(false)
+	const { isNetworkConnected, isInternetReachable } = useNetwork()
+	const isOffline = !isNetworkConnected || !isInternetReachable
 
 	const logout = async () => {
 		useAuth.getState().removeAccessToken()
@@ -77,7 +66,7 @@ export default function SettingTabScreen() {
 					gap: 12,
 				}}
 			>
-				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<ActivityIndicator size="large" color={theme.colors.accent} />
 				<Text style={{ color: theme.colors.textSecondary }}>
 					Loading profile...
 				</Text>
@@ -85,33 +74,31 @@ export default function SettingTabScreen() {
 		)
 	}
 
-	if (error) {
+	// Only block the whole screen if we have no profile at all (first load, no cache)
+	if (!profile) {
+		if (isOffline) {
+			return (
+				<StatusScreen
+					variant="network-error"
+					title="No internet connection"
+					subtitle="Check your connection and try again."
+					onRefresh={onRefresh}
+					isRefreshing={isRefreshing}
+				/>
+			)
+		}
 		return (
 			<StatusScreen
 				variant="network-error"
 				title="Settings Unavailable"
-				subtitle="We couldn't load your profile. Check your connection and try again."
-				hint="Only local area features are available."
+				subtitle="We couldn't reach the server. Try again shortly."
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
 		)
 	}
 
-	if (!profile) {
-		return (
-			<StatusScreen
-				variant="missing-data"
-				title="Profile Data Unavailable"
-				subtitle="Some profile data couldn't be loaded."
-				hint="Only local area features are available."
-				onRefresh={onRefresh}
-				isRefreshing={isRefreshing}
-			/>
-		)
-	}
-
-	const sections: SettingsSection[] = [
+	const sections: SettingSection[] = [
 		{
 			title: 'Preferences',
 			rows: [
@@ -125,8 +112,18 @@ export default function SettingTabScreen() {
 		{
 			title: 'Support',
 			rows: [
-				{ label: 'Help centre', icon: 'help-outline', onPress: () => {} },
-				{ label: 'Contact support', icon: 'mail-outline', onPress: () => {} },
+				{
+					label: 'Help centre',
+					icon: 'help-outline',
+					onPress: () => {},
+					requiresServer: true,
+				},
+				{
+					label: 'Contact support',
+					icon: 'mail-outline',
+					onPress: () => {},
+					requiresServer: true,
+				},
 			],
 		},
 		{
@@ -146,52 +143,13 @@ export default function SettingTabScreen() {
 	]
 
 	return (
-		<ScrollView
-			refreshControl={
-				<RefreshControl
-					refreshing={isRefreshing}
-					onRefresh={onRefresh}
-					colors={[theme.colors.accentBlue]}
-				/>
-			}
-		>
-			<UserCard
-				name={profile.fullName}
-				email={profile.email}
-				imageUrl={profile.imageUrl}
-				avatarSize={62}
-				onPress={() => router.push('/settings/profile')}
-			/>
-
-			{sections.map((section) => (
-				<View key={section.title}>
-					<SectionTitle text={section.title} />
-					<Card elevation={0}>
-						{section.rows.map((row) => {
-							if (row.label === 'Logout') {
-								return (
-									<SimpleCardItem
-										key={row.label}
-										label={row.label}
-										icon={row.icon}
-										onPress={row.onPress}
-										modifiers={['fault']}
-									/>
-								)
-							}
-
-							return (
-								<SimpleCardItem
-									key={row.label}
-									label={row.label}
-									icon={row.icon}
-									onPress={row.onPress}
-								/>
-							)
-						})}
-					</Card>
-				</View>
-			))}
-		</ScrollView>
+		<SettingScreen
+			profile={profile}
+			sections={sections}
+			isRefreshing={isRefreshing}
+			onRefresh={onRefresh}
+			isOffline={isOffline}
+			hasServerError={!!error}
+		/>
 	)
 }

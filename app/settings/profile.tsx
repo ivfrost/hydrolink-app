@@ -408,7 +408,7 @@ export default function ProfileScreen() {
 					gap: theme.space.md,
 				}}
 			>
-				<ActivityIndicator size="large" color={theme.colors.accentBlue} />
+				<ActivityIndicator size="large" color={theme.colors.accent} />
 				<Text style={{ color: theme.colors.textSecondary }}>
 					Loading profile…
 				</Text>
@@ -455,7 +455,7 @@ export default function ProfileScreen() {
 						refreshing={isRefreshing}
 						onRefresh={onRefresh}
 						progressViewOffset={theme.space.x2l}
-						colors={[theme.colors.accentBlue]}
+						colors={[theme.colors.accent]}
 					/>
 				}
 			>
