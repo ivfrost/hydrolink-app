@@ -66,7 +66,8 @@ export default function StationCardItem({
 	}
 
 	const isOverrideActive = !!(manualOverride?.active && manualOverride.end)
-	const isSensor = station.type === 'Sensor'
+	// Sensors and unclassified stations are read-only: no start/stop or timer.
+	const isReadOnly = station.type === 'Sensor' || station.type === 'Unknown'
 
 	const buttonVariant =
 		station.status.state === 'Running' ? 'destructive' : 'primary'
@@ -121,7 +122,7 @@ export default function StationCardItem({
 								isLoading={isLoading}
 								disabled={!isMqttEditable}
 							/>
-						) : isSensor ? (
+						) : isReadOnly ? (
 							// Sensors are read-only; a live reading will be
 							// shown here in the future.
 							<Text
@@ -178,7 +179,7 @@ export default function StationCardItem({
 									borderColor={theme.colors.border}
 								/>
 
-								{!isSensor && !isActionDisabled && (
+								{!isReadOnly && !isActionDisabled && (
 									<DurationControl
 										endTimestamp={
 											isOverrideActive ? manualOverride.end : undefined
