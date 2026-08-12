@@ -6,11 +6,20 @@ import mqtt from 'mqtt'
 
 import { getMqttCredentials } from '@/queries/auth'
 import { decodeJwt } from '@/utils/decodeJwt'
+import { normalizeMqttPayload } from '@/utils/mqttPayload'
 
 export let mqttClient: any = null
 export let publishableTopics: string[] = []
 let activeRun: Promise<void> | null = null
 let rerunQueued = false
+
+type MqttMessageHandler = (topic: string, message: string) => void
+let messageHandler: MqttMessageHandler | null = null
+
+/** Register the callback invoked for every incoming MQTT message. */
+export function setMqttMessageHandler(handler: MqttMessageHandler) {
+	messageHandler = handler
+}
 
 export async function getUniqueDeviceId(): Promise<string> {
 	try {
@@ -102,6 +111,23 @@ export const initMqtt = async (): Promise<void> => {
 				clean: true,
 				connectTimeout: 10000,
 				reconnectPeriod: 2000,
+			})
+
+			// Attach the message listener BEFORE subscribing. Retained messages
+			// (e.g. OTA announcements) are delivered the instant the subscription
+			// completes; attaching on('message') after subscribeAsync would miss
+			// them forever. The handler is set by the app via setMqttMessageHandler.
+			mqttClient.on('message', (topic: string, payload: any) => {
+				// Normalize the payload: some brokers/servers publish with a
+				// UTF-8 BOM, null bytes, or CRLF framing which would otherwise
+				// make JSON.parse() fail on valid JSON. normalizeMqttPayload
+				// strips any junk surrounding the JSON so every consumer
+				// (area store, OTA notifications) gets clean text.
+				const rawMessage = normalizeMqttPayload(payload)
+
+				if (messageHandler) {
+					messageHandler(topic, rawMessage)
+				}
 			})
 
 			if (topicsToSubscribe.length > 0) {

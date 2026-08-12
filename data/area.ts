@@ -17,6 +17,8 @@ export enum AreaMenuOptionValue {
 	Unlink = 'unlink',
 	Reboot = 'reboot',
 	Connectivity = 'connectivity',
+	OTAUpdate = 'OTA-update',
+	Logs = 'logs',
 }
 
 export const getAreaMenuOptions = (
@@ -30,9 +32,21 @@ export const getAreaMenuOptions = (
 	if (isOnline) {
 		// If online, add connectivity + maintenance actions
 		options.set('Connectivity', [AreaMenuOptionValue.Connectivity])
-		options.set('Maintenance', [AreaMenuOptionValue.Reboot])
+		options.set('Maintenance', [AreaMenuOptionValue.Reboot, AreaMenuOptionValue.Logs])
 	}
 
+	return options
+}
+/**
+ * Options shown in the header dropdown of the Areas tab screen.
+ */
+export const getAreasScreenHeaderOptions = (): Map<
+	string,
+	AreaMenuOptionValue[]
+> => {
+	const options = new Map<string, AreaMenuOptionValue[]>()
+	// Admin: navigate to the firmware upload screen
+	options.set('Admin', [AreaMenuOptionValue.OTAUpdate])
 	return options
 }
 export type AreaMenuOption = {

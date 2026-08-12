@@ -1,15 +1,24 @@
 import { Animated, StyleSheet, View } from 'react-native'
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { Tabs } from 'expo-router'
+import { Tabs, useRouter } from 'expo-router'
 
+import DropdownMenu from '@/components/ui/DropdownMenu'
 import { useTheme } from '@/context/ThemeContext'
+import { AreaMenuOptionValue, getAreasScreenHeaderOptions } from '@/data/area'
 import { useLocalDiscovery } from '@/hooks/useLocalDiscovery'
+import { useAuth } from '@/stores/authStore'
+import { decodeJwt } from '@/utils/decodeJwt'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 export default function TabsLayout() {
 	useLocalDiscovery()
 	const theme = useTheme()
+	const router = useRouter()
+	const accessToken = useAuth((state) => state.accessToken)
+	const isAdmin = Boolean(
+		accessToken && (decodeJwt(accessToken)?.roles ?? []).includes('ADMIN'),
+	)
 
 	return (
 		<Tabs
@@ -17,6 +26,7 @@ export default function TabsLayout() {
 				sceneStyle: {
 					backgroundColor: theme.colors.background,
 				},
+				headerTintColor: theme.colors.textPrimary,
 				headerBackground: () => (
 					<Animated.View
 						style={[
@@ -75,6 +85,26 @@ export default function TabsLayout() {
 				name="areas"
 				options={{
 					title: 'Areas',
+					headerShown: true,
+					headerShadowVisible: false,
+					headerStyle: {
+						backgroundColor: theme.colors.background,
+					},
+					headerRightContainerStyle: {
+						paddingRight: theme.space.sm,
+					},
+					headerRight: isAdmin
+						? () => (
+								<DropdownMenu
+									options={getAreasScreenHeaderOptions()}
+									onClick={(option) => {
+										if (option === AreaMenuOptionValue.OTAUpdate) {
+											router.push('/(area)/areas/OTA-update')
+										}
+									}}
+								/>
+							)
+						: undefined,
 					tabBarIcon: ({ color, focused }) => (
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons

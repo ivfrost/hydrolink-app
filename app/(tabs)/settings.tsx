@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
@@ -12,6 +13,7 @@ import StatusScreen from '@/components/status/StatusScreen'
 import { useNetwork } from '@/context/NetworkContext'
 import { useTheme } from '@/context/ThemeContext'
 import { profileQueryFn } from '@/queries/profile'
+import { queryCacheStorageKey } from '@/queries/queryClient'
 import { useAuth } from '@/stores/authStore'
 import { useOnboarding } from '@/stores/onboardingStore'
 
@@ -27,6 +29,11 @@ export default function SettingTabScreen() {
 	const logout = async () => {
 		useAuth.getState().removeAccessToken()
 		await SecureStore.deleteItemAsync('refreshToken')
+		// Wipe the query cache (and its AsyncStorage copy) so the next
+		// session/user can't see stale devices, profile data, etc. from
+		// this one.
+		queryClient.clear()
+		await AsyncStorage.removeItem(queryCacheStorageKey)
 		router.replace('/onboarding/onboarding2')
 	}
 

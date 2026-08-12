@@ -63,7 +63,7 @@ export default function AreasScreen({
 	const serverUnavailable = isOffline || hasServerError
 	const canOpenLinkSheet = canUseRemoteLinking && !serverUnavailable
 	const discoveredDevices = useDiscoveryStore((s) => s.devices)
-	const linkedKeys = new Set(areas.map((a) => a.key))
+	const linkedKeys = new Set(areas !== null ? areas.map((a) => a.key) : [])
 	const unlinkedLocalDevices = Array.from(discoveredDevices.values()).filter(
 		(d) => !linkedKeys.has(d.deviceKey),
 	)
@@ -215,11 +215,11 @@ export default function AreasScreen({
 				const online = isAreaOnline(area.key)
 
 				if (!areaData || !online) {
-					subtitle = `${area.locationLabel.trim() ? area.locationLabel + ' • ' : ''}Offline`
+					subtitle = `${area.locationLabel != null ? (area.locationLabel.trim() ? area.locationLabel.trim() + ' • ' : '') : ''}Offline`
 					return (
 						<Card key={area.id + idx} flexDirection="column" elevation={0}>
 							<CardItem
-								title={area.friendlyName ?? area.key ?? 'Unnamed Area'}
+								title={area.friendlyName || area.key || 'Unnamed Area'}
 								subtitle={
 									<Text
 										style={{
@@ -230,7 +230,7 @@ export default function AreasScreen({
 										{subtitle}
 									</Text>
 								}
-								icon="map-marker-off-outline"
+								icon="map-marker-off"
 								statusColor={
 									!online ? theme.colors.offline : theme.colors.online
 								}
@@ -297,7 +297,7 @@ export default function AreasScreen({
 				return (
 					<Card key={area.id + idx} flexDirection="column" elevation={0}>
 						<AreaCardItem
-							title={area.friendlyName ?? area.key ?? 'Unnamed Area'}
+							title={area.friendlyName || area.key || 'Unnamed Area'}
 							subtitle={subtitle}
 							online={isOnline}
 							local={isLocal}

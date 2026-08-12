@@ -16,6 +16,12 @@ interface EditableInfoCardProps {
 	onInfoChange: (field: keyof ProfileUpdatePayload, value: string) => void
 	isCredentialChanging?: boolean
 	errorState?: Partial<Record<keyof ProfileUpdatePayload, string>>
+	/** Original values from the server, used to detect changes per field. */
+	initialValues?: Partial<Record<keyof ProfileUpdatePayload, string>>
+	/** Called when the user taps a field's inline confirm button. */
+	onFieldConfirm?: (field: string, value: string) => void
+	/** Which field's confirm is currently saving (shows spinner). */
+	confirmingField?: string | null
 }
 
 export function EditableProfileInfoCard({
@@ -29,6 +35,9 @@ export function EditableProfileInfoCard({
 	onInfoChange,
 	isCredentialChanging = false,
 	errorState,
+	initialValues,
+	onFieldConfirm,
+	confirmingField,
 }: EditableInfoCardProps) {
 	const theme = useTheme()
 
@@ -50,6 +59,13 @@ export function EditableProfileInfoCard({
 					editable
 					error={errorState?.fullName}
 					icon="account-outline"
+					initialValue={initialValues?.fullName}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('fullName', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'fullName'}
 				/>
 			)}
 
@@ -62,6 +78,13 @@ export function EditableProfileInfoCard({
 					editable
 					error={errorState?.username}
 					icon="at"
+					initialValue={initialValues?.username}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('username', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'username'}
 				/>
 			)}
 
@@ -75,6 +98,13 @@ export function EditableProfileInfoCard({
 					editable
 					error={errorState?.email}
 					icon="email-outline"
+					initialValue={initialValues?.email}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('email', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'email'}
 				/>
 			)}
 
@@ -90,6 +120,13 @@ export function EditableProfileInfoCard({
 					textContentType="password"
 					error={errorState?.password}
 					icon="lock-plus-outline"
+					initialValue={initialValues?.password}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('password', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'password'}
 				/>
 			)}
 
@@ -97,7 +134,9 @@ export function EditableProfileInfoCard({
 				<EditableInfoCardItem
 					label="Current Password (Required)"
 					text={currentPassword}
-					onChangeText={(value) => onInfoChange('currentPassword', value)}
+					onChangeText={(value) =>
+						onInfoChange('currentPassword', value)
+					}
 					secureTextEntry
 					editable
 					autoCapitalize="none"
@@ -117,6 +156,13 @@ export function EditableProfileInfoCard({
 					editable
 					error={errorState?.phoneNumber}
 					icon="phone-outline"
+					initialValue={initialValues?.phoneNumber}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('phoneNumber', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'phoneNumber'}
 				/>
 			)}
 
@@ -128,6 +174,13 @@ export function EditableProfileInfoCard({
 					editable
 					error={errorState?.address}
 					icon="map-marker-outline"
+					initialValue={initialValues?.address}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('address', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'address'}
 				/>
 			)}
 		</View>

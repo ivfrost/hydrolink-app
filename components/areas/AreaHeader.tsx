@@ -1,8 +1,7 @@
-import { Image, StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
-import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
 import { AreaDbData } from '@/types/area'
 import resolveImageUrl from '@/utils/resolveImageUrl'
@@ -10,7 +9,6 @@ import resolveImageUrl from '@/utils/resolveImageUrl'
 import Badge from '../ui/Badge'
 import { CircleMedia } from '../ui/CircleMedia'
 import { RectangularMedia } from '../ui/RectangularMedia'
-import Subtitle from '../ui/Subtitle'
 
 export interface AreaHeaderProps {
 	dbArea: AreaDbData
@@ -19,65 +17,43 @@ export interface AreaHeaderProps {
 
 export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 	const theme = useTheme()
+	const statusColor = online ? theme.colors.online : theme.colors.fault
+	const statusBg = online ? theme.colors.onlineBg : theme.colors.faultBg
 
 	return (
-		<View style={{ gap: theme.space.x2l, flexDirection: 'column' }}>
-			<View
-				style={{
-					alignItems: 'center',
-					gap: theme.space.lg,
-				}}
-			>
-				{dbArea.imageUrl ? (
-					<RectangularMedia
-						aspectRatio={16 / 9}
-						isFullWidth
-						ringColor={theme.colors.border}
-						elevation={0}
-					>
-						<Image
-							source={{ uri: resolveImageUrl(dbArea.imageUrl) }}
-							style={StyleSheet.absoluteFill}
-							resizeMode="cover"
-							onError={(e) =>
-								console.log(
-									'Failed to load image from URI:',
-									resolveImageUrl(dbArea.imageUrl),
-									e.nativeEvent.error,
-								)
-							}
-						/>
-
-						<View
-							style={{
-								position: 'absolute',
-								top: 0,
-								right: 0,
-								margin: theme.space.sm,
-							}}
-						>
-							<Badge
-								text={online ? 'Online' : 'Offline'}
-								icon="circle"
-								iconSize={8}
-								color={online ? theme.colors.online : theme.colors.fault}
-								backgroundColor={
-									online ? theme.colors.onlineBg : theme.colors.faultBg
-								}
-							/>
-						</View>
-					</RectangularMedia>
-				) : (
+		<View style={{ gap: theme.space.lg }}>
+			{/* Hero image when available */}
+			{dbArea.imageUrl ? (
+				<RectangularMedia
+					aspectRatio={16 / 9}
+					isFullWidth
+					ringColor={theme.colors.border}
+					elevation={0}
+				>
+					<Image
+						source={{ uri: resolveImageUrl(dbArea.imageUrl) }}
+						style={StyleSheet.absoluteFill}
+						resizeMode="cover"
+						onError={(e) =>
+							console.log(
+								'Failed to load image from URI:',
+								resolveImageUrl(dbArea.imageUrl),
+								e.nativeEvent.error,
+							)
+						}
+					/>
+				</RectangularMedia>
+			) : (
+				/* Fallback icon when no image */
+				<View style={{ paddingHorizontal: theme.space.xs, paddingTop: theme.space.md }}>
 					<CircleMedia
-						size={68}
+						size={72}
 						onPress={() => {}}
-						ringColor={online ? theme.colors.online : theme.colors.fault}
+						ringColor={statusColor}
 					>
 						<View
 							style={{
-								backgroundColor: online
-									? theme.colors.onlineBg
-									: theme.colors.faultBg,
+								backgroundColor: statusBg,
 								width: '100%',
 								height: '100%',
 								justifyContent: 'center',
@@ -86,26 +62,58 @@ export default function AreaHeader({ dbArea, online }: AreaHeaderProps) {
 						>
 							<MaterialCommunityIcons
 								name={online ? 'map-marker-check' : 'map-marker-off'}
-								size={36}
-								color={online ? theme.colors.online : theme.colors.fault}
+								size={40}
+								color={statusColor}
 							/>
 						</View>
 					</CircleMedia>
-				)}
+				</View>
+			)}
+
+			{/* Name row */}
+			<View style={{ paddingHorizontal: theme.space.xs }}>
+				<Text
+					numberOfLines={1}
+					style={{
+						fontSize: theme.font.xl,
+						fontWeight: '600',
+						letterSpacing: -0.3,
+						color: theme.colors.textPrimary,
+					}}
+				>
+					{dbArea.friendlyName || dbArea.key || 'Unnamed Area'}
+				</Text>
 
 				<View
 					style={{
 						flexDirection: 'row',
 						alignItems: 'center',
-						width: '85%',
-						paddingHorizontal: theme.space.md,
-						justifyContent: 'center',
+						gap: theme.space.xs,
+						marginTop: theme.space.x2s,
 					}}
 				>
-					<View style={{ alignItems: 'center', flex: 1, gap: theme.space.x3s }}>
-						<Title text={dbArea.friendlyName ?? dbArea.key ?? 'Unnamed Area'} />
-						<Subtitle text={dbArea.locationLabel || 'Unknown Location'} />
-					</View>
+					<MaterialCommunityIcons
+						name="map-marker-outline"
+						size={14}
+						color={theme.colors.textMuted}
+					/>
+					<Text
+						numberOfLines={1}
+						style={{
+							fontSize: theme.font.sm,
+							color: theme.colors.textSecondary,
+							flexShrink: 1,
+						}}
+					>
+						{dbArea.locationLabel || 'Unknown Location'}
+					</Text>
+					<Badge
+						text={online ? 'Online' : 'Offline'}
+						icon="circle"
+						iconSize={8}
+						color={statusColor}
+						backgroundColor={statusBg}
+					/>
 				</View>
 			</View>
 		</View>

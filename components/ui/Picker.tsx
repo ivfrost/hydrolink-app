@@ -20,6 +20,8 @@ import Button from './Button'
 
 type PickerOption<T> = { label: string; value: T }
 
+type PickerModifier = 'tall' | 'full' | 'small' | 'outlined'
+
 type PickerProps<T> = {
 	label?: string
 	options: PickerOption<T>[]
@@ -31,6 +33,7 @@ type PickerProps<T> = {
 	maxHeight?: number
 	isLoading?: boolean
 	disabled?: boolean
+	modifier?: PickerModifier[]
 }
 
 export function Picker<T extends string | number>({
@@ -44,6 +47,7 @@ export function Picker<T extends string | number>({
 	maxHeight = 260,
 	isLoading = false,
 	disabled = false,
+	modifier = ['outlined', 'small'],
 }: PickerProps<T>) {
 	const theme = useTheme()
 	const anchorRef = useRef(null)
@@ -147,7 +151,7 @@ export function Picker<T extends string | number>({
 			<View style={styles.buttonRow}>
 				<Button
 					ref={anchorRef}
-					modifier={['outlined', 'small']}
+					modifier={modifier}
 					variant="tertiary"
 					onPress={toggle}
 					activeOpacity={0.9}

@@ -63,3 +63,5 @@ export const tanstackKeys = {
 } as const
 
 export type TanstackKey = (typeof tanstackKeys)[keyof typeof tanstackKeys]
+
+export const MAX_LOGS_PER_AREA = 500

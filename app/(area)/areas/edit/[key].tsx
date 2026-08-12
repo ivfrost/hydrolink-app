@@ -269,6 +269,8 @@ export default function EditAreaScreen() {
 		[],
 	)
 
+	const saveRequestedRef = useRef(false)
+
 	// Handler for saving changes to the API and MQTT
 	const handleSave = async () => {
 		if (!dbArea) return
@@ -321,8 +323,15 @@ export default function EditAreaScreen() {
 
 		// Then trigger the DB save -> saving -> syncingDevice -> ready
 		send({ type: 'SAVE', payload: apiPayload })
-		router.back()
+		saveRequestedRef.current = true
 	}
+
+	// Navigate back once the state machine finishes persisting.
+	useEffect(() => {
+		if (saveRequestedRef.current && currentScreenState.matches('ready')) {
+			router.back()
+		}
+	}, [currentScreenState, router])
 
 	// Handler for discarding changes and resetting local state to the last known
 	// values (API and MQTT)

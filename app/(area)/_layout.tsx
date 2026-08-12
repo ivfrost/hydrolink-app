@@ -1,9 +1,11 @@
-import { Alert } from 'react-native'
+import { Alert, Text, TouchableOpacity, View } from 'react-native'
 
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import { router, Stack } from 'expo-router'
 
+import Badge from '@/components/ui/Badge'
 import DropdownMenu from '@/components/ui/DropdownMenu'
 import { tanstackKeys } from '@/constants'
 import { useMqtt } from '@/context/MqttContext'
@@ -106,6 +108,8 @@ export default function AreaLayout() {
 						},
 					],
 				)
+			case 'logs':
+				router.push(`/areas/${areaKey}/logs`)
 				break
 			default:
 				break
@@ -113,7 +117,11 @@ export default function AreaLayout() {
 	}
 
 	return (
-		<Stack>
+		<Stack
+			screenOptions={{
+				headerTintColor: theme.colors.textPrimary,
+			}}
+		>
 			<Stack.Screen
 				name="scan"
 				options={{
@@ -147,6 +155,22 @@ export default function AreaLayout() {
 			/>
 
 			<Stack.Screen
+				name="areas/OTA-update"
+				options={{
+					headerShown: true,
+					headerShadowVisible: false,
+					animation: 'slide_from_right',
+					headerTitle: 'OTA Update',
+					contentStyle: {
+						backgroundColor: theme.colors.background,
+					},
+					headerStyle: {
+						backgroundColor: theme.colors.background,
+					},
+				}}
+			/>
+
+			<Stack.Screen
 				name="areas/[key]"
 				options={({ navigation, route }) => {
 					const { key } = route.params as { key: string }
@@ -170,6 +194,67 @@ export default function AreaLayout() {
 						),
 					}
 				}}
+			/>
+			<Stack.Screen
+				name="areas/[key]/logs"
+				options={({ route }) => ({
+					headerShown: true,
+					headerTitle: '',
+					headerLeft: () => {
+						const { key } = route.params as { key: string }
+
+						return (
+							<View
+								style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+							>
+								<TouchableOpacity
+									hitSlop={40}
+									onPress={() => {
+										if (router.canGoBack()) {
+											router.back()
+										} else {
+											router.dismissTo({ pathname: '/(tabs)/areas' })
+										}
+									}}
+								>
+									<MaterialCommunityIcons
+										name="arrow-left"
+										size={theme.space.iconSize}
+										color={theme.colors.textPrimary}
+									/>
+								</TouchableOpacity>
+								<Text
+									style={{
+										fontSize: theme.font.md,
+										color: theme.colors.textPrimary,
+									}}
+								>
+									Logs for {key}
+								</Text>
+							</View>
+						)
+					},
+					headerShadowVisible: false,
+					contentStyle: { backgroundColor: theme.colors.background },
+					headerStyle: { backgroundColor: theme.colors.background },
+					headerRight: () => {
+						const { key } = route.params as { key: string }
+
+						return (
+							<Badge
+								text={isOnline(key) ? 'Online' : 'Offline'}
+								icon="circle"
+								iconSize={8}
+								color={
+									isOnline(key) ? theme.colors.online : theme.colors.offline
+								}
+								backgroundColor={
+									isOnline(key) ? theme.colors.onlineBg : theme.colors.offlineBg
+								}
+							/>
+						)
+					},
+				})}
 			/>
 		</Stack>
 	)

@@ -8,6 +8,9 @@ import {
 	stationArrSchema,
 	StationType,
 } from '@/types/area'
+import { normalizeMqttPayload } from '@/utils/mqttPayload'
+
+import { useLogStore } from './logStore'
 
 interface AreaState {
 	areas: Record<string, AreaMqttData>
@@ -130,13 +133,19 @@ export const useAreaStore = create<AreaState>()(
 				const [_, areaKey, subTopic] = parts
 
 				try {
+					const trimmed = normalizeMqttPayload(rawMessage)
+
+					// The ESP streams its device log lines on "<org>/<deviceKey>/logs"
+					// as plain-text, pre-formatted lines (e.g. "2026-08-12 13:33:09
+					// [DEBUG] ACTIONS: ..."). Forward them to the log store -
+					// parsing already happened here, so no logic is duplicated.
+					// Kept outside set() so the updater stays pure.
+					if (subTopic === 'logs') {
+						useLogStore.getState().addLog(areaKey, trimmed)
+						return
+					}
+
 					if (subTopic !== 'status') return
-
-					const trimmed = rawMessage.trim()
-					// console.log(
-					// 	`[areaStore] MQTT message for area ${areaKey}: ${trimmed}`,
-					// )
-
 					set((state) => {
 						const prev = state.areas[areaKey] ?? {
 							key: areaKey,

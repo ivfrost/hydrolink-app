@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, TextInput, TextInputProps, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
@@ -18,20 +18,24 @@ export default function Input({
 
 	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
 
-	const animate = (toValue: number) => {
-		Animated.timing(labelAnim, {
-			toValue,
-			duration: 150,
-			useNativeDriver: false,
-		}).start()
-	}
+	const animate = useCallback(
+		(toValue: number) => {
+			Animated.timing(labelAnim, {
+				toValue,
+				duration: 150,
+				useNativeDriver: false,
+			}).start()
+		},
+		[labelAnim],
+	)
 
-	// 🔥 FIX: float label when value becomes non-empty
+	// Keep the floating label in sync with the value even when the field
+	// isn't focused (e.g. when the value is cleared programmatically).
 	useEffect(() => {
-		if (props.value && !focused) {
-			animate(1)
+		if (!focused) {
+			animate(props.value ? 1 : 0)
 		}
-	}, [props.value])
+	}, [props.value, focused, animate])
 
 	const handleFocus = (e: any) => {
 		setFocused(true)
@@ -56,6 +60,10 @@ export default function Input({
 	})
 
 	const labelColor = focused ? theme.colors.accent : theme.colors.textMuted
+
+	// Only render the hint/placeholder once the label has floated up, so the
+	// two never overlap while the label sits inside the field.
+	const showPlaceholder = focused || !!props.value
 
 	return (
 		<View style={{ width: '100%' }}>
@@ -90,6 +98,7 @@ export default function Input({
 						padding: 0,
 					}}
 					{...props}
+					placeholder={showPlaceholder ? props.placeholder : undefined}
 				/>
 			</View>
 		</View>

@@ -1,5 +1,12 @@
 import React, { useRef } from 'react'
-import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
+import {
+	Pressable,
+	StyleSheet,
+	Text,
+	TextInput,
+	TextInputProps,
+	View,
+} from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
@@ -15,6 +22,12 @@ interface EditableInfoCardItemProps extends TextInputProps {
 		| keyof typeof MaterialCommunityIcons.glyphMap
 		| keyof typeof MaterialIcons.glyphMap
 	renderBottom?: () => React.ReactNode
+	/** When set, a check button appears inline when the value differs from this. */
+	initialValue?: string
+	/** Called when the user taps the inline confirm button. */
+	onConfirm?: (value: string) => void
+	/** Whether a confirm is in flight (shows a spinner on the button). */
+	confirmLoading?: boolean
 }
 
 export default function EditableInfoCardItem({
@@ -23,10 +36,16 @@ export default function EditableInfoCardItem({
 	error,
 	icon,
 	renderBottom,
+	initialValue,
+	onConfirm,
+	confirmLoading = false,
 	...props
 }: EditableInfoCardItemProps) {
 	const theme = useTheme()
 	const inputRef = useRef<TextInput>(null)
+
+	const hasChanges =
+		onConfirm && initialValue !== undefined && text !== initialValue
 
 	const styles = StyleSheet.create({
 		cardContainer: {
@@ -86,7 +105,10 @@ export default function EditableInfoCardItem({
 							/>
 							{error && (
 								<Text
-									style={{ color: theme.colors.fault, fontSize: theme.font.xs }}
+									style={{
+										color: theme.colors.fault,
+										fontSize: theme.font.xs,
+									}}
 								>
 									{error}
 								</Text>
@@ -96,6 +118,37 @@ export default function EditableInfoCardItem({
 						<Text style={styles.text}>{text}</Text>
 					)}
 				</View>
+
+				{/* Inline confirm button */}
+				{hasChanges && (
+					<Pressable
+						disabled={confirmLoading}
+						onPress={() => onConfirm?.(text)}
+						hitSlop={8}
+						style={{
+							width: 32,
+							height: 32,
+							borderRadius: 16,
+							backgroundColor: theme.colors.accent,
+							justifyContent: 'center',
+							alignItems: 'center',
+						}}
+					>
+						{confirmLoading ? (
+							<MaterialCommunityIcons
+								name="loading"
+								size={16}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						) : (
+							<MaterialCommunityIcons
+								name="check"
+								size={16}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						)}
+					</Pressable>
+				)}
 			</View>
 
 			{/* Full-width Bottom Container */}

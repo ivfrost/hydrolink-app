@@ -239,7 +239,7 @@ export default function AreaInfoScreen() {
 								refreshing={currentScreenState.matches('loading')}
 								onRefresh={() => send({ type: 'RETRY' })}
 								progressViewOffset={theme.space.x3l}
-								colors={[theme.colors.accent]}
+								colors={[theme.colors.accent, theme.colors.background]}
 							/>
 						}
 					>
@@ -291,7 +291,7 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accent]}
+						colors={[theme.colors.accent, theme.colors.background]}
 					/>
 				}
 			>
@@ -333,7 +333,7 @@ export default function AreaInfoScreen() {
 							refreshing={currentScreenState.matches('loading')}
 							onRefresh={() => send({ type: 'RETRY' })}
 							progressViewOffset={theme.space.x3l}
-							colors={[theme.colors.accent]}
+							colors={[theme.colors.accent, theme.colors.background]}
 						/>
 					}
 				>
@@ -387,7 +387,7 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accent]}
+						colors={[theme.colors.accent, theme.colors.background]}
 					/>
 				}
 			>

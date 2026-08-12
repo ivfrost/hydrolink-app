@@ -1,6 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 
-import { initMqtt, mqttClient, publishableTopics } from '@/services/mqtt'
+import {
+	initMqtt,
+	mqttClient,
+	publishableTopics,
+	setMqttMessageHandler,
+} from '@/services/mqtt'
+import {
+	notifyOtaUpdateIfCommand,
+	requestNotificationPermission,
+	setOtaNotificationTapHandler,
+	publishOtaCommand,
+} from '@/services/otaNotifications'
 import { useAreaStore } from '@/stores/areaStore'
 import { StationType } from '@/types/area'
 import type { MqttCommand, MqttStatus } from '@/types/mqtt'
@@ -54,6 +65,31 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 		init()
 		let cleanupListeners: (() => void) | undefined
 
+		// Ask for notification permission up front so the OS prompt shows
+		// immediately, not only when the first OTA command happens to arrive.
+		requestNotificationPermission()
+
+		// When the user taps a native "Firmware update available" notification,
+		// re-publish the stored OTA command to the device so flashing actually
+		// starts. The handler is registered once here after MQTT is available.
+		setOtaNotificationTapHandler(publishOtaCommand)
+
+		// Register the message handler BEFORE initMqtt() subscribes. Retained
+		// messages (OTA announcements) are delivered the very moment the broker
+		// completes the subscription — a handler attached after initMqtt()
+		// resolves would miss them forever.
+		setMqttMessageHandler((topic, rawMessage) => {
+			// The area store parses the message and updates areas accordingly
+			useAreaStore.getState().handleIncomingMqtt(topic, rawMessage)
+			// Show a native notification when the backend dispatches an OTA command
+			notifyOtaUpdateIfCommand({
+				topic,
+				rawMessage,
+				deviceKey: topic.split('/')[1] ?? '',
+				version: '',
+			})
+		})
+
 		initMqtt()
 			.then(() => {
 				setStatus('CONNECTED')
@@ -61,17 +97,11 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 				setPublishableTopicState(publishableTopics)
 
 				if (mqttClient) {
-					const handleMessage = (topic: string, payload: any) => {
-						const rawMessage = payload.toString()
-						// The area store parses the message and updates areas accordingly
-						useAreaStore.getState().handleIncomingMqtt(topic, rawMessage)
-					}
 					const handleClose = () => setStatus('DISCONNECTED')
 					const handleConnect = () => setStatus('CONNECTED')
 					const handleError = () => setStatus('ERROR')
 
 					mqttClient.on('connect', handleConnect)
-					mqttClient.on('message', handleMessage)
 					mqttClient.on('close', handleClose)
 					mqttClient.on('error', handleError)
 
@@ -79,7 +109,6 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 					cleanupListeners = () => {
 						if (mqttClient) {
 							mqttClient.off('connect', handleConnect)
-							mqttClient.off('message', handleMessage)
 							mqttClient.off('close', handleClose)
 							mqttClient.off('error', handleError)
 						}

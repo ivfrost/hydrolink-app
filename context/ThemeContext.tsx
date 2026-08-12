@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext } from 'react'
+import { useColorScheme } from 'react-native'
 
 const themeTokens = {
 	colors: {
@@ -22,8 +23,8 @@ const themeTokens = {
 			buttonSecondaryText: '#1b2a3b',
 			buttonSecondaryBorder: '#d7dee5',
 			buttonDestructive: '#c44f3f',
-			buttonDisabled: '#edf1f5',
-			buttonDisabledText: '#8a97a8',
+			buttonDisabled: '#d7dee5',
+			buttonDisabledText: '#5d6b7c',
 
 			cardPressed: '#f0f3f7',
 			buttonPrimaryPressed: '#141f2b',
@@ -73,8 +74,8 @@ const themeTokens = {
 			accentTint: '#1e293b',
 			gradientStart: '#1a1e26',
 			gradientEnd: '#0f1115',
-			buttonPrimary: '#ffffff',
-			buttonPrimaryText: '#1b2a3b',
+			buttonPrimary: '#60a5fa',
+			buttonPrimaryText: '#ffffff',
 			buttonSecondary: '#2c323f',
 			buttonSecondaryText: '#ffffff',
 			buttonSecondaryBorder: '#3d4656',
@@ -83,7 +84,7 @@ const themeTokens = {
 			buttonDisabledText: '#64748b',
 
 			cardPressed: '#222731',
-			buttonPrimaryPressed: '#e2e8f0',
+			buttonPrimaryPressed: '#3b82f6',
 			buttonSecondaryPressed: '#363d4a',
 			buttonTertiaryPressed: '#1e293b',
 			buttonDestructivePressed: '#d94f4f',
@@ -173,16 +174,27 @@ const themeTokens = {
 		cardTextSubtitle: 18,
 		paragraph: 22,
 	},
+	terminal: {
+		bg: '#0d1117',
+		muted: '#8b949e',
+		text: '#c9d1d9',
+		debug: '#6e7681',
+		info: '#c9d1d9',
+		warning: '#d29922',
+		error: '#f85149',
+		critical: '#ff7b72',
+	},
 } as const
 
 type ThemeMode = 'light' | 'dark'
 
 type ThemeColors = Record<keyof typeof themeTokens.colors.light, string>
+type ThemeTerminal = typeof themeTokens.terminal
 
 interface ThemeContextType {
 	mode: ThemeMode
-	setMode: (mode: ThemeMode) => void
 	colors: ThemeColors
+	terminal: ThemeTerminal
 	space: typeof themeTokens.space
 	radius: typeof themeTokens.radius
 	font: typeof themeTokens.font
@@ -192,12 +204,13 @@ interface ThemeContextType {
 export const ThemeContext = createContext<ThemeContextType | null>(null)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-	const [mode, setMode] = useState<ThemeMode>('light')
+	const scheme = useColorScheme()
+	const mode: ThemeMode = scheme === 'dark' ? 'dark' : 'light'
 
 	const value: ThemeContextType = {
 		mode,
-		setMode,
 		colors: themeTokens.colors[mode],
+		terminal: themeTokens.terminal,
 		space: themeTokens.space,
 		radius: themeTokens.radius,
 		font: themeTokens.font,

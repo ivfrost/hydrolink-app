@@ -9,6 +9,8 @@ import { PortalProvider } from '@gorhom/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { Stack, useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import * as SystemUI from 'expo-system-ui'
+import { useEffect } from 'react'
 
 import { MqttProvider } from '@/context/MqttContext'
 import { NetworkProvider } from '@/context/NetworkContext'
@@ -31,11 +33,27 @@ function AppContent() {
 	const theme = useTheme()
 	const router = useRouter()
 
+	useEffect(() => {
+		SystemUI.setBackgroundColorAsync(theme.colors.background)
+	}, [theme.colors.background])
+
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<PersistQueryClientProvider
 				client={queryClient}
-				persistOptions={{ persister: asyncStoragePersister }}
+				persistOptions={{
+					persister: asyncStoragePersister,
+					// Don't persist account-scoped data (linked devices, profile)
+					// to AsyncStorage. Persisting these makes stale data — e.g.
+					// a device unlinked elsewhere, or another user's data after
+					// logout — reappear on the next launch before a fresh
+					// refetch succeeds (or forever, if the refetch fails).
+					// In-memory caching is unaffected.
+					dehydrateOptions: {
+						shouldDehydrateQuery: (query) =>
+							query.queryKey[0] !== 'areas' && query.queryKey[0] !== 'profile',
+					},
+				}}
 			>
 				<BottomSheetModalProvider>
 					<NetworkProvider>
@@ -112,7 +130,7 @@ function AppContent() {
 										/>
 									</Stack>
 									<Toast />
-									<StatusBar style="dark" />
+									<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
 								</MqttProvider>
 							</KeyboardProvider>
 						</PortalProvider>

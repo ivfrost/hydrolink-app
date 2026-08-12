@@ -151,6 +151,27 @@ export default function ProfileScreen() {
 		},
 	})
 
+	const [confirmingField, setConfirmingField] = useState<string | null>(null)
+
+	// Per-field save handler — calls the API directly without navigating away.
+	const handleFieldConfirm = async (field: string, value: string) => {
+		if (!profile) return
+		setConfirmingField(field)
+		try {
+			const payload = { [field]: value }
+			await profileUpdateFn(payload as ProfileUpdatePayload)
+			queryClient.invalidateQueries({ queryKey: ['profile'] })
+			Burnt.toast({ title: 'Saved', preset: 'done' })
+		} catch (err: any) {
+			Burnt.toast({
+				title: err?.message || 'Failed to save',
+				preset: 'error',
+			})
+		} finally {
+			setConfirmingField(null)
+		}
+	}
+
 	// Handler for input value changes
 	const handleInputChange = (
 		field: keyof ProfileUpdatePayload,
@@ -484,6 +505,14 @@ export default function ProfileScreen() {
 							address={profileFormState.address}
 							onInfoChange={handleInputChange}
 							errorState={errorState}
+							initialValues={{
+								fullName: profile.fullName,
+								username: profile.username,
+								phoneNumber: profile.phoneNumber ?? '',
+								address: profile.address ?? '',
+							}}
+							onFieldConfirm={handleFieldConfirm}
+							confirmingField={confirmingField}
 						/>
 					</View>
 
@@ -516,14 +545,6 @@ export default function ProfileScreen() {
 					</View>
 				</View>
 			</KeyboardAwareScrollView>
-
-			<StickyActionButtons
-				disabled={isButtonDisabled}
-				onSave={handleSave}
-				onDiscard={handleDiscard}
-				isLoading={isProfileUpdating || loadProfilePending}
-				bottomInset={insets.bottom}
-			/>
 		</>
 	)
 }

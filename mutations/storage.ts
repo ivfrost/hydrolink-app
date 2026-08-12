@@ -34,6 +34,40 @@ export const profileFileUploadFn = async (
 	return data.details as { fileUrl: string }
 }
 
+// /storage/firmware/upload
+export const firmwareUploadFn = async (
+	payload: FileUploadPayload,
+	technicalName: string,
+	version: string,
+): Promise<{ fileUrl: string }> => {
+	const file = new File(payload.uri)
+
+	const formData = new FormData()
+	formData.append('file', file)
+
+	const forceInstall = payload.forceInstall ? '&forceInstall=true' : ''
+
+	const data = await apiFetch<{ fileUrl: string }>(
+		`/storage/firmware/upload?technicalName=${encodeURIComponent(
+			technicalName,
+		)}&version=${encodeURIComponent(version)}${forceInstall}`,
+		{
+			method: 'POST',
+			body: formData,
+		},
+	)
+
+	if (data.code !== null) {
+		if (isKnownErrorCode(data.code)) {
+			throw new AppError(data.code, data.message)
+		} else {
+			throw new AppError('UNKNOWN_ERROR', data.message)
+		}
+	}
+
+	return data.details as { fileUrl: string }
+}
+
 // /storage/areas/{areaId}/upload
 export const areaFileUploadFn = async (
 	payload: FileUploadPayload,

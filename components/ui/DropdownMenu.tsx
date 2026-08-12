@@ -282,6 +282,18 @@ export default function DropdownMenu({
 																	size={24}
 																	color={theme.colors.textPrimary}
 																/>
+															) : value === AreaMenuOptionValue.OTAUpdate ? (
+																<MaterialCommunityIcons
+																	name="file-upload-outline"
+																	size={28}
+																	color={theme.colors.textPrimary}
+																/>
+															) : value === AreaMenuOptionValue.Logs ? (
+																<MaterialCommunityIcons
+																	name="file-document-outline"
+																	size={28}
+																	color={theme.colors.textPrimary}
+																/>
 															) : null}
 														</View>
 
@@ -299,7 +311,14 @@ export default function DropdownMenu({
 																	flexShrink: 0,
 																}}
 															>
-																{value[0].toUpperCase() + value.slice(1)}
+																{value
+																	.split('-')
+																	.map(
+																		(word) =>
+																			word.charAt(0).toUpperCase() +
+																			word.slice(1),
+																	)
+																	.join(' ')}
 															</Text>
 														</View>
 													</View>

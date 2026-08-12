@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, View } from 'react-native'
 
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
@@ -15,13 +15,24 @@ export default function BottomSheetInput({
 	const [focused, setFocused] = useState(false)
 	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
 
-	const animate = (toValue: number) => {
-		Animated.timing(labelAnim, {
-			toValue,
-			duration: 150,
-			useNativeDriver: false,
-		}).start()
-	}
+	const animate = useCallback(
+		(toValue: number) => {
+			Animated.timing(labelAnim, {
+				toValue,
+				duration: 150,
+				useNativeDriver: false,
+			}).start()
+		},
+		[labelAnim],
+	)
+
+	// Keep the floating label in sync with the value even when the field
+	// isn't focused (e.g. when the value is cleared programmatically).
+	useEffect(() => {
+		if (!focused) {
+			animate(props.value ? 1 : 0)
+		}
+	}, [props.value, focused, animate])
 
 	const handleFocus = (e: any) => {
 		setFocused(true)
@@ -44,6 +55,10 @@ export default function BottomSheetInput({
 		outputRange: [16, 12],
 	})
 	const labelColor = focused ? theme.colors.accent : theme.colors.textMuted
+
+	// Only render the hint/placeholder once the label has floated up, so the
+	// two never overlap while the label sits inside the field.
+	const showPlaceholder = focused || !!props.value
 
 	return (
 		<View
@@ -79,6 +94,7 @@ export default function BottomSheetInput({
 					padding: 0,
 				}}
 				{...props}
+				placeholder={showPlaceholder ? props.placeholder : undefined}
 			/>
 		</View>
 	)

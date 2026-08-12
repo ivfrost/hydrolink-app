@@ -11,6 +11,7 @@ export default function SettingsLayout() {
 				headerShown: true,
 				headerShadowVisible: false,
 				animation: 'slide_from_right',
+				headerTintColor: theme.colors.textPrimary,
 				contentStyle: {
 					backgroundColor: theme.colors.background,
 				},

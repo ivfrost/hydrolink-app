@@ -16,6 +16,9 @@ interface EditableAreaInfoCardProps {
 	locationCoordinates?: string
 	description?: string
 	onInfoChange: (field: keyof AreaUpdatePayload, value: string) => void
+	initialValues?: Partial<Record<keyof AreaUpdatePayload, string>>
+	onFieldConfirm?: (field: string, value: string) => void
+	confirmingField?: string | null
 }
 
 export function EditableAreaInfoCard({
@@ -24,6 +27,9 @@ export function EditableAreaInfoCard({
 	locationCoordinates,
 	description,
 	onInfoChange,
+	initialValues,
+	onFieldConfirm,
+	confirmingField,
 }: EditableAreaInfoCardProps) {
 	const theme = useTheme()
 	const [isFetchingLocation, setIsFetchingLocation] = useState(false)
@@ -51,10 +57,19 @@ export function EditableAreaInfoCard({
 				<EditableInfoCardItem
 					label="Area Name"
 					text={friendlyName}
-					onChangeText={(value) => onInfoChange('friendlyName', value)}
+					onChangeText={(value) =>
+						onInfoChange('friendlyName', value)
+					}
 					editable
 					icon="label-outline"
 					error={undefined}
+					initialValue={initialValues?.friendlyName}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('friendlyName', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'friendlyName'}
 				/>
 			)}
 
@@ -62,10 +77,19 @@ export function EditableAreaInfoCard({
 				<EditableInfoCardItem
 					label="Area Description"
 					text={description}
-					onChangeText={(value) => onInfoChange('description', value)}
+					onChangeText={(value) =>
+						onInfoChange('description', value)
+					}
 					editable
 					icon="text-box-outline"
 					error={undefined}
+					initialValue={initialValues?.description}
+					onConfirm={
+						onFieldConfirm
+							? (v) => onFieldConfirm('description', v)
+							: undefined
+					}
+					confirmLoading={confirmingField === 'description'}
 				/>
 			)}
 
@@ -74,10 +98,19 @@ export function EditableAreaInfoCard({
 					<EditableInfoCardItem
 						label="Area Location"
 						text={locationLabel}
-						onChangeText={(value) => onInfoChange('locationLabel', value)}
+						onChangeText={(value) =>
+							onInfoChange('locationLabel', value)
+						}
 						editable
 						icon="map-marker-outline"
 						error={undefined}
+						initialValue={initialValues?.locationLabel}
+						onConfirm={
+							onFieldConfirm
+								? (v) => onFieldConfirm('locationLabel', v)
+								: undefined
+						}
+						confirmLoading={confirmingField === 'locationLabel'}
 					/>
 
 					<View

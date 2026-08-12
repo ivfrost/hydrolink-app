@@ -9,6 +9,7 @@ export type MqttAction =
 	| 'SetName'
 	| 'SetDescription'
 	| 'SetImageUrl'
+	| 'OTAUpdate'
 export type MqttCause = 'Manual' | 'Sensor' | 'Schedule' | 'Done'
 export type MqttCommand = {
 	action: MqttAction
@@ -19,4 +20,5 @@ export type MqttCommand = {
 	name?: string
 	description?: string
 	imageUrl?: string
+	binUrl?: string
 }
