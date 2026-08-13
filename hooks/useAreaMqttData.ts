@@ -61,6 +61,7 @@ export function useAreaMqttData(areaKey: string | undefined) {
 		...grouped,
 		activeSolenoid,
 		isAreaOnline: mqttAreaData?.online ?? false,
+		isUpdating: mqttAreaData?.updating ?? false,
 		lastUpdatedStr: mqttAreaData?.lastUpdated || 'Never',
 		mqttAreaData,
 		manualOverrides,

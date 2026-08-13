@@ -22,9 +22,11 @@ import Button from './Button'
 export default function DropdownMenu({
 	options,
 	onClick,
+	iconColor,
 }: {
 	options: Map<string, AreaMenuOptionValue[]>
 	onClick: (option: AreaMenuOptionValue) => void
+	iconColor?: string
 }) {
 	const [isExpanded, setIsExpanded] = useState(false)
 	const [anchor, setAnchor] = useState<{
@@ -185,6 +187,7 @@ export default function DropdownMenu({
 					isSubmenuOpen={isExpanded}
 					onPress={openMenu}
 					icon="dots-vertical"
+					iconColor={iconColor ?? theme.colors.textPrimary}
 					hapticFeedback={false}
 				/>
 			</View>

@@ -1,5 +1,6 @@
 import { StyleProp, View, ViewStyle } from 'react-native'
 import { KeyboardAwareScrollView as RNKeyboardAwareScrollView } from 'react-native-keyboard-controller'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useTheme } from '@/context/ThemeContext'
 
@@ -16,6 +17,7 @@ export default function KeyboardAwareScrollView({
 	...props
 }: KeyboardAwareScrollViewProps) {
 	const theme = useTheme()
+	const insets = useSafeAreaInsets()
 	return (
 		<View style={{ flex: 1 }}>
 			<RNKeyboardAwareScrollView
@@ -24,7 +26,7 @@ export default function KeyboardAwareScrollView({
 					{
 						flexGrow: 1,
 						paddingHorizontal: theme.space.xl,
-						paddingBottom: theme.space.x3l,
+						paddingBottom: Math.max(theme.space.x3l, insets.bottom + theme.space.xl),
 						gap: theme.space.x3l,
 						justifyContent: 'center',
 					},

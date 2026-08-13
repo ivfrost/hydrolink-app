@@ -32,7 +32,7 @@ export function ProfileHeader({
 				hitSlop={10}
 				onPress={handleChooseImage}
 			>
-				<UserAvatar imageUrl={imageUrl} seed={email} size={64} />
+				<UserAvatar imageUrl={imageUrl} seed={email} size={72} />
 			</TouchableOpacity>
 			<View style={{ flexShrink: 1 }}>
 				{fullName && (

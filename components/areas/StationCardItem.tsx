@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Pressable, Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
@@ -37,6 +37,12 @@ export interface StationCardItemProps {
 		stationId: number,
 		newValue: string,
 	) => void
+	/** Commits a field immediately (MQTT + state machine), used by the
+	 *  dropdown (on change) and the inline confirm button (on press). */
+	onFieldCommit?: (field: 'name' | 'description' | 'imageUrl' | 'type', value: string) => void
+	/** Original name from the live station, used to show the confirm button only
+	 *  when the draft name differs. */
+	initialName?: string
 	isEditable?: boolean
 	isMqttEditable?: boolean
 	newLeadingIcon?: (typeof STATION_TYPE_ICON)[StationType]
@@ -51,6 +57,8 @@ export default function StationCardItem({
 	onDrag,
 	onActionPress,
 	onDataChange,
+	onFieldCommit,
+	initialName,
 	isMqttEditable = false,
 	newLeadingIcon,
 }: StationCardItemProps) {
@@ -63,6 +71,7 @@ export default function StationCardItem({
 	const handleTypeChange = (newType: StationType) => {
 		setSelectedStationType(newType)
 		onDataChange?.('type', station.id, newType)
+		onFieldCommit?.('type', newType)
 	}
 
 	const isOverrideActive = !!(manualOverride?.active && manualOverride.end)
@@ -153,14 +162,46 @@ export default function StationCardItem({
 					bottomElement={
 						isMqttEditable ? (
 							<View style={{ gap: theme.space.md }}>
-								<Input
-									label="Name"
-									value={station.name ?? ''}
-									labelBackground={theme.colors.card}
-									onChangeText={(text) =>
-										onDataChange?.('name', station.id, text)
-									}
-								/>
+								<View
+									style={{
+										flexDirection: 'row',
+										alignItems: 'center',
+										gap: theme.space.xs,
+									}}
+								>
+									<View style={{ flex: 1 }}>
+										<Input
+											label="Name"
+											value={station.name ?? ''}
+											labelBackground={theme.colors.card}
+											onChangeText={(text) =>
+												onDataChange?.('name', station.id, text)
+											}
+										/>
+									</View>
+									{onFieldCommit && station.name !== initialName && (
+										<Pressable
+											onPress={() =>
+												onFieldCommit('name', station.name ?? '')
+											}
+											hitSlop={8}
+											style={{
+												width: 32,
+												height: 32,
+												borderRadius: 16,
+												backgroundColor: theme.colors.accent,
+												justifyContent: 'center',
+												alignItems: 'center',
+											}}
+										>
+											<MaterialCommunityIcons
+												name="check"
+												size={16}
+												color={theme.colors.buttonPrimaryText}
+											/>
+										</Pressable>
+									)}
+								</View>
 							</View>
 						) : (
 							<View

@@ -158,7 +158,7 @@ export default function AreaTabScreen() {
 
 	return (
 		<AreasScreen
-			areas={areas}
+			areas={areas ?? []}
 			mqttAreas={mqttAreas}
 			isAreaOnline={isAreaOnline}
 			isRefreshing={isRefreshing}

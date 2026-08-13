@@ -51,8 +51,7 @@ let otaNotificationTapHandler:
 	| ((topic: string, payload: string) => void)
 	| null = null
 
-// Retained messages redeliver on every subscribe — avoid re-notifying for
-// the same firmware binary.
+// Dedupe: retained announces redeliver on every subscribe.
 let lastNotifiedSha: string | null = null
 
 /** Register the callback invoked when the user taps an OTA notification. */
@@ -143,9 +142,7 @@ export async function notifyOtaUpdateIfCommand(
 		return
 	}
 
-	// Skip if we already notified for this exact firmware binary.
-	// Retained messages redeliver on every MQTT subscribe, so without
-	// this the user gets spammed on every reconnect.
+	// Skip repeats of the same firmware.
 	const sha = (command as { sha256?: string }).sha256
 	if (sha && sha === lastNotifiedSha) return
 	lastNotifiedSha = sha ?? null

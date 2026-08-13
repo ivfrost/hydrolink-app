@@ -11,7 +11,6 @@ import { useDebounce } from 'use-debounce'
 
 import Card from '@/components/layout/Card'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
-import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 import { EditableProfileInfoCard } from '@/components/profile/EditableProfileInfoCard'
 import { ProfileHeader } from '@/components/profile/ProfileHeader'
 import StatusScreen from '@/components/status/StatusScreen'
@@ -160,7 +159,10 @@ export default function ProfileScreen() {
 		try {
 			const payload = { [field]: value }
 			await profileUpdateFn(payload as ProfileUpdatePayload)
-			queryClient.invalidateQueries({ queryKey: ['profile'] })
+			// Update the cache so the confirm button disappears immediately.
+			queryClient.setQueryData(['profile'], (old: User | undefined) =>
+				old ? { ...old, [field]: value } : old,
+			)
 			Burnt.toast({ title: 'Saved', preset: 'done' })
 		} catch (err: any) {
 			Burnt.toast({

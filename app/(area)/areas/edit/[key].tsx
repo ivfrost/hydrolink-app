@@ -25,7 +25,6 @@ import EditableStationCardItem from '@/components/areas/EditableStationCardItem'
 import { STATION_TYPE_ICON } from '@/components/areas/StationCardItem'
 import Card from '@/components/layout/Card'
 import ScrollView from '@/components/layout/ScrollView'
-import { StickyActionButtons } from '@/components/layout/StickyActionButtons'
 import StatusScreen from '@/components/status/StatusScreen'
 import Button from '@/components/ui/Button'
 import LoadingScreen from '@/components/ui/LoadingScreen'
@@ -38,6 +37,7 @@ import { useAreaMqttData } from '@/hooks/useAreaMqttData'
 import useStationAction from '@/hooks/useStationAction'
 import useStationMqttUpdate from '@/hooks/useStationMqttUpdate'
 import { currentScreenMachine } from '@/machines/currentScreenMachine'
+import { areaUpdateMutationFn } from '@/mutations/areas'
 import { areaFileUploadFn } from '@/mutations/storage'
 import { AppError } from '@/types/api'
 import { AreaUpdatePayload, Station, StationType } from '@/types/area'
@@ -48,13 +48,22 @@ export default function EditAreaScreen() {
 	const theme = useTheme()
 	const queryClient = useQueryClient()
 	const { key } = useLocalSearchParams() as { key: string }
-	const insets = useSafeAreaInsets()
 	const router = useRouter()
+	const insets = useSafeAreaInsets()
 	const initializedRef = useRef(false)
 	const [localAreaImage, setLocalAreaImage] = useState({
 		uri: '',
 		name: '',
 		type: '',
+	})
+	const [confirmingField, setConfirmingField] = useState<string | null>(null)
+
+	// Baseline of the last successfully saved area info fields, used to know
+	// when a field's inline confirm button should disappear.
+	const [savedAreaValues, setSavedAreaValues] = useState({
+		friendlyName: '',
+		locationLabel: '',
+		description: '',
 	})
 
 	// Local state (type omitted, changes instantly on picker change)
@@ -91,7 +100,6 @@ export default function EditAreaScreen() {
 				})
 			},
 			onSuccess: (data) => {
-				console.log('Area image uploaded successfully:', data)
 				setAreaFormState((prev) => ({
 					...prev,
 					imageUrl: resolveImageUrl(data.fileUrl) || data.fileUrl,
@@ -117,7 +125,11 @@ export default function EditAreaScreen() {
 							description: area.description || '',
 							imageUrl: area.imageUrl || '',
 						}))
-						console.log('areaFormState synced to API data:', areaFormState)
+						setSavedAreaValues({
+							friendlyName: area.friendlyName || '',
+							locationLabel: area.locationLabel || '',
+							description: area.description || '',
+						})
 					}
 				},
 				// Reset area state to the last known values from the store when
@@ -156,7 +168,6 @@ export default function EditAreaScreen() {
 	// State machine derived area state (API data)
 	const {
 		areas: dbAreas,
-		pendingSave,
 		pendingStationTypeChange,
 		pendingStationNameChange,
 		pendingStationDescriptionChange,
@@ -228,10 +239,6 @@ export default function EditAreaScreen() {
 			description: dbArea.description || '',
 			imageUrl: dbArea.imageUrl || '',
 		}))
-		console.log(
-			'loadAreaDrafts: areaFormState loaded from API data:',
-			areaFormState,
-		)
 	}, [dbArea, areaFormState])
 
 	// Seed station drafts once on load. Guarded so live MQTT updates afterward
@@ -239,7 +246,6 @@ export default function EditAreaScreen() {
 	useEffect(() => {
 		if (initializedRef.current) return
 		if (!dbArea) return
-		console.log(dbArea.imageUrl, 'dbArea.imageUrl')
 		initializedRef.current = true
 		queueMicrotask(() => {
 			resetStationDrafts()
@@ -254,9 +260,6 @@ export default function EditAreaScreen() {
 			stationId: number,
 			newValue: string,
 		) => {
-			console.log(
-				`handleStationDataChange: field=${field}, stationId=${stationId}, newValue=${newValue}`,
-			)
 			setAreaFormState((prev) => ({
 				...prev,
 				stations: prev.stations.map((station) =>
@@ -269,75 +272,28 @@ export default function EditAreaScreen() {
 		[],
 	)
 
-	const saveRequestedRef = useRef(false)
-
-	// Handler for saving changes to the API and MQTT
-	const handleSave = async () => {
+	const handleFieldConfirm = async (field: string, value: string) => {
 		if (!dbArea) return
-
-		let finalImageUrl = areaFormState.imageUrl
-		console.log('handleSave: areaFormState:', areaFormState)
-
-		// Upload selected area image to the API if it has changed before saving DB state
-		if (localAreaImage.uri && localAreaImage.uri !== dbArea.imageUrl) {
-			try {
-				const uploadResult = await uploadAreaImageAsync({
-					payload: {
-						uri: localAreaImage.uri,
-						name: localAreaImage.name,
-						type: localAreaImage.type,
-					} as FileUploadPayload,
-					areaId: dbArea.id,
-				})
-				finalImageUrl =
-					resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
-			} catch {
-				// Image upload failed, halt save flow so DB payload isn't out of sync
-				return
+		setConfirmingField(field)
+		try {
+			await areaUpdateMutationFn({
+				key: dbArea.key,
+				[field]: value,
+			} as Partial<AreaUpdatePayload>)
+			// Update the baseline so the confirm button disappears immediately.
+			if (field === 'friendlyName' || field === 'locationLabel' || field === 'description') {
+				setSavedAreaValues((prev) => ({ ...prev, [field]: value }))
 			}
+			queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+			Burnt.toast({ title: 'Saved', preset: 'done' })
+		} catch (err: any) {
+			Burnt.toast({
+				title: err?.message || 'Failed to save',
+				preset: 'error',
+			})
+		} finally {
+			setConfirmingField(null)
 		}
-
-		const apiPayload: Partial<AreaUpdatePayload> = {
-			key: dbArea.key,
-			friendlyName: areaFormState.friendlyName ?? undefined,
-			locationLabel: areaFormState.locationLabel ?? undefined,
-			locationCoordinates: areaFormState.locationCoordinates ?? undefined,
-			description: areaFormState.description ?? undefined,
-			imageUrl: finalImageUrl ?? undefined,
-		}
-
-		// Fire MQTT commits first, so pending maps are populated before syncingDevice
-		areaFormState.stations.forEach((draftStation) => {
-			const liveStation = allStations.find((s) => s.id === draftStation.id)
-			if (!liveStation) return
-			;(['type', 'name', 'description', 'imageUrl'] as const).forEach(
-				(field) => {
-					const draftValue = draftStation[field] ?? ''
-					const liveValue = liveStation[field] ?? ''
-					if (draftValue !== liveValue) {
-						setNewValueForStation(draftStation.id, field, draftValue)
-					}
-				},
-			)
-		})
-
-		// Then trigger the DB save -> saving -> syncingDevice -> ready
-		send({ type: 'SAVE', payload: apiPayload })
-		saveRequestedRef.current = true
-	}
-
-	// Navigate back once the state machine finishes persisting.
-	useEffect(() => {
-		if (saveRequestedRef.current && currentScreenState.matches('ready')) {
-			router.back()
-		}
-	}, [currentScreenState, router])
-
-	// Handler for discarding changes and resetting local state to the last known
-	// values (API and MQTT)
-	const handleDiscard = () => {
-		loadAreaDrafts()
-		send({ type: 'DISCARD' })
 	}
 
 	// Handle add/edit area image press. Opens the image picker and updates local draft state.
@@ -377,6 +333,26 @@ export default function EditAreaScreen() {
 					...prev,
 					imageUrl: imageUri,
 				}))
+
+				// Upload + persist immediately — image changes are saved on selection.
+				if (dbArea?.id) {
+					const uploadResult = await uploadAreaImageAsync({
+						payload: {
+							uri: imageUri,
+							name: filename,
+							type: mimeType,
+						} as FileUploadPayload,
+						areaId: dbArea.id,
+					})
+					const url =
+						resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
+					await areaUpdateMutationFn({
+						key: dbArea.key,
+						imageUrl: url,
+					} as Partial<AreaUpdatePayload>)
+					queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+					setAreaFormState((prev) => ({ ...prev, imageUrl: url }))
+				}
 			} else {
 				Burnt.alert({
 					title: 'Image Selection Canceled',
@@ -393,55 +369,16 @@ export default function EditAreaScreen() {
 		}
 	}
 
-	// Determine if the save button should be disabled (no changes, or a save/sync already in flight)
-	const isButtonDisabled = useMemo(() => {
-		if (!dbArea) return true
-
-		const hasPendingStationAction = allStations.some((station) =>
-			isStationActionPending(station.id),
-		)
-		const hasPendingChange = [
-			pendingStationTypeChange,
-			pendingStationNameChange,
-			pendingStationDescriptionChange,
-			pendingStationImageUrlChange,
-		].some((changeMap) => Object.values(changeMap).some((v) => v !== undefined))
-
-		if (hasPendingStationAction || hasPendingChange || pendingSave) {
-			return true
-		}
-
-		const hasAreaFieldChanged =
-			areaFormState.friendlyName !== dbArea.friendlyName ||
-			areaFormState.locationLabel !== dbArea.locationLabel ||
-			areaFormState.locationCoordinates !== dbArea.locationCoordinates ||
-			areaFormState.description !== dbArea.description ||
-			areaFormState.imageUrl !== dbArea.imageUrl
-
-		const hasStationFieldChanged = areaFormState.stations.some(
-			(draftStation) => {
-				const liveStation = allStations.find((s) => s.id === draftStation.id)
-				if (!liveStation) return false
-				return (
-					draftStation.name !== liveStation.name ||
-					draftStation.description !== liveStation.description ||
-					draftStation.imageUrl !== liveStation.imageUrl
-				)
-			},
-		)
-
-		return !(hasAreaFieldChanged || hasStationFieldChanged)
-	}, [
-		dbArea,
-		allStations,
-		pendingSave,
-		pendingStationTypeChange,
-		pendingStationNameChange,
-		pendingStationDescriptionChange,
-		pendingStationImageUrlChange,
-		areaFormState,
-		isStationActionPending,
-	])
+	// Handle remove area image press. Clears local draft state and persists the removal.
+	const handleRemoveImage = async () => {
+		setLocalAreaImage({ uri: '', name: '', type: '' })
+		await areaUpdateMutationFn({
+			key: dbArea?.key || '',
+			imageUrl: '',
+		} as Partial<AreaUpdatePayload>)
+		queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+		setAreaFormState((prev) => ({ ...prev, imageUrl: '' }))
+	}
 
 	// API specific editable data
 	const renderApiEditableData = useCallback(
@@ -453,52 +390,44 @@ export default function EditAreaScreen() {
 
 			return (
 				<View style={{ flex: 1 }}>
-					<View>
-						<RectangularMedia
-							aspectRatio={16 / 9}
-							isFullWidth
-							ringColor={theme.colors.border}
-							elevation={0}
-							borderRadius={theme.radius.card}
-						>
-							{displayUri ? (
-								<Image
-									source={{ uri: displayUri }}
-									style={StyleSheet.absoluteFill}
-									resizeMode="cover"
-									onError={(e) =>
-										console.log(
-											'Failed to load image from URI:',
-											displayUri,
-											e.nativeEvent.error,
-										)
-									}
-								/>
-							) : (
-								<View
-									style={[
-										StyleSheet.absoluteFill,
-										{
-											backgroundColor: theme.colors.accent + '15',
-											justifyContent: 'center',
-											alignItems: 'center',
-											gap: 8,
-										},
-									]}
-								>
+					{displayUri ? (
+						<View>
+							<RectangularMedia
+								aspectRatio={16 / 9}
+								isFullWidth
+								ringColor={theme.colors.border}
+								elevation={0}
+								borderRadius={theme.radius.card}
+							>
+								{displayUri ? (
+									<Image
+										source={{ uri: displayUri }}
+										style={StyleSheet.absoluteFill}
+										resizeMode="cover"
+										onError={(e) =>
+											console.log(
+												'Failed to load image from URI:',
+												displayUri,
+												e.nativeEvent.error,
+											)
+										}
+									/>
+								) : null}
+								{isUploadingImage && (
 									<View
-										style={{
-											borderRadius: 0,
-											justifyContent: 'center',
-											alignItems: 'center',
-											flexDirection: 'row',
-											gap: theme.space.sm,
-										}}
+										style={[
+											StyleSheet.absoluteFill,
+											{
+												backgroundColor: theme.colors.card,
+												justifyContent: 'center',
+												alignItems: 'center',
+												gap: theme.space.sm,
+											},
+										]}
 									>
-										<MaterialCommunityIcons
-											name="file-image-plus"
-											size={theme.space.iconSize}
-											color={theme.colors.textPrimary}
+										<ActivityIndicator
+											color={theme.colors.accent}
+											size="large"
 										/>
 										<Text
 											style={{
@@ -507,53 +436,52 @@ export default function EditAreaScreen() {
 												color: theme.colors.textPrimary,
 											}}
 										>
-											Add area image
+											Uploading...
 										</Text>
 									</View>
-								</View>
-							)}
-
-							{isUploadingImage && (
-								<View
-									style={[
-										StyleSheet.absoluteFill,
-										{
-											backgroundColor: theme.colors.card,
-											justifyContent: 'center',
-											alignItems: 'center',
-											gap: theme.space.sm,
-										},
-									]}
-								>
-									<ActivityIndicator
-										color={theme.colors.accent}
-										size="large"
-									/>
-									<Text
-										style={{
-											fontSize: theme.font.sm + 2,
-											fontWeight: '500',
-											color: theme.colors.textPrimary,
-										}}
-									>
-										Uploading...
-									</Text>
-								</View>
-							)}
-						</RectangularMedia>
+								)}
+							</RectangularMedia>
+							<View
+								style={{
+									position: 'absolute',
+									bottom: theme.space.sm,
+									left: theme.space.sm,
+								}}
+							>
+								<Button
+									label="Remove"
+									variant="destructive"
+									icon="trash-can-outline"
+									modifier={['small']}
+									onPress={handleRemoveImage}
+								/>
+							</View>
+							<View
+								style={{
+									position: 'absolute',
+									bottom: theme.space.sm,
+									right: theme.space.sm,
+								}}
+							>
+								<Button
+									label="Change"
+									variant="primary"
+									icon="image-edit-outline"
+									modifier={['small']}
+									onPress={handleChooseImage}
+								/>
+							</View>
+						</View>
+					) : (
 						<Button
-							icon="image-edit"
-							label="Change Image"
-							variant="secondary"
-							modifier={['small']}
+							label="Add area image"
+							variant="primary"
+							icon="image-plus"
+							modifier={['full', 'tall']}
 							onPress={handleChooseImage}
-							extraStyles={{
-								position: 'absolute',
-								bottom: theme.space.sm,
-								right: theme.space.sm,
-							}}
 						/>
-					</View>
+					)}
+
 					<View style={{ marginVertical: theme.space.x2l }} />
 					<SectionTitle text="Edit Area" />
 					<EditableAreaInfoCard
@@ -564,6 +492,9 @@ export default function EditAreaScreen() {
 						onInfoChange={(field, newValue) => {
 							setAreaFormState((prev) => ({ ...prev, [field]: newValue }))
 						}}
+						initialValues={savedAreaValues}
+						onFieldConfirm={handleFieldConfirm}
+						confirmingField={confirmingField}
 					/>
 					{apiOnly ? (
 						<View
@@ -634,11 +565,22 @@ export default function EditAreaScreen() {
 						<Card>
 							<EditableStationCardItem
 								station={mergedStation}
+								initialName={station.name ?? undefined}
 								isActive={isActive}
 								isLoading={isStationLoading}
 								manualOverride={manualOverride}
 								onDrag={drag}
 								onDataChange={handleStationDataChange}
+								onFieldCommit={(field, value) => {
+									const committed = setNewValueForStation(station.id, field, value)
+									if (committed) {
+										Burnt.toast({
+											title:
+												field === 'type' ? 'Role updated' : 'Station updated',
+											preset: 'done',
+										})
+									}
+								}}
 								isMqttEditable={isAreaOnline}
 								newLeadingIcon={
 									localStateMatch?.type === 'Solenoid'
@@ -660,6 +602,7 @@ export default function EditAreaScreen() {
 			isStationActionPending,
 			pendingStationTypeChange,
 			handleStationDataChange,
+			setNewValueForStation,
 			theme.space.lg,
 			areaFormState.stations,
 		],
@@ -723,16 +666,6 @@ export default function EditAreaScreen() {
 					>
 						{renderApiEditableData(true)}
 					</ScrollView>
-					<StickyActionButtons
-						disabled={isButtonDisabled}
-						onSave={handleSave}
-						onDiscard={handleDiscard}
-						isLoading={
-							currentScreenState.matches('saving') ||
-							currentScreenState.matches('syncingDevice')
-						}
-						bottomInset={insets.bottom}
-					/>
 				</>
 			)
 		}
@@ -795,16 +728,6 @@ export default function EditAreaScreen() {
 					>
 						{renderApiEditableData(true)}
 					</ScrollView>
-					<StickyActionButtons
-						disabled={isButtonDisabled}
-						onSave={handleSave}
-						onDiscard={handleDiscard}
-						isLoading={
-							currentScreenState.matches('saving') ||
-							currentScreenState.matches('syncingDevice')
-						}
-						bottomInset={insets.bottom}
-					/>
 				</>
 			)
 		}
@@ -833,7 +756,12 @@ export default function EditAreaScreen() {
 							</>
 						}
 						ListFooterComponent={
-							<View style={{ gap: theme.space.x2l }}>
+							<View
+								style={{
+									gap: theme.space.x2l,
+									paddingBottom: insets.bottom + theme.space.x3l,
+								}}
+							>
 								<View
 									style={{
 										flexDirection: 'row',
@@ -876,16 +804,6 @@ export default function EditAreaScreen() {
 						windowSize={5}
 					/>
 				</View>
-				<StickyActionButtons
-					disabled={isButtonDisabled}
-					onSave={handleSave}
-					onDiscard={handleDiscard}
-					isLoading={
-						currentScreenState.matches('saving') ||
-						currentScreenState.matches('syncingDevice')
-					}
-					bottomInset={insets.bottom}
-				/>
 			</>
 		)
 	}

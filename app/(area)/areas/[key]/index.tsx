@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import { RefreshControl, Text, View } from 'react-native'
+import { Dimensions, RefreshControl, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -20,12 +20,33 @@ import { useAreaMqttData } from '@/hooks/useAreaMqttData'
 import useStationAction from '@/hooks/useStationAction'
 import { currentScreenMachine } from '@/machines/currentScreenMachine'
 import { areasQueryFn } from '@/queries/areas'
+import { useHeaderStore } from '@/stores/headerStore'
 import { Station, StationAction, StationStatus } from '@/types/area'
 
 export default function AreaInfoScreen() {
 	const theme = useTheme()
 	const queryClient = useQueryClient()
 	const { key } = useLocalSearchParams() as { key: string }
+	const setAreaHeaderOpacity = useHeaderStore(
+		(state) => state.setAreaHeaderOpacity,
+	)
+
+	// The hero image is 16:9 full-bleed; the header fades in as you scroll past it.
+	const heroHeight = (Dimensions.get('window').width * 9) / 16
+
+	const handleScroll = useCallback(
+		(event: { nativeEvent: { contentOffset: { y: number } } }) => {
+			const y = event.nativeEvent.contentOffset.y
+			const opacity = Math.min(1, Math.max(0, y / heroHeight))
+			setAreaHeaderOpacity(opacity)
+		},
+		[setAreaHeaderOpacity, heroHeight],
+	)
+
+	// Reset the header to transparent when the screen unmounts.
+	useEffect(() => {
+		return () => setAreaHeaderOpacity(0)
+	}, [setAreaHeaderOpacity])
 
 	// State machine for managing screen states
 	const [currentScreenState, send] = useMachine(
@@ -55,7 +76,8 @@ export default function AreaInfoScreen() {
 		[liveAreas, dbAreas, key],
 	)
 	// Store derived area state (MQTT data)
-	const { allStations, isAreaOnline, manualOverrides } = useAreaMqttData(key)
+	const { allStations, isAreaOnline, isUpdating, manualOverrides } =
+		useAreaMqttData(key)
 
 	const {
 		isActionButtonDisabled,
@@ -121,12 +143,12 @@ export default function AreaInfoScreen() {
 			if (!dbArea) return null
 
 			return (
-				<View
-					style={{
-						marginBottom: theme.space.x2l,
-					}}
-				>
-					<AreaHeader dbArea={dbArea} online={isAreaOnline} />
+				<>
+					<AreaHeader
+						dbArea={dbArea}
+						online={isAreaOnline}
+						updating={isUpdating}
+					/>
 					{apiOnly ? (
 						<View
 							style={{
@@ -163,15 +185,15 @@ export default function AreaInfoScreen() {
 							</Text>
 						</View>
 					) : null}
-				</View>
+				</>
 			)
 		},
 		[
 			dbArea,
 			isAreaOnline,
+			isUpdating,
 			theme.colors.textMuted,
 			theme.font.xs,
-			theme.space.x2l,
 			theme.space.sm,
 		],
 	)
@@ -301,7 +323,11 @@ export default function AreaInfoScreen() {
 						gap: theme.space.x3l,
 					}}
 				>
-					<AreaHeader dbArea={dbArea} online={isAreaOnline} />
+					<AreaHeader
+						dbArea={dbArea}
+						online={isAreaOnline}
+						updating={isUpdating}
+					/>
 				</View>
 				<SectionTitle text="Stations & Roles" />
 				<LoadingScreen label="Connecting to MQTT..." />
@@ -382,6 +408,8 @@ export default function AreaInfoScreen() {
 		// Normal area UI
 		return (
 			<ScrollView
+				onScroll={handleScroll}
+				scrollEventThrottle={16}
 				refreshControl={
 					<RefreshControl
 						refreshing={currentScreenState.matches('loading')}
@@ -392,14 +420,6 @@ export default function AreaInfoScreen() {
 				}
 			>
 				{renderApiData()}
-				{/* <AreaSummaryCard
-					solenoidCount={solenoids.length}
-					fertilizerCount={fertilizers.length}
-					sensorCount={sensors.length}
-					unclassifiedCount={unclassified.length}
-					lastUpdatedStr={lastUpdatedStr}
-				/> */}
-				{/* <View style={{ marginVertical: theme.space.xl }} /> */}
 				<View style={{ gap: theme.space.lg }}>
 					<SectionTitle text="Stations & Roles" style={{ marginBottom: 0 }} />
 					{allStations.map((station) => (

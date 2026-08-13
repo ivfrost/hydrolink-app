@@ -61,6 +61,7 @@ export function EditableAreaInfoCard({
 						onInfoChange('friendlyName', value)
 					}
 					editable
+					maxLength={40}
 					icon="label-outline"
 					error={undefined}
 					initialValue={initialValues?.friendlyName}
@@ -81,6 +82,10 @@ export function EditableAreaInfoCard({
 						onInfoChange('description', value)
 					}
 					editable
+					multiline
+					numberOfLines={3}
+					textAlignVertical="top"
+					maxLength={255}
 					icon="text-box-outline"
 					error={undefined}
 					initialValue={initialValues?.description}
@@ -102,6 +107,7 @@ export function EditableAreaInfoCard({
 							onInfoChange('locationLabel', value)
 						}
 						editable
+						maxLength={255}
 						icon="map-marker-outline"
 						error={undefined}
 						initialValue={initialValues?.locationLabel}

@@ -12,6 +12,43 @@ import { normalizeMqttPayload } from '@/utils/mqttPayload'
 
 import { useLogStore } from './logStore'
 
+// How long the OTA "updating" flag may stay set before it is force-cleared.
+// The ESP normally clears it by coming back online after flashing; this
+// timeout covers the case where the update fails and the device never
+// reconnects (e.g. a boot crash).
+const OTA_UPDATE_TIMEOUT_MS = 5 * 60 * 1000
+
+// Per-area timers that auto-clear the OTA updating flag.
+const updatingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+function clearUpdatingTimer(areaKey: string) {
+	const timer = updatingTimers.get(areaKey)
+	if (timer) {
+		clearTimeout(timer)
+		updatingTimers.delete(areaKey)
+	}
+}
+
+function scheduleUpdatingTimeout(areaKey: string) {
+	clearUpdatingTimer(areaKey)
+	updatingTimers.set(
+		areaKey,
+		setTimeout(() => {
+			updatingTimers.delete(areaKey)
+			useAreaStore.setState((state) => {
+				const area = state.areas[areaKey]
+				if (!area?.updating) return state
+				return {
+					areas: {
+						...state.areas,
+						[areaKey]: { ...area, updating: false },
+					},
+				}
+			})
+		}, OTA_UPDATE_TIMEOUT_MS),
+	)
+}
+
 interface AreaState {
 	areas: Record<string, AreaMqttData>
 	clearAreas: () => void
@@ -23,6 +60,7 @@ interface AreaState {
 		type: StationType,
 	) => void
 	isOnline: (areaKey: string) => boolean
+	isUpdating: (areaKey: string) => boolean
 	stationDisplayOrder: Record<string, number[]>
 	setStationDisplayOrder: (areaKey: string, order: number[]) => void
 	getManualOverrideForStation: (
@@ -103,6 +141,10 @@ export const useAreaStore = create<AreaState>()(
 				const area: AreaMqttData = get().areas[areaKey]
 				return area?.online ?? false
 			},
+			isUpdating: (areaKey: string) => {
+				const area: AreaMqttData = get().areas[areaKey]
+				return area?.updating ?? false
+			},
 			setStationDisplayOrder: (areaKey, order) => {
 				// Check if the order is different from the current one to avoid unnecessary state updates
 				const currentOrder = get().stationDisplayOrder[areaKey] || []
@@ -135,13 +177,22 @@ export const useAreaStore = create<AreaState>()(
 				try {
 					const trimmed = normalizeMqttPayload(rawMessage)
 
-					// The ESP streams its device log lines on "<org>/<deviceKey>/logs"
-					// as plain-text, pre-formatted lines (e.g. "2026-08-12 13:33:09
-					// [DEBUG] ACTIONS: ..."). Forward them to the log store -
-					// parsing already happened here, so no logic is duplicated.
-					// Kept outside set() so the updater stays pure.
 					if (subTopic === 'logs') {
 						useLogStore.getState().addLog(areaKey, trimmed)
+
+						if (trimmed.includes('type=OTAUpdate')) {
+							scheduleUpdatingTimeout(areaKey)
+							set((state) => {
+								const prev = state.areas[areaKey]
+								if (!prev) return state
+								return {
+									areas: {
+										...state.areas,
+										[areaKey]: { ...prev, updating: true },
+									},
+								}
+							})
+						}
 						return
 					}
 
@@ -163,6 +214,8 @@ export const useAreaStore = create<AreaState>()(
 										...prev,
 										online: trimmed === 'online',
 										lastUpdated: new Date().toISOString(),
+										// Clear update flag when device comes back online
+										updating: trimmed === 'online' ? false : prev.updating,
 									},
 								},
 							}
@@ -173,22 +226,7 @@ export const useAreaStore = create<AreaState>()(
 						const targetArray =
 							data && typeof data === 'object' ? data.stations : null
 
-						// Older devices may still report "Pump" stations. The pump
-						// role is now represented by "Fertilizer", so normalize it
-						// before validating to keep legacy payloads working.
-						const normalizedStationsInput = Array.isArray(targetArray)
-							? targetArray.map((station: any) =>
-									station &&
-									typeof station === 'object' &&
-									station.type === 'Pump'
-										? { ...station, type: 'Fertilizer' }
-										: station,
-								)
-							: targetArray
-
-						const validated = stationArrSchema.safeParse(
-							normalizedStationsInput,
-						)
+						const validated = stationArrSchema.safeParse(targetArray)
 						if (!validated.success) {
 							console.error(
 								'[areaStore] Invalid station data:',
@@ -211,6 +249,7 @@ export const useAreaStore = create<AreaState>()(
 								[areaKey]: {
 									...prev,
 									online: true,
+									updating: false,
 									stations: mergedStations,
 									lastUpdated: new Date().toISOString(),
 								},

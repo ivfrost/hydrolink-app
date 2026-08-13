@@ -70,6 +70,8 @@ export interface AreaMqttData {
 	stations: Record<number, Station>
 	lastUpdated: string
 	online?: boolean
+	/** Set when the ESP starts an OTA firmware update. */
+	updating?: boolean
 }
 
 export const stationUpdateSchema = stationSchema.omit({

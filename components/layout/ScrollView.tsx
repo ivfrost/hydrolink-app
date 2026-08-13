@@ -7,19 +7,19 @@ import {
 	View,
 	ViewStyle,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import { useTheme } from '@/context/ThemeContext'
 
-export interface ScrollViewProps {
+export interface ScrollViewProps extends RNScrollViewProps {
 	refreshControl?: React.ReactElement<RefreshControlProps>
 	extraStyles?: StyleProp<ViewStyle>
 	headerTransparent?: boolean
 	children: React.ReactNode
 	flexDirection?: 'column' | 'row'
 	fab?: React.ReactNode
-	props?: RNScrollViewProps
 }
 
 export default function ScrollView({
@@ -33,6 +33,7 @@ export default function ScrollView({
 }: ScrollViewProps) {
 	const theme = useTheme()
 	const headerHeight = useHeaderHeight()
+	const insets = useSafeAreaInsets()
 	return (
 		<View style={{ flex: 1 }}>
 			<RNScrollView
@@ -43,7 +44,9 @@ export default function ScrollView({
 					{
 						gap: theme.space.xl,
 						marginHorizontal: theme.space.lg,
-						paddingBottom: theme.space.xl + theme.space.stickyBarHeight,
+						paddingBottom:
+							theme.space.xl +
+							Math.max(theme.space.stickyBarHeight, insets.bottom),
 						paddingTop: headerTransparent ? headerHeight + theme.space.x3l : 0,
 						flexGrow: 1,
 						flexDirection,

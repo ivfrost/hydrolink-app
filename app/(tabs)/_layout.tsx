@@ -102,6 +102,7 @@ export default function TabsLayout() {
 											router.push('/(area)/areas/OTA-update')
 										}
 									}}
+									iconColor={theme.colors.textPrimary}
 								/>
 							)
 						: undefined,

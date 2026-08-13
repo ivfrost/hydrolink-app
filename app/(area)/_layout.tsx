@@ -1,7 +1,7 @@
 import { Alert, Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import { router, Stack } from 'expo-router'
 
@@ -12,7 +12,9 @@ import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
 import { AreaMenuOption, getAreaMenuOptions } from '@/data/area'
 import { areaUnlinkMutationFn } from '@/mutations/areas'
+import { areasQueryFn } from '@/queries/areas'
 import { useAreaStore } from '@/stores/areaStore'
+import { useHeaderStore } from '@/stores/headerStore'
 import { AppError } from '@/types/api'
 
 export default function AreaLayout() {
@@ -21,6 +23,11 @@ export default function AreaLayout() {
 	const queryClient = useQueryClient()
 	const isOnline = useAreaStore((state) => state.isOnline)
 	const removeArea = useAreaStore((state) => state.removeArea)
+	const areaHeaderOpacity = useHeaderStore((state) => state.areaHeaderOpacity)
+	const { data: areas } = useQuery({
+		queryKey: tanstackKeys.AREAS,
+		queryFn: areasQueryFn,
+	})
 	const { mutate: unlinkArea } = useMutation({
 		mutationFn: areaUnlinkMutationFn,
 		mutationKey: ['unlinkArea'],
@@ -57,8 +64,6 @@ export default function AreaLayout() {
 		switch (option) {
 			case 'edit':
 				if (!areaKey) return
-				console.log('Navigating to edit area screen for areaKey:', areaKey)
-				// Navigate to the edit area screen
 				router.push(`/areas/edit/${areaKey}`)
 
 				break
@@ -111,6 +116,9 @@ export default function AreaLayout() {
 			case 'logs':
 				router.push(`/areas/${areaKey}/logs`)
 				break
+			case 'connectivity':
+				router.push(`/areas/${areaKey}/connectivity`)
+				break
 			default:
 				break
 		}
@@ -144,7 +152,6 @@ export default function AreaLayout() {
 					headerShadowVisible: false,
 					animation: 'slide_from_bottom',
 					headerTitle: 'Edit Area',
-					headerRight: () => null,
 					contentStyle: {
 						backgroundColor: theme.colors.background,
 					},
@@ -171,41 +178,22 @@ export default function AreaLayout() {
 			/>
 
 			<Stack.Screen
-				name="areas/[key]"
+				name="areas/[key]/connectivity"
 				options={({ navigation, route }) => {
 					const { key } = route.params as { key: string }
 
 					return {
-						headerTitle: '',
 						headerShown: true,
 						headerShadowVisible: false,
-						contentStyle: {
-							backgroundColor: theme.colors.background,
-						},
-						headerStyle: {
-							backgroundColor: theme.colors.background,
-						},
-						presentation: 'modal',
-						headerRight: () => (
-							<DropdownMenu
-								options={getAreaMenuOptions(isOnline(key))}
-								onClick={(optionValue) => handleTappedOption(optionValue, key)}
-							/>
-						),
-					}
-				}}
-			/>
-			<Stack.Screen
-				name="areas/[key]/logs"
-				options={({ route }) => ({
-					headerShown: true,
-					headerTitle: '',
-					headerLeft: () => {
-						const { key } = route.params as { key: string }
-
-						return (
+						animation: 'slide_from_right',
+						headerTitle: '',
+						headerLeft: () => (
 							<View
-								style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: theme.space.sm,
+								}}
 							>
 								<TouchableOpacity
 									hitSlop={40}
@@ -227,6 +215,102 @@ export default function AreaLayout() {
 									style={{
 										fontSize: theme.font.md,
 										color: theme.colors.textPrimary,
+										fontWeight: '600',
+										flexShrink: 1,
+									}}
+									numberOfLines={1}
+								>
+									Connectivity for {key}
+								</Text>
+							</View>
+						),
+						contentStyle: {
+							backgroundColor: theme.colors.background,
+						},
+						headerStyle: {
+							backgroundColor: 'transparent',
+						},
+					}
+				}}
+			/>
+
+			<Stack.Screen
+				name="areas/[key]"
+				options={({ navigation, route }) => {
+					const { key } = route.params as { key: string }
+					const area = areas?.find((a) => a.key === key)
+					const hasImage = Boolean(area?.imageUrl)
+					// No image: header is always opaque. With an image it fades in
+					// as you scroll past the hero.
+					const opacity = hasImage ? areaHeaderOpacity : 1
+					const tintDark = opacity > 0.6
+
+					return {
+						headerTitle: '',
+						headerShown: true,
+						headerTransparent: true,
+						headerShadowVisible: false,
+						headerTintColor: tintDark ? theme.colors.textPrimary : '#ffffff',
+						headerBackground: () => (
+							<View
+								style={{
+									flex: 1,
+									backgroundColor: theme.colors.background,
+									opacity,
+								}}
+							/>
+						),
+						contentStyle: {
+							backgroundColor: theme.colors.background,
+						},
+						presentation: 'modal',
+						headerRight: () => (
+							<DropdownMenu
+								options={getAreaMenuOptions(isOnline(key))}
+								onClick={(optionValue) => handleTappedOption(optionValue, key)}
+								iconColor={theme.colors.textPrimary}
+							/>
+						),
+					}
+				}}
+			/>
+			<Stack.Screen
+				name="areas/[key]/logs"
+				options={({ route }) => ({
+					headerShown: true,
+					headerTitle: '',
+					headerLeft: () => {
+						const { key } = route.params as { key: string }
+
+						return (
+							<View
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: theme.space.sm,
+								}}
+							>
+								<TouchableOpacity
+									hitSlop={40}
+									onPress={() => {
+										if (router.canGoBack()) {
+											router.back()
+										} else {
+											router.dismissTo({ pathname: '/(tabs)/areas' })
+										}
+									}}
+								>
+									<MaterialCommunityIcons
+										name="arrow-left"
+										size={theme.space.iconSize}
+										color={theme.colors.textPrimary}
+									/>
+								</TouchableOpacity>
+								<Text
+									style={{
+										fontSize: theme.font.md,
+										color: theme.colors.textPrimary,
+										fontWeight: '600',
 									}}
 								>
 									Logs for {key}

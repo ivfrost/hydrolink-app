@@ -39,12 +39,12 @@ export default function useStationMqttUpdate(
 	// ESP publishes the new state back to the MQTT topic, store updates the UI
 	// TODO: might be worth saving directly to API in a future, or at least
 	const setNewValueForStation = useCallback(
-		(stationId: number, field: string, newValue: string) => {
+		(stationId: number, field: string, newValue: string): boolean => {
 			const currentValue = allStations?.find((s) => s.id === stationId)?.[
 				field as keyof (typeof allStations)[number]
 			] as string | undefined
 
-			if (currentValue === newValue) return
+			if (currentValue === newValue) return false
 
 			// flushing last good known copy to API regularly, else there's no offline
 			// access to these values.
@@ -58,6 +58,8 @@ export default function useStationMqttUpdate(
 			} else if (field === 'imageUrl') {
 				mqtt.setImageUrlForAreaStation(areaKey, stationId, newValue)
 			}
+
+			return true
 		},
 		[mqtt, send, areaKey, allStations],
 	)

@@ -13,12 +13,12 @@ export interface AreaCardItemProps {
 	title: string
 	subtitle: string | ReactNode
 	online: boolean
+	updating?: boolean
 	activeSolenoid?: Station | undefined
 	activeFertilizers?: Station[] | undefined
 	sensors?: Station[] | undefined
 	schedules?: StationSchedule[] | undefined
 	onPress?: () => void
-	local?: boolean
 }
 
 // How often to refresh relative ("time ago") labels while the card is visible.
@@ -181,16 +181,31 @@ function RunningPill({
 	)
 }
 
+export function UpdatingLabel() {
+	const theme = useTheme()
+	return (
+		<Text
+			style={{
+				color: theme.colors.online,
+				fontSize: theme.font.sm,
+				fontWeight: '600',
+			}}
+		>
+			Updating firmware…
+		</Text>
+	)
+}
+
 export default function AreaCardItem({
 	title,
 	subtitle,
 	online,
+	updating = false,
 	activeSolenoid,
 	activeFertilizers,
 	sensors,
 	schedules,
 	onPress,
-	local = false,
 }: AreaCardItemProps) {
 	const theme = useTheme()
 	const currentSchedule = schedules?.[1]
@@ -257,10 +272,24 @@ export default function AreaCardItem({
 	return (
 		<CardItem
 			title={title}
-			subtitle={subtitle}
-			icon={online ? 'map-marker-check' : 'map-marker-off'}
-			statusColor={online ? theme.colors.online : theme.colors.fault}
-			statusBg={online ? theme.colors.onlineBg : theme.colors.faultBg}
+			subtitle={updating ? <UpdatingLabel /> : subtitle}
+			icon={
+				updating ? 'update' : online ? 'map-marker-check' : 'map-marker-off'
+			}
+			statusColor={
+				updating
+					? theme.colors.online
+					: online
+						? theme.colors.online
+						: theme.colors.fault
+			}
+			statusBg={
+				updating
+					? theme.colors.onlineBg
+					: online
+						? theme.colors.onlineBg
+						: theme.colors.faultBg
+			}
 			onPress={onPress}
 			rightElement={
 				onPress && (
@@ -281,7 +310,11 @@ export default function AreaCardItem({
 				)
 			}
 			bottomElement={
-				activeSolenoid || pastSchedule || currentSchedule || futureSchedule ? (
+				!updating &&
+				(activeSolenoid ||
+					pastSchedule ||
+					currentSchedule ||
+					futureSchedule) ? (
 					<>
 						{activeSolenoid && (
 							<>
