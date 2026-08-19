@@ -59,6 +59,7 @@ export const tanstackKeys = {
 	SIGN_IN: ['signin'] as const,
 	PROFILE: ['profile'] as const,
 	AREAS: ['areas'] as const,
+	SCHEDULES: ['schedules'] as const,
 	VALID_EMAIL_USERNAME: ['validEmailUsername'] as const,
 	AREA_LINK: ['linkArea'] as const,
 	PROFILE_UPDATE: ['profileUpdate'] as const,

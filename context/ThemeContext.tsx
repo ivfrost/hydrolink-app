@@ -150,6 +150,7 @@ const themeTokens = {
 
 	radius: {
 		card: 18,
+		viewOverImage: 22,
 		boxInCard: 8,
 		dropdown: 6,
 		fab: 18,

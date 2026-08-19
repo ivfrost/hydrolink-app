@@ -60,7 +60,7 @@ export default function Register() {
 			})
 		},
 		onSuccess: async (data: RegisterResponse) => {
-			if (data.error !== null || !data.details) {
+			if (data.error != null || !data.details) {
 				Burnt.toast({
 					title:
 						data.message ||

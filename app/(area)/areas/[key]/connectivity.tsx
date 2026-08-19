@@ -26,11 +26,32 @@ interface EspNetworkStatus {
 	connected: boolean
 }
 
-async function fetchEspJson<T>(path: string, init?: RequestInit): Promise<T> {
-	const res = await fetch(`${ESP_BASE_URL}${path}`, init)
-	if (!res.ok) throw new Error(`ESP responded with HTTP ${res.status}`)
-	console.log('ESP response', await res.text())
-	return (await res.json()) as T
+const networkIcon = (
+	secure: string,
+): keyof typeof MaterialCommunityIcons.glyphMap =>
+	secure === 'secure' ? 'lock' : 'lock-open-variant'
+
+async function fetchEspJson<T>(
+	path: string,
+	init?: RequestInit,
+	timeoutMs = 5000,
+): Promise<T> {
+	const controller = new AbortController()
+	const timer = setTimeout(() => controller.abort(), timeoutMs)
+	try {
+		const res = await fetch(`${ESP_BASE_URL}${path}`, {
+			...init,
+			signal: controller.signal,
+		})
+		if (!res.ok) throw new Error(`ESP responded with HTTP ${res.status}`)
+		// Read the body once — a fetch Response body is single-use, so reading it
+		// with `text()` and then again with `json()` would always throw.
+		const text = await res.text()
+		console.log('ESP response', text)
+		return JSON.parse(text) as T
+	} finally {
+		clearTimeout(timer)
+	}
 }
 
 export default function Connectivity() {
@@ -41,19 +62,26 @@ export default function Connectivity() {
 	const [currentNetwork, setCurrentNetwork] = useState<EspNetworkStatus | null>(
 		null,
 	)
+	const [isRefreshing, setIsRefreshing] = useState(false)
 	const [networks, setNetworks] = useState<EspNetwork[]>([])
 	const [scanning, setScanning] = useState(false)
 	const [selectedSsid, setSelectedSsid] = useState('')
 	const [password, setPassword] = useState('')
 	const [saving, setSaving] = useState(false)
 
+	const selectedSsidSecure =
+		networks.find((n) => n.ssid === selectedSsid)?.secure === 'secure'
+
 	const refreshStatus = useCallback(async () => {
 		try {
+			setIsRefreshing(true)
 			const status = await fetchEspJson<EspNetworkStatus>('/api/network')
 			setCurrentNetwork(status)
 			setReachable(true)
+			setIsRefreshing(false)
 		} catch {
 			setReachable(false)
+			setIsRefreshing(false)
 		}
 	}, [])
 
@@ -80,8 +108,14 @@ export default function Connectivity() {
 			}
 			setNetworks(list)
 			setSelectedSsid('')
+			setPassword('')
 			if (list.length === 0) {
 				Burnt.toast({ title: 'No networks found', preset: 'done' })
+			} else {
+				Burnt.toast({
+					title: `${list.length} network${list.length === 1 ? '' : 's'} found`,
+					preset: 'done',
+				})
 			}
 		} catch {
 			Burnt.toast({
@@ -91,7 +125,7 @@ export default function Connectivity() {
 		} finally {
 			setScanning(false)
 		}
-	}, [])
+	}, [setScanning, setNetworks, setSelectedSsid, setPassword])
 
 	const handleConnect = useCallback(async () => {
 		if (!selectedSsid) {
@@ -113,12 +147,22 @@ export default function Connectivity() {
 		} finally {
 			setSaving(false)
 		}
-	}, [selectedSsid, password, refreshStatus])
+	}, [selectedSsid, password, refreshStatus, setSaving])
 
-	const pickerOptions = networks.map((n) => ({
-		label: `${n.ssid}  ${n.secure === 'secure' ? '🔒' : '🌐'}  ${n.rssi} dBm`,
-		value: n.ssid,
-	}))
+	const pickerOptions = [
+		{ label: 'Select a network', value: '' },
+		...networks
+			.filter((n) => n.ssid !== currentNetwork?.ssid)
+			.map((n) => ({
+				label: `${n.ssid}  ${n.rssi} dBm`,
+				value: n.ssid,
+				icon: networkIcon(n.secure),
+				iconColor:
+					n.secure === 'secure'
+						? theme.colors.accent
+						: theme.colors.textSecondary,
+			})),
+	]
 
 	const statusColor = reachable
 		? theme.colors.online
@@ -197,6 +241,7 @@ export default function Connectivity() {
 						variant="secondary"
 						modifier={['full']}
 						icon="refresh"
+						loading={isRefreshing}
 						onPress={refreshStatus}
 						extraStyles={{ marginTop: theme.space.md }}
 					/>
@@ -205,7 +250,7 @@ export default function Connectivity() {
 				<Button
 					label={scanning ? 'Scanning…' : 'Scan for networks'}
 					modifier={['full', 'tall']}
-					icon="wifi"
+					icon="wifi-scan"
 					loading={scanning}
 					disabled={scanning || !reachable}
 					onPress={handleScan}
@@ -221,7 +266,7 @@ export default function Connectivity() {
 					/>
 				)}
 
-				{selectedSsid ? (
+				{selectedSsid && selectedSsidSecure ? (
 					<Input
 						label="Password"
 						value={password}
@@ -230,19 +275,20 @@ export default function Connectivity() {
 						autoCapitalize="none"
 						autoCorrect={false}
 						labelBackground={theme.colors.background}
-						placeholder="Leave empty for open networks"
+						placeholder="Enter the Wi-Fi password"
 						placeholderTextColor={theme.colors.textMuted}
 					/>
 				) : null}
-
-				<Button
-					label="Connect device to this network"
-					modifier={['full', 'tall']}
-					icon="check"
-					loading={saving}
-					disabled={saving || !selectedSsid || !reachable}
-					onPress={handleConnect}
-				/>
+				{selectedSsid && (!selectedSsidSecure || password.length > 0) ? (
+					<Button
+						label="Connect device to this network"
+						modifier={['full', 'tall']}
+						icon="lan-connect"
+						loading={saving}
+						disabled={saving || !selectedSsid || !reachable}
+						onPress={handleConnect}
+					/>
+				) : null}
 			</View>
 		</ScrollView>
 	)

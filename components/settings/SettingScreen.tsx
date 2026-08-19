@@ -82,24 +82,13 @@ export default function SettingScreen({
 						<Card elevation={0}>
 							{section.rows.map((row) => {
 								const disabled = row.requiresServer && serverUnavailable
-								console.log(row.label, {
-									requiresServer: row.requiresServer,
-									serverUnavailable,
-									disabled,
-								})
 
 								return (
 									<SimpleCardItem
 										key={row.label}
 										label={row.label}
 										icon={row.icon}
-										onPress={() =>
-											console.log(row.label, {
-												requiresServer: row.requiresServer,
-												serverUnavailable,
-												disabled,
-											})
-										}
+										onPress={row.onPress}
 										disabled={disabled}
 										modifiers={row.label === 'Logout' ? ['fault'] : undefined}
 									/>

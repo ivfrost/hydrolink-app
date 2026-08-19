@@ -5,12 +5,33 @@ export interface StationPickerOption {
 	value: StationType
 }
 
-export const STATION_PICKER_OPTIONS: StationPickerOption[] = [
-	{ label: 'Solenoid', value: 'Solenoid' },
-	{ label: 'Fertilizer', value: 'Fertilizer' },
-	{ label: 'Sensor', value: 'Sensor' },
-	{ label: 'Unclassified', value: 'Unknown' },
+export const STATION_TYPE_LABEL: Record<StationType, string> = {
+	Solenoid: 'Solenoid',
+	FertilizerPump: 'Fertilizer Pump',
+	CaudalSensor: 'Caudal Sensor',
+	HumiditySensor: 'Humidity Sensor',
+	Unclassified: 'Unclassified',
+}
+
+// Sensor stations are read-only (no start/stop action) and are grouped
+// separately from the actionable stations (solenoids and fertilizer pumps).
+export const SENSOR_STATION_TYPES: readonly StationType[] = [
+	'CaudalSensor',
+	'HumiditySensor',
 ]
+
+export const isSensorStationType = (type: StationType): boolean =>
+	SENSOR_STATION_TYPES.includes(type)
+
+export const isReadOnlyStationType = (type: StationType): boolean =>
+	type === 'Unclassified' || isSensorStationType(type)
+
+export const STATION_PICKER_OPTIONS: StationPickerOption[] = (
+	Object.keys(STATION_TYPE_LABEL) as StationType[]
+).map((value) => ({
+	label: STATION_TYPE_LABEL[value],
+	value,
+}))
 
 export enum AreaMenuOptionValue {
 	Edit = 'edit',
@@ -23,34 +44,25 @@ export enum AreaMenuOptionValue {
 
 export const getAreaMenuOptions = (
 	isOnline: boolean,
-): Map<string, AreaMenuOptionValue[]> => {
-	const options = new Map<string, AreaMenuOptionValue[]>()
-
-	// Always allow edit/unlink
-	options.set('General', [AreaMenuOptionValue.Edit, AreaMenuOptionValue.Unlink])
+): AreaMenuOptionValue[] => {
+	const options: AreaMenuOptionValue[] = [AreaMenuOptionValue.Edit]
 
 	if (isOnline) {
-		// If online, add connectivity + maintenance actions
-		options.set('Connectivity', [AreaMenuOptionValue.Connectivity])
-		options.set('Maintenance', [AreaMenuOptionValue.Reboot, AreaMenuOptionValue.Logs])
+		options.push(AreaMenuOptionValue.Connectivity)
+	}
+
+	options.push(AreaMenuOptionValue.Unlink)
+
+	if (isOnline) {
+		options.push(AreaMenuOptionValue.Reboot, AreaMenuOptionValue.Logs)
 	}
 
 	return options
 }
+
 /**
  * Options shown in the header dropdown of the Areas tab screen.
  */
-export const getAreasScreenHeaderOptions = (): Map<
-	string,
-	AreaMenuOptionValue[]
-> => {
-	const options = new Map<string, AreaMenuOptionValue[]>()
-	// Admin: navigate to the firmware upload screen
-	options.set('Admin', [AreaMenuOptionValue.OTAUpdate])
-	return options
-}
-export type AreaMenuOption = {
-	label: string
-	value: AreaMenuOptionValue
-	header?: string
-}
+export const getAreasScreenHeaderOptions = (): AreaMenuOptionValue[] => [
+	AreaMenuOptionValue.OTAUpdate,
+]

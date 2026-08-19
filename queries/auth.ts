@@ -16,7 +16,7 @@ export const checkAvailabilityFn = async (
 
 	const data = (await response.json()) as ApiResponse<boolean>
 
-	if (!response.ok) {
+	if (!response.ok || data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		} else {

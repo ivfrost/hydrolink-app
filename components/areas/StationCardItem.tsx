@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { Pressable, Text, TouchableOpacity, View } from 'react-native'
+import { Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
-import { STATION_PICKER_OPTIONS } from '@/data/area'
+import {
+	isReadOnlyStationType,
+	STATION_PICKER_OPTIONS,
+	STATION_TYPE_LABEL,
+} from '@/data/area'
 import { ManualOverride, Station, StationType } from '@/types/area'
 
 import Badge from '../ui/Badge'
@@ -18,10 +22,11 @@ export const STATION_TYPE_ICON: Record<
 	StationType,
 	React.ComponentProps<typeof MaterialCommunityIcons>['name']
 > = {
-	Unknown: 'help-circle-outline',
 	Solenoid: 'valve',
-	Fertilizer: 'sprout-outline',
-	Sensor: 'thermometer-lines',
+	FertilizerPump: 'water-pump',
+	CaudalSensor: 'gauge',
+	HumiditySensor: 'water-percent',
+	Unclassified: 'help-circle-outline',
 }
 
 export interface StationCardItemProps {
@@ -31,7 +36,7 @@ export interface StationCardItemProps {
 	isActionDisabled?: boolean
 	manualOverride?: ManualOverride
 	onDrag?: () => void
-	onActionPress?: (durationMs: number) => void
+	onActionPress?: (action: 'Start' | 'Stop', durationMs: number) => void
 	onDataChange?: (
 		field: 'name' | 'description' | 'imageUrl' | 'type',
 		stationId: number,
@@ -39,7 +44,10 @@ export interface StationCardItemProps {
 	) => void
 	/** Commits a field immediately (MQTT + state machine), used by the
 	 *  dropdown (on change) and the inline confirm button (on press). */
-	onFieldCommit?: (field: 'name' | 'description' | 'imageUrl' | 'type', value: string) => void
+	onFieldCommit?: (
+		field: 'name' | 'description' | 'imageUrl' | 'type',
+		value: string,
+	) => void
 	/** Original name from the live station, used to show the confirm button only
 	 *  when the draft name differs. */
 	initialName?: string
@@ -74,13 +82,18 @@ export default function StationCardItem({
 		onFieldCommit?.('type', newType)
 	}
 
-	const isOverrideActive = !!(manualOverride?.active && manualOverride.end)
 	// Sensors and unclassified stations are read-only: no start/stop or timer.
-	const isReadOnly = station.type === 'Sensor' || station.type === 'Unknown'
+	const isReadOnly = isReadOnlyStationType(station.type)
 
-	const buttonVariant =
-		station.status.state === 'Running' ? 'destructive' : 'primary'
-	const actionIcon = station.status.state === 'Running' ? 'stop' : 'play'
+	const isRunning = station.status.state === 'Running'
+	// A manual override only counts as an active countdown while the station is
+	// actually running. The ESP may leave a stale `active` flag after a Stop, so
+	// an idle station never shows a countdown or a stop button.
+	const isOverrideActive =
+		isRunning && !!(manualOverride?.active && manualOverride.end)
+
+	const buttonVariant = isRunning ? 'destructive' : 'primary'
+	const actionIcon = isRunning ? 'stop' : 'play'
 	const headingIcon = newLeadingIcon ?? STATION_TYPE_ICON[station.type]
 
 	const stationLabel = `Station ${station.id + 1}`
@@ -155,7 +168,12 @@ export default function StationCardItem({
 										color="white"
 									/>
 								}
-								onPress={() => onActionPress?.(minutes * 60 * 1000)}
+								onPress={() =>
+									onActionPress?.(
+										isRunning ? 'Stop' : 'Start',
+										minutes * 60 * 1000,
+									)
+								}
 							/>
 						)
 					}
@@ -180,26 +198,10 @@ export default function StationCardItem({
 										/>
 									</View>
 									{onFieldCommit && station.name !== initialName && (
-										<Pressable
-											onPress={() =>
-												onFieldCommit('name', station.name ?? '')
-											}
-											hitSlop={8}
-											style={{
-												width: 32,
-												height: 32,
-												borderRadius: 16,
-												backgroundColor: theme.colors.accent,
-												justifyContent: 'center',
-												alignItems: 'center',
-											}}
-										>
-											<MaterialCommunityIcons
-												name="check"
-												size={16}
-												color={theme.colors.buttonPrimaryText}
-											/>
-										</Pressable>
+										<Button
+											variant="confirm"
+											onPress={() => onFieldCommit('name', station.name ?? '')}
+										/>
 									)}
 								</View>
 							</View>
@@ -214,7 +216,7 @@ export default function StationCardItem({
 								}}
 							>
 								<Badge
-									text={station.type}
+									text={STATION_TYPE_LABEL[station.type]}
 									color={theme.colors.textSecondary}
 									backgroundColor={''}
 									borderColor={theme.colors.border}

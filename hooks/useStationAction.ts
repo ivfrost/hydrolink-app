@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import * as Burnt from 'burnt'
 
 import { useMqtt } from '@/context/MqttContext'
+import { isReadOnlyStationType } from '@/data/area'
 import { publishableTopics } from '@/services/mqtt'
 import { StationAction } from '@/types/area'
 import { MqttCommand } from '@/types/mqtt'
@@ -55,15 +56,11 @@ export default function useStationAction(
 				action.action === 'Start' &&
 				currentStation.status.state === 'Running'
 			) {
-				console.warn(
-					`Station ${stationId} is already in target state: Running. Action not sent.`,
-				)
+				console.warn(`Station ${stationId} is already running. Start not sent.`)
 				return
 			}
 			if (action.action === 'Stop' && currentStation.status.state === 'Idle') {
-				console.warn(
-					`Station ${stationId} is already in target state: Idle. Action not sent.`,
-				)
+				console.warn(`Station ${stationId} is already idle. Stop not sent.`)
 				return
 			}
 
@@ -110,7 +107,7 @@ export default function useStationAction(
 			const stationType = station?.type
 			const isPendingAction = isStationActionPending(stationId)
 
-			if (stationType === 'Unknown' || stationType === 'Sensor') return true
+			if (stationType && isReadOnlyStationType(stationType)) return true
 			if (isPendingAction) return true
 
 			if (stationType === 'Solenoid') {

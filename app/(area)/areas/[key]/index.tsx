@@ -21,7 +21,7 @@ import useStationAction from '@/hooks/useStationAction'
 import { currentScreenMachine } from '@/machines/currentScreenMachine'
 import { areasQueryFn } from '@/queries/areas'
 import { useHeaderStore } from '@/stores/headerStore'
-import { Station, StationAction, StationStatus } from '@/types/area'
+import { Station, StationAction } from '@/types/area'
 
 export default function AreaInfoScreen() {
 	const theme = useTheme()
@@ -89,23 +89,11 @@ export default function AreaInfoScreen() {
 		currentScreenState.context.pendingStationActions,
 	)
 
-	// Toggle station action (start/stop) based on current state
+	// Toggle station action (start/stop) based on the button that was pressed.
 	const toggleAction = useCallback(
-		(
-			stationId: number,
-			currentState: StationStatus['state'],
-			durationMs: number,
-		) => {
-			console.log(`Current state of station ${stationId}: ${currentState}`)
-			console.log(
-				`Next state of station ${stationId}: ${currentState === 'Running' ? 'Idle' : 'Running'}`,
-			)
-			console.log(
-				`Next action of station ${stationId}: ${currentState === 'Running' ? 'Stop' : 'Start'}`,
-			)
-
+		(stationId: number, action: 'Start' | 'Stop', durationMs: number) => {
 			const newAction: StationAction = {
-				action: currentState === 'Running' ? 'Stop' : 'Start',
+				action,
 				cause: 'Manual',
 				durationMs,
 			}
@@ -155,7 +143,6 @@ export default function AreaInfoScreen() {
 								flexDirection: 'row',
 								alignItems: 'center',
 								gap: theme.space.sm,
-								marginVertical: theme.space.sm,
 								paddingHorizontal: theme.space.sm,
 							}}
 						>
@@ -171,17 +158,9 @@ export default function AreaInfoScreen() {
 									fontSize: theme.font.xs,
 								}}
 							>
-								Live data is unavailable. Only API data is shown. Ensure the{' '}
-								<Text
-									style={{
-										fontVariant: ['small-caps'],
-										color: theme.colors.textMuted,
-										fontWeight: '500',
-									}}
-								>
-									Hydrolink
-								</Text>{' '}
-								is powered on and connected to the network. Pull to refresh.
+								Live data is unavailable. Only API data is shown. Ensure your
+								Hydrolink is powered on and connected to the network. Pull to
+								refresh.
 							</Text>
 						</View>
 					) : null}
@@ -222,8 +201,8 @@ export default function AreaInfoScreen() {
 						isActionDisabled={isActionButtonDisabled(station.id)}
 						isLoading={isStationLoading}
 						manualOverride={manualOverride}
-						onActionPress={(durationMs: number) =>
-							toggleAction(station.id, station.status.state, durationMs)
+						onActionPress={(action, durationMs) =>
+							toggleAction(station.id, action, durationMs)
 						}
 						isActive={station.status.state === 'Running'}
 					/>
@@ -254,19 +233,17 @@ export default function AreaInfoScreen() {
 		// On MQTT error, show API data as fallback if available
 		if (error?.code === 'MQTT_ERROR') {
 			return (
-				<ScrollView flexDirection="column">
-					<ScrollView
-						refreshControl={
-							<RefreshControl
-								refreshing={currentScreenState.matches('loading')}
-								onRefresh={() => send({ type: 'RETRY' })}
-								progressViewOffset={theme.space.x3l}
-								colors={[theme.colors.accent, theme.colors.background]}
-							/>
-						}
-					>
-						{renderApiData(true)}
-					</ScrollView>
+				<ScrollView
+					refreshControl={
+						<RefreshControl
+							refreshing={currentScreenState.matches('loading')}
+							onRefresh={() => send({ type: 'RETRY' })}
+							progressViewOffset={theme.space.x3l}
+							colors={[theme.colors.accent, theme.colors.background]}
+						/>
+					}
+				>
+					{renderApiData(true)}
 				</ScrollView>
 			)
 		}
@@ -370,7 +347,6 @@ export default function AreaInfoScreen() {
 								flexDirection: 'row',
 								alignItems: 'center',
 								gap: theme.space.sm,
-								marginVertical: theme.space.sm,
 								paddingHorizontal: theme.space.sm,
 							}}
 						>
@@ -433,7 +409,6 @@ export default function AreaInfoScreen() {
 							flexDirection: 'row',
 							alignItems: 'center',
 							gap: theme.space.sm,
-							marginVertical: theme.space.sm,
 							paddingHorizontal: theme.space.sm,
 						}}
 					>

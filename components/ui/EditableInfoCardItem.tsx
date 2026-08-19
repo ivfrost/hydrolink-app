@@ -1,17 +1,11 @@
 import React, { useRef } from 'react'
-import {
-	Pressable,
-	StyleSheet,
-	Text,
-	TextInput,
-	TextInputProps,
-	View,
-} from 'react-native'
+import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
 
+import Button from './Button'
 import HeadingIcon from './HeadingIcon'
 
 interface EditableInfoCardItemProps extends TextInputProps {
@@ -121,33 +115,11 @@ export default function EditableInfoCardItem({
 
 				{/* Inline confirm button */}
 				{hasChanges && (
-					<Pressable
-						disabled={confirmLoading}
+					<Button
+						variant="confirm"
+						loading={confirmLoading}
 						onPress={() => onConfirm?.(text)}
-						hitSlop={8}
-						style={{
-							width: 32,
-							height: 32,
-							borderRadius: 16,
-							backgroundColor: theme.colors.accent,
-							justifyContent: 'center',
-							alignItems: 'center',
-						}}
-					>
-						{confirmLoading ? (
-							<MaterialCommunityIcons
-								name="loading"
-								size={16}
-								color={theme.colors.buttonPrimaryText}
-							/>
-						) : (
-							<MaterialCommunityIcons
-								name="check"
-								size={16}
-								color={theme.colors.buttonPrimaryText}
-							/>
-						)}
-					</Pressable>
+					/>
 				)}
 			</View>
 

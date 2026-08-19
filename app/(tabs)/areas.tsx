@@ -4,10 +4,10 @@ import { ActivityIndicator, Text, View } from 'react-native'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
-import AreasScreen from '@/components/areas/AreasScreen'
+import AreasTabScreen from '@/components/areas/AreasTabScreen'
 import { tanstackKeys } from '@/constants'
 import { useMqtt } from '@/context/MqttContext'
 import { useNetwork } from '@/context/NetworkContext'
@@ -41,7 +41,10 @@ export default function AreaTabScreen() {
 		// Keep the linked-devices list in sync with the server without a
 		// manual pull-to-refresh while the tab is open.
 		refetchInterval: 30_000,
+		refetchOnWindowFocus: true,
+		refetchOnMount: true,
 	})
+
 	const mqttAreas = useAreaStore((state) => state.areas)
 	const isAreaOnline = useAreaStore((state) => state.isOnline)
 	const { isNetworkConnected, isInternetReachable } = useNetwork()
@@ -49,24 +52,24 @@ export default function AreaTabScreen() {
 	const canUseRemoteLinking = Boolean(isNetworkConnected && isInternetReachable)
 	const canUseLocalDiscovery = Boolean(isNetworkConnected)
 
-	// Keep the latest snapshot-request callback in a ref so the focus effect
-	// below stays stable (the callback's identity changes on every render).
-	// The ref is updated inside an effect to satisfy React's rules (no ref
-	// writes during render).
-	const requestStatusSnapshotRef = useRef(requestStatusSnapshot)
-	useEffect(() => {
-		requestStatusSnapshotRef.current = requestStatusSnapshot
-	}, [requestStatusSnapshot])
+	// // Keep the latest snapshot-request callback in a ref so the focus effect
+	// // below stays stable (the callback's identity changes on every render).
+	// // The ref is updated inside an effect to satisfy React's rules (no ref
+	// // writes during render).
+	// const requestStatusSnapshotRef = useRef(requestStatusSnapshot)
+	// useEffect(() => {
+	// 	requestStatusSnapshotRef.current = requestStatusSnapshot
+	// }, [requestStatusSnapshot])
 
-	// Auto-sync whenever the Areas tab regains focus: refetch the linked
-	// devices list and request a fresh MQTT status snapshot, so area updates
-	// (links, renames, unlinks, status) appear without pulling to refresh.
-	useFocusEffect(
-		useCallback(() => {
-			queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
-			requestStatusSnapshotRef.current()
-		}, [queryClient]),
-	)
+	// // Auto-sync whenever the Areas tab regains focus: refetch the linked
+	// // devices list and request a fresh MQTT status snapshot, so area updates
+	// // (links, renames, unlinks, status) appear without pulling to refresh.
+	// useFocusEffect(
+	// 	useCallback(() => {
+	// 		queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+	// 		requestStatusSnapshotRef.current()
+	// 	}, [queryClient]),
+	// )
 
 	// Mutation for linking an area
 	const { mutate, isPending: linkPending } = useMutation({
@@ -104,7 +107,7 @@ export default function AreaTabScreen() {
 	const onRefresh = async () => {
 		setIsRefreshing(true)
 		try {
-			await queryClient.invalidateQueries({ queryKey: ['areas'] })
+			await queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
 			reconnectMqtt()
 			rescanLocal()
 		} catch (error) {
@@ -157,7 +160,7 @@ export default function AreaTabScreen() {
 	}
 
 	return (
-		<AreasScreen
+		<AreasTabScreen
 			areas={areas ?? []}
 			mqttAreas={mqttAreas}
 			isAreaOnline={isAreaOnline}

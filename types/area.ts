@@ -33,7 +33,13 @@ export type ManualOverride = z.infer<typeof manualOverrideSchema>
 
 export const stationSchema = z.object({
 	id: z.number(),
-	type: z.enum(['Solenoid', 'Fertilizer', 'Sensor', 'Unknown']),
+	type: z.enum([
+		'Solenoid',
+		'FertilizerPump',
+		'CaudalSensor',
+		'HumiditySensor',
+		'Unclassified',
+	]),
 	name: z.string().nullable().optional(),
 	description: z.string().nullable().optional(),
 	// TODO: add API minio endpoint to upload images and store the URL here

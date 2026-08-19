@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
@@ -10,7 +11,6 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { Stack, useRouter } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
-import { useEffect } from 'react'
 
 import { MqttProvider } from '@/context/MqttContext'
 import { NetworkProvider } from '@/context/NetworkContext'
@@ -43,15 +43,17 @@ function AppContent() {
 				client={queryClient}
 				persistOptions={{
 					persister: asyncStoragePersister,
-					// Don't persist account-scoped data (linked devices, profile)
-					// to AsyncStorage. Persisting these makes stale data — e.g.
-					// a device unlinked elsewhere, or another user's data after
+					// Don't persist account-scoped data (linked devices, profile,
+					// schedules) to AsyncStorage. Persisting these makes stale data —
+					// e.g. a device unlinked elsewhere, or another user's data after
 					// logout — reappear on the next launch before a fresh
 					// refetch succeeds (or forever, if the refetch fails).
 					// In-memory caching is unaffected.
 					dehydrateOptions: {
 						shouldDehydrateQuery: (query) =>
-							query.queryKey[0] !== 'areas' && query.queryKey[0] !== 'profile',
+							query.queryKey[0] !== 'areas' &&
+							query.queryKey[0] !== 'profile' &&
+							query.queryKey[0] !== 'schedules',
 					},
 				}}
 			>

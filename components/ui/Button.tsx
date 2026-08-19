@@ -17,7 +17,7 @@ import { useTheme } from '@/context/ThemeContext'
 export interface ButtonProps extends TouchableOpacityProps {
 	ref?: React.Ref<View>
 	label?: string
-	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive'
+	variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive' | 'confirm'
 	modifier?: ('tall' | 'full' | 'fab' | 'iconOnly' | 'small' | 'outlined')[]
 	icon?:
 		| React.ReactNode
@@ -27,6 +27,7 @@ export interface ButtonProps extends TouchableOpacityProps {
 	iconSize?: number
 	outlineColor?: string
 	outlineWidth?: number
+	pressedColor?: string
 	loading?: boolean
 	disabled?: boolean
 	onPress?: () => void
@@ -47,6 +48,7 @@ export default function Button({
 	iconSize,
 	outlineColor,
 	outlineWidth,
+	pressedColor,
 	disabled = false,
 	iconPosition = 'left',
 	extraStyles,
@@ -64,6 +66,8 @@ export default function Button({
 	const isOutlined = modifier?.includes('outlined') ?? false
 
 	const isMuted = disabled || loading
+	// The confirm variant is icon-only and defaults to a check icon.
+	const effectiveIcon = icon ?? (variant === 'confirm' ? 'check' : undefined)
 
 	const handlePress = () => {
 		if (isMuted) return
@@ -89,16 +93,31 @@ export default function Button({
 			base: theme.colors.buttonDestructive,
 			pressed: theme.colors.buttonDestructivePressed,
 		},
+		confirm: {
+			base: theme.colors.accent,
+			pressed: theme.colors.accent,
+		},
 	} as const
 
 	const textColorByVariant = {
 		primary: theme.colors.buttonPrimaryText,
 		secondary: theme.colors.buttonSecondaryText,
 		tertiary: theme.colors.textSecondary,
-		destructive: theme.colors.buttonPrimaryText,
+		destructive: '#ffffff',
+		confirm: theme.colors.buttonPrimaryText,
 	} as const
 
 	const sizeConfig = (() => {
+		if (variant === 'confirm') {
+			return {
+				width: 32,
+				height: 32,
+				paddingVertical: 0,
+				paddingHorizontal: 0,
+				iconSize: 16,
+			}
+		}
+
 		if (isFab) {
 			const size = isSmall
 				? theme.space.smallButtonSize
@@ -160,11 +179,14 @@ export default function Button({
 			alignItems: 'center',
 			justifyContent: 'center',
 			gap: isSmall ? theme.space.xs : theme.space.sm,
-			borderRadius: isFab
-				? theme.radius.fab
-				: isIconOnly
-					? theme.radius.headingIcon
-					: theme.radius.button,
+			borderRadius:
+				variant === 'confirm'
+					? 16
+					: isFab
+						? theme.radius.fab
+						: isIconOnly
+							? theme.radius.headingIcon
+							: theme.radius.button,
 			borderWidth:
 				variant === 'tertiary' && isOutlined ? (outlineWidth ?? 1) : 0,
 			borderColor:
@@ -195,7 +217,9 @@ export default function Button({
 			return (
 				<ActivityIndicator
 					color={
-						variant === 'primary' || variant === 'destructive'
+						variant === 'primary' ||
+						variant === 'destructive' ||
+						variant === 'confirm'
 							? theme.colors.buttonDisabledText
 							: theme.colors.buttonSecondaryText
 					}
@@ -204,26 +228,26 @@ export default function Button({
 			)
 		}
 
-		if (typeof icon === 'string') {
+		if (typeof effectiveIcon === 'string') {
 			const resolvedSize = iconSize || sizeConfig.iconSize
 			const resolvedColor = isMuted
 				? theme.colors.buttonDisabledText
 				: iconColor || textColorByVariant[variant]
 
-			if (icon in MaterialCommunityIcons.glyphMap) {
+			if (effectiveIcon in MaterialCommunityIcons.glyphMap) {
 				return (
 					<MaterialCommunityIcons
-						name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
+						name={effectiveIcon as keyof typeof MaterialCommunityIcons.glyphMap}
 						size={resolvedSize}
 						color={resolvedColor}
 					/>
 				)
 			}
 
-			if (icon in MaterialIcons.glyphMap) {
+			if (effectiveIcon in MaterialIcons.glyphMap) {
 				return (
 					<MaterialIcons
-						name={icon as keyof typeof MaterialIcons.glyphMap}
+						name={effectiveIcon as keyof typeof MaterialIcons.glyphMap}
 						size={resolvedSize}
 						color={resolvedColor}
 					/>
@@ -231,7 +255,7 @@ export default function Button({
 			}
 		}
 
-		return icon as React.ReactNode
+		return effectiveIcon as React.ReactNode
 	}
 
 	return (
@@ -248,7 +272,7 @@ export default function Button({
 						? 'transparent'
 						: theme.colors.buttonDisabled
 					: isPressed || isSubmenuOpen
-						? bgColorByVariant[variant].pressed
+						? (pressedColor ?? bgColorByVariant[variant].pressed)
 						: bgColorByVariant[variant].base
 
 				return [
@@ -265,11 +289,11 @@ export default function Button({
 				]
 			}}
 		>
-			{iconPosition === 'left' && icon && resolveIcon()}
+			{iconPosition === 'left' && effectiveIcon && resolveIcon()}
 			{!isIconOnly && !isFab && label && (
 				<Text style={baseStyles.text}>{label}</Text>
 			)}
-			{iconPosition === 'right' && icon && resolveIcon()}
+			{iconPosition === 'right' && effectiveIcon && resolveIcon()}
 		</Pressable>
 	)
 }

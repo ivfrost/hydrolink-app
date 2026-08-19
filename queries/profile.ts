@@ -5,8 +5,7 @@ import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
 export const profileQueryFn = async (): Promise<User> => {
 	const data = await apiFetch<User>('/me')
-
-	if (data.code !== null) {
+	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		} else {

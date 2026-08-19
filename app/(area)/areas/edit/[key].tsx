@@ -76,7 +76,7 @@ export default function EditAreaScreen() {
 		stations: [
 			{
 				id: 0,
-				type: 'Unknown' as StationType,
+				type: 'Unclassified' as StationType,
 				name: '',
 				description: '',
 				imageUrl: '',
@@ -281,7 +281,11 @@ export default function EditAreaScreen() {
 				[field]: value,
 			} as Partial<AreaUpdatePayload>)
 			// Update the baseline so the confirm button disappears immediately.
-			if (field === 'friendlyName' || field === 'locationLabel' || field === 'description') {
+			if (
+				field === 'friendlyName' ||
+				field === 'locationLabel' ||
+				field === 'description'
+			) {
 				setSavedAreaValues((prev) => ({ ...prev, [field]: value }))
 			}
 			queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
@@ -518,24 +522,23 @@ export default function EditAreaScreen() {
 								}}
 							>
 								MQTT data is unavailable. Only API editable data is shown.
-								Ensure the{' '}
-								<Text
-									style={{
-										fontVariant: ['small-caps'],
-										color: theme.colors.textMuted,
-										fontWeight: '500',
-									}}
-								>
-									Hydrolink
-								</Text>{' '}
-								is powered on and connected to the network. Pull to refresh.
+								Ensure your Hydrolink is powered on and connected to the
+								network. Pull to refresh.
 							</Text>
 						</View>
 					) : null}
 				</View>
 			)
 		},
-		[dbArea, areaFormState, theme.colors, theme.font, theme.space],
+		[
+			dbArea,
+			areaFormState,
+			savedAreaValues,
+			confirmingField,
+			theme.colors,
+			theme.font,
+			theme.space,
+		],
 	)
 
 	// Station render item for DraggableFlatList
@@ -572,7 +575,11 @@ export default function EditAreaScreen() {
 								onDrag={drag}
 								onDataChange={handleStationDataChange}
 								onFieldCommit={(field, value) => {
-									const committed = setNewValueForStation(station.id, field, value)
+									const committed = setNewValueForStation(
+										station.id,
+										field,
+										value,
+									)
 									if (committed) {
 										Burnt.toast({
 											title:
@@ -583,11 +590,9 @@ export default function EditAreaScreen() {
 								}}
 								isMqttEditable={isAreaOnline}
 								newLeadingIcon={
-									localStateMatch?.type === 'Solenoid'
-										? STATION_TYPE_ICON.Solenoid
-										: localStateMatch?.type === 'Fertilizer'
-											? STATION_TYPE_ICON.Fertilizer
-											: STATION_TYPE_ICON.Unknown
+									localStateMatch
+										? STATION_TYPE_ICON[localStateMatch.type]
+										: undefined
 								}
 							/>
 						</Card>

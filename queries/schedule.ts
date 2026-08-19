@@ -8,7 +8,7 @@ export const areaScheduleQueryFn = async (
 ): Promise<Schedule[]> => {
 	const data = await apiFetch<Schedule>(`/devices/${areaKey}/schedules`)
 
-	if (data.code !== null) {
+	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		}
@@ -16,6 +16,7 @@ export const areaScheduleQueryFn = async (
 	}
 
 	const schedules = data.details
+	console.log('Fetched schedules for area', areaKey, schedules)
 	if (!schedules) return []
 
 	return Array.isArray(schedules) ? schedules : [schedules]
@@ -29,12 +30,11 @@ export const areaScheduleForDayQueryFn = async (
 		`/devices/${areaKey}/schedules/${dayOfWeek}`,
 	)
 
-	if (data.code !== null) {
+	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		}
 		throw new AppError('UNKNOWN_ERROR', data.message)
 	}
-
 	return data.details || null
 }

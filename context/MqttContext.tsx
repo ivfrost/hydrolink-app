@@ -8,9 +8,9 @@ import {
 } from '@/services/mqtt'
 import {
 	notifyOtaUpdateIfCommand,
+	publishOtaCommand,
 	requestNotificationPermission,
 	setOtaNotificationTapHandler,
-	publishOtaCommand,
 } from '@/services/otaNotifications'
 import { useAreaStore } from '@/stores/areaStore'
 import { StationType } from '@/types/area'
@@ -39,11 +39,6 @@ export interface MqttContextType {
 		areaKey: string,
 		stationId: number,
 		description: string,
-	) => void
-	setImageUrlForAreaStation: (
-		areaKey: string,
-		stationId: number,
-		imageUrl: string,
 	) => void
 }
 const MqttContext = createContext<MqttContextType | undefined>(undefined)
@@ -292,35 +287,6 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 		publish(commandTopic, JSON.stringify(cmd))
 	}
 
-	// Function to set the image URL of a specific station in a specific area
-	const setImageUrlForAreaStation = (
-		areaKey: string,
-		stationId: number,
-		imageUrl: string,
-	) => {
-		if (!mqttClient || !mqttClient.connected) return
-
-		const topic = publishableTopics.find(
-			(t) => t.includes(`/${areaKey}/`) && t.endsWith('/#'),
-		)
-
-		if (!topic) {
-			console.warn(`Cannot set image URL: no MQTT topic for area ${areaKey}`)
-			return
-		}
-
-		const commandTopic = getCommandTopic(topic)
-
-		const cmd: MqttCommand = {
-			action: 'SetImageUrl',
-			stationId,
-			imageUrl,
-			cause: 'Manual',
-		}
-		console.log(`Publishing SetImageUrl command to ${commandTopic}:`, cmd)
-		publish(commandTopic, JSON.stringify(cmd))
-	}
-
 	return (
 		<MqttContext.Provider
 			value={{
@@ -334,7 +300,6 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 				setTypeForAreaStation,
 				setNameForAreaStation,
 				setDescriptionForAreaStation,
-				setImageUrlForAreaStation,
 			}}
 		>
 			{children}

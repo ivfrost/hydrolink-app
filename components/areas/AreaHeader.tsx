@@ -44,15 +44,16 @@ export default function AreaHeader({
 		<View
 			style={{
 				flexShrink: 1,
+				gap: theme.space.xs,
 			}}
 		>
 			<View
 				style={{
 					flexDirection: 'row',
-					alignItems: 'center',
 					justifyContent: 'space-between',
+					alignItems: 'flex-start',
 					width: '100%',
-					gap: theme.space.sm,
+					gap: theme.space.md,
 				}}
 			>
 				<Text
@@ -105,7 +106,7 @@ export default function AreaHeader({
 							backgroundColor={theme.colors.inputBackground}
 						/>
 					</View>
-					{dbArea.description && (
+					{dbArea.description?.trim() && (
 						<View
 							style={{
 								flexDirection: 'row',
@@ -216,10 +217,10 @@ export default function AreaHeader({
 							marginHorizontal: -theme.space.lg,
 							marginTop: -theme.space.x3l,
 							backgroundColor: theme.colors.background,
-							borderTopLeftRadius: theme.radius.card,
-							borderTopRightRadius: theme.radius.card,
+							borderTopLeftRadius: theme.radius.viewOverImage,
+							borderTopRightRadius: theme.radius.viewOverImage,
 							paddingTop: theme.space.lg,
-							paddingHorizontal: theme.space.md,
+							paddingHorizontal: theme.space.lg,
 							paddingBottom: theme.space.lg,
 						}}
 					>

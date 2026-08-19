@@ -5,8 +5,8 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
 	AreaMqttData,
 	ManualOverride,
+	Station,
 	stationArrSchema,
-	StationType,
 } from '@/types/area'
 import { normalizeMqttPayload } from '@/utils/mqttPayload'
 
@@ -54,10 +54,11 @@ interface AreaState {
 	clearAreas: () => void
 	removeArea: (areaKey: string) => void
 	updateStations: (areaKey: string, stations: AreaMqttData['stations']) => void
-	setTypeForAreaStation: (
+	setStationField: (
 		areaKey: string,
 		stationId: number,
-		type: StationType,
+		field: 'type' | 'name' | 'description' | 'imageUrl',
+		value: string,
 	) => void
 	isOnline: (areaKey: string) => boolean
 	isUpdating: (areaKey: string) => boolean
@@ -105,10 +106,7 @@ export const useAreaStore = create<AreaState>()(
 					}
 				})
 			},
-			setTypeForAreaStation: (areaKey, stationId, type) => {
-				console.log(
-					`[areaStore] Setting station type for area ${areaKey}, station ${stationId} to ${type}`,
-				)
+			setStationField: (areaKey, stationId, field, value) => {
 				set((state) => {
 					const area = state.areas[areaKey]
 					if (!area) return state
@@ -120,10 +118,7 @@ export const useAreaStore = create<AreaState>()(
 						key: area.key,
 						stations: {
 							...area.stations,
-							[stationId]: {
-								...station,
-								type,
-							},
+							[stationId]: { ...station, [field]: value } as unknown as Station,
 						},
 						lastUpdated: area.lastUpdated,
 						online: area.online,

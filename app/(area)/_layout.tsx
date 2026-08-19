@@ -10,7 +10,7 @@ import DropdownMenu from '@/components/ui/DropdownMenu'
 import { tanstackKeys } from '@/constants'
 import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
-import { AreaMenuOption, getAreaMenuOptions } from '@/data/area'
+import { AreaMenuOptionValue, getAreaMenuOptions } from '@/data/area'
 import { areaUnlinkMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
 import { useAreaStore } from '@/stores/areaStore'
@@ -57,10 +57,7 @@ export default function AreaLayout() {
 		},
 	})
 
-	const handleTappedOption = (
-		option: AreaMenuOption['value'],
-		areaKey: string,
-	) => {
+	const handleTappedOption = (option: AreaMenuOptionValue, areaKey: string) => {
 		switch (option) {
 			case 'edit':
 				if (!areaKey) return
@@ -100,10 +97,9 @@ export default function AreaLayout() {
 							style: 'destructive',
 							onPress: () => {
 								mqtt.rebootArea(areaKey)
-								// Refresh MQTT so the rebooting device shows as
-								// offline until it reconnects, then return to the
-								// areas list.
-								mqtt.reconnect()
+								// Return to the areas list. The device reports itself
+								// offline via the broker's last-will while it reboots,
+								// then comes back online once it reconnects.
 								if (router.canGoBack()) {
 									router.back()
 								} else {
@@ -113,6 +109,7 @@ export default function AreaLayout() {
 						},
 					],
 				)
+				break
 			case 'logs':
 				router.push(`/areas/${areaKey}/logs`)
 				break
@@ -244,6 +241,13 @@ export default function AreaLayout() {
 					// as you scroll past the hero.
 					const opacity = hasImage ? areaHeaderOpacity : 1
 					const tintDark = opacity > 0.6
+					// The status bar mirrors the header tint: white icons over the
+					// hero image, dark icons once the opaque header fades in.
+					const statusBarStyle = tintDark
+						? theme.mode === 'dark'
+							? 'light'
+							: 'dark'
+						: 'light'
 
 					return {
 						headerTitle: '',
@@ -251,6 +255,7 @@ export default function AreaLayout() {
 						headerTransparent: true,
 						headerShadowVisible: false,
 						headerTintColor: tintDark ? theme.colors.textPrimary : '#ffffff',
+						statusBarStyle,
 						headerBackground: () => (
 							<View
 								style={{
@@ -268,7 +273,12 @@ export default function AreaLayout() {
 							<DropdownMenu
 								options={getAreaMenuOptions(isOnline(key))}
 								onClick={(optionValue) => handleTappedOption(optionValue, key)}
-								iconColor={theme.colors.textPrimary}
+								iconColor={tintDark ? theme.colors.textPrimary : '#ffffff'}
+								pressedColor={
+									tintDark
+										? theme.colors.buttonTertiaryPressed
+										: 'rgba(255,255,255,0.2)'
+								}
 							/>
 						),
 					}

@@ -18,15 +18,21 @@ import { useTheme } from '@/context/ThemeContext'
 
 import Button from './Button'
 
-type PickerOption<T> = { label: string; value: T }
+type PickerOption<T> = {
+	label: string
+	value: T
+	icon?: keyof typeof MaterialCommunityIcons.glyphMap
+	iconColor?: string
+}
 
 type PickerModifier = 'tall' | 'full' | 'small' | 'outlined'
 
 type PickerProps<T> = {
 	label?: string
 	options: PickerOption<T>[]
-	selectedValue: T
+	selectedValue: T | null
 	onValueChange: (v: T) => void
+	placeholder?: string
 	isOpen?: boolean
 	onOpen?: () => void
 	onRequestClose?: () => void
@@ -41,6 +47,7 @@ export function Picker<T extends string | number>({
 	options,
 	selectedValue,
 	onValueChange,
+	placeholder,
 	isOpen: controlledOpen,
 	onOpen,
 	onRequestClose,
@@ -67,10 +74,15 @@ export function Picker<T extends string | number>({
 	} | null>(null)
 	const [drawerHeight, setDrawerHeight] = useState<number | null>(null)
 
-	const currentOption = options.find((o) => o.value === selectedValue)
+	const currentOption =
+		selectedValue != null
+			? options.find((o) => o.value === selectedValue)
+			: undefined
 	const displayLabel = currentOption
 		? currentOption.label
-		: String(selectedValue)
+		: selectedValue != null
+			? String(selectedValue)
+			: (placeholder ?? 'Select…')
 
 	const measureAnchor = useCallback(() => {
 		const node = findNodeHandle(anchorRef.current)
@@ -109,9 +121,23 @@ export function Picker<T extends string | number>({
 		const top = openBelow
 			? anchorLayout.y + anchorLayout.height
 			: Math.max(8, anchorLayout.y - preferredHeight)
-		const left = Math.max(8, anchorLayout.x)
-		const maxWidth = screen.width - left - 8
+
 		const minWidth = Math.max(anchorLayout.width, 150)
+		const anchorRight = anchorLayout.x + anchorLayout.width
+		const edge = 8
+
+		// Prefer aligning the drawer's left edge with the anchor's left edge. When
+		// there is not enough room on the right (e.g. the picker sits near the
+		// right edge of the screen, or its selected label is short so the anchor is
+		// narrow and pushed right), align the drawer's right edge with the anchor's
+		// right edge instead so the list stays on screen.
+		let left = Math.max(edge, anchorLayout.x)
+		let maxWidth = screen.width - left - edge
+
+		if (minWidth > maxWidth) {
+			left = Math.max(edge, anchorRight - minWidth)
+			maxWidth = screen.width - left - edge
+		}
 
 		return { top, left, minWidth, maxWidth }
 	}
@@ -138,11 +164,13 @@ export function Picker<T extends string | number>({
 			overflow: 'hidden',
 		},
 		optionItem: {
-			height: theme.space.iconOnlyButtonSize,
+			minHeight: theme.space.buttonSize,
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'space-between',
+			flexWrap: 'nowrap',
 			paddingHorizontal: theme.space.buttonHorizontalPadding,
+			paddingVertical: theme.space.sm,
 		},
 	})
 
@@ -224,6 +252,19 @@ export function Picker<T extends string | number>({
 											},
 										]}
 									>
+										{option.icon && (
+											<MaterialCommunityIcons
+												name={option.icon}
+												size={18}
+												color={
+													option.iconColor ??
+													(isSelected
+														? theme.colors.accent
+														: theme.colors.textSecondary)
+												}
+												style={{ marginRight: theme.space.sm }}
+											/>
+										)}
 										<Text
 											style={{
 												fontSize: theme.font.base,

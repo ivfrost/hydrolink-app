@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react'
 
 import { useMqtt } from '@/context/MqttContext'
+import { useAreaStore } from '@/stores/areaStore'
 import { StationType } from '@/types/area'
 
 import { useAreaMqttData } from './useAreaMqttData'
@@ -39,7 +40,11 @@ export default function useStationMqttUpdate(
 	// ESP publishes the new state back to the MQTT topic, store updates the UI
 	// TODO: might be worth saving directly to API in a future, or at least
 	const setNewValueForStation = useCallback(
-		(stationId: number, field: string, newValue: string): boolean => {
+		(
+			stationId: number,
+			field: 'type' | 'name' | 'description' | 'imageUrl',
+			newValue: string,
+		): boolean => {
 			const currentValue = allStations?.find((s) => s.id === stationId)?.[
 				field as keyof (typeof allStations)[number]
 			] as string | undefined
@@ -49,6 +54,14 @@ export default function useStationMqttUpdate(
 			// flushing last good known copy to API regularly, else there's no offline
 			// access to these values.
 			send({ type: 'SET_STATION_FIELD', stationId, field, newValue })
+
+			// Optimistically update the store so the "saved" value matches the
+			// draft immediately. This lets the inline confirm button disappear
+			// without waiting for the ESP to echo the change back.
+			useAreaStore
+				.getState()
+				.setStationField(areaKey, stationId, field, newValue)
+
 			if (field === 'type') {
 				mqtt.setTypeForAreaStation(areaKey, stationId, newValue as StationType)
 			} else if (field === 'name') {

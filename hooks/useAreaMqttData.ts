@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { isSensorStationType } from '@/data/area'
 import { useAreaStore } from '@/stores/areaStore'
 import { Station } from '@/types/area'
 
@@ -41,9 +42,9 @@ export function useAreaMqttData(areaKey: string | undefined) {
 		() => ({
 			allStations: sortedStations,
 			solenoids: sortedStations.filter((s) => s.type === 'Solenoid'),
-			fertilizers: sortedStations.filter((s) => s.type === 'Fertilizer'),
-			sensors: sortedStations.filter((s) => s.type === 'Sensor'),
-			unclassified: sortedStations.filter((s) => s.type === 'Unknown'),
+			fertilizers: sortedStations.filter((s) => s.type === 'FertilizerPump'),
+			sensors: sortedStations.filter((s) => isSensorStationType(s.type)),
+			unclassified: sortedStations.filter((s) => s.type === 'Unclassified'),
 		}),
 		[sortedStations],
 	)

@@ -23,10 +23,12 @@ export default function DropdownMenu({
 	options,
 	onClick,
 	iconColor,
+	pressedColor,
 }: {
-	options: Map<string, AreaMenuOptionValue[]>
+	options: AreaMenuOptionValue[]
 	onClick: (option: AreaMenuOptionValue) => void
 	iconColor?: string
+	pressedColor?: string
 }) {
 	const [isExpanded, setIsExpanded] = useState(false)
 	const [anchor, setAnchor] = useState<{
@@ -188,6 +190,7 @@ export default function DropdownMenu({
 					onPress={openMenu}
 					icon="dots-vertical"
 					iconColor={iconColor ?? theme.colors.textPrimary}
+					pressedColor={pressedColor}
 					hapticFeedback={false}
 				/>
 			</View>
@@ -225,109 +228,104 @@ export default function DropdownMenu({
 								}}
 								onLayout={onMenuLayout}
 							>
-								{Array.from(options.entries()).map(([header, values], idx) => (
-									<View key={header}>
-										{values.map((value, idx) => (
-											<View key={value}>
-												<Pressable
-													onPress={() => {
-														closeMenu()
-														onClick(value)
+								{options.map((value) => (
+									<View key={value}>
+										<Pressable
+											onPress={() => {
+												closeMenu()
+												onClick(value)
+											}}
+											style={({ pressed }) => ({
+												backgroundColor: pressed
+													? theme.colors.accentTint
+													: 'transparent',
+												paddingHorizontal: theme.space.xl,
+												height: theme.space.buttonSize,
+												justifyContent: 'center',
+												alignItems: 'flex-start',
+											})}
+											hitSlop={8}
+										>
+											<View
+												style={{
+													flexDirection: 'row',
+													alignItems: 'center',
+													flexShrink: 0,
+													gap: theme.space.sm,
+												}}
+											>
+												<View
+													style={{
+														alignItems: 'center',
+														justifyContent: 'flex-start',
+														flexShrink: 0,
+														width: 32,
 													}}
-													style={({ pressed }) => ({
-														backgroundColor: pressed
-															? theme.colors.accentTint
-															: 'transparent',
-														paddingHorizontal: theme.space.xl,
-														height: theme.space.buttonSize,
-														justifyContent: 'center',
-														alignItems: 'flex-start',
-													})}
-													hitSlop={8}
 												>
-													<View
+													{value === AreaMenuOptionValue.Edit ? (
+														<MaterialCommunityIcons
+															name="pencil-outline"
+															size={28}
+															color={theme.colors.textPrimary}
+														/>
+													) : value === AreaMenuOptionValue.Unlink ? (
+														<MaterialCommunityIcons
+															name="link-off"
+															size={28}
+															color={theme.colors.textPrimary}
+														/>
+													) : value === AreaMenuOptionValue.Reboot ? (
+														<MaterialCommunityIcons
+															name="restart"
+															size={28}
+															color={theme.colors.textPrimary}
+														/>
+													) : value === AreaMenuOptionValue.Connectivity ? (
+														<MaterialCommunityIcons
+															name="wifi"
+															size={24}
+															color={theme.colors.textPrimary}
+														/>
+													) : value === AreaMenuOptionValue.OTAUpdate ? (
+														<MaterialCommunityIcons
+															name="file-upload-outline"
+															size={28}
+															color={theme.colors.textPrimary}
+														/>
+													) : value === AreaMenuOptionValue.Logs ? (
+														<MaterialCommunityIcons
+															name="file-document-outline"
+															size={28}
+															color={theme.colors.textPrimary}
+														/>
+													) : null}
+												</View>
+
+												<View
+													style={{
+														marginLeft: theme.space.x3s,
+														flexShrink: 0,
+													}}
+												>
+													<Text
 														style={{
-															flexDirection: 'row',
-															alignItems: 'center',
+															color: theme.colors.textPrimary,
+															fontSize: theme.font.base,
+															fontWeight: '500',
 															flexShrink: 0,
-															gap: theme.space.sm,
 														}}
 													>
-														<View
-															style={{
-																alignItems: 'center',
-																justifyContent: 'flex-start',
-																flexShrink: 0,
-																width: 32,
-															}}
-														>
-															{value === AreaMenuOptionValue.Edit ? (
-																<MaterialCommunityIcons
-																	name="pencil-outline"
-																	size={28}
-																	color={theme.colors.textPrimary}
-																/>
-															) : value === AreaMenuOptionValue.Unlink ? (
-																<MaterialCommunityIcons
-																	name="link-off"
-																	size={28}
-																	color={theme.colors.textPrimary}
-																/>
-															) : value === AreaMenuOptionValue.Reboot ? (
-																<MaterialCommunityIcons
-																	name="restart"
-																	size={28}
-																	color={theme.colors.textPrimary}
-																/>
-															) : value === AreaMenuOptionValue.Connectivity ? (
-																<MaterialCommunityIcons
-																	name="wifi"
-																	size={24}
-																	color={theme.colors.textPrimary}
-																/>
-															) : value === AreaMenuOptionValue.OTAUpdate ? (
-																<MaterialCommunityIcons
-																	name="file-upload-outline"
-																	size={28}
-																	color={theme.colors.textPrimary}
-																/>
-															) : value === AreaMenuOptionValue.Logs ? (
-																<MaterialCommunityIcons
-																	name="file-document-outline"
-																	size={28}
-																	color={theme.colors.textPrimary}
-																/>
-															) : null}
-														</View>
-
-														<View
-															style={{
-																marginLeft: theme.space.x3s,
-																flexShrink: 0,
-															}}
-														>
-															<Text
-																style={{
-																	color: theme.colors.textPrimary,
-																	fontSize: theme.font.base,
-																	fontWeight: '500',
-																	flexShrink: 0,
-																}}
-															>
-																{value
-																	.split('-')
-																	.map(
-																		(word) =>
-																			word.charAt(0).toUpperCase() +
-																			word.slice(1),
-																	)
-																	.join(' ')}
-															</Text>
-														</View>
-													</View>
-												</Pressable>
+														{value
+															.split('-')
+															.map(
+																(word) =>
+																	word.charAt(0).toUpperCase() + word.slice(1),
+															)
+															.join(' ')}
+													</Text>
+												</View>
 											</View>
-										))}
+										</Pressable>
 									</View>
 								))}
 							</Animated.View>

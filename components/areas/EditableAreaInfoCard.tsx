@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { Text, View } from 'react-native'
-
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
 import { AreaUpdatePayload } from '@/types/area'
@@ -57,9 +55,7 @@ export function EditableAreaInfoCard({
 				<EditableInfoCardItem
 					label="Area Name"
 					text={friendlyName}
-					onChangeText={(value) =>
-						onInfoChange('friendlyName', value)
-					}
+					onChangeText={(value) => onInfoChange('friendlyName', value)}
 					editable
 					maxLength={40}
 					icon="label-outline"
@@ -78,9 +74,7 @@ export function EditableAreaInfoCard({
 				<EditableInfoCardItem
 					label="Area Description"
 					text={description}
-					onChangeText={(value) =>
-						onInfoChange('description', value)
-					}
+					onChangeText={(value) => onInfoChange('description', value)}
 					editable
 					multiline
 					numberOfLines={3}
@@ -90,9 +84,7 @@ export function EditableAreaInfoCard({
 					error={undefined}
 					initialValue={initialValues?.description}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('description', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('description', v) : undefined
 					}
 					confirmLoading={confirmingField === 'description'}
 				/>
@@ -103,9 +95,7 @@ export function EditableAreaInfoCard({
 					<EditableInfoCardItem
 						label="Area Location"
 						text={locationLabel}
-						onChangeText={(value) =>
-							onInfoChange('locationLabel', value)
-						}
+						onChangeText={(value) => onInfoChange('locationLabel', value)}
 						editable
 						maxLength={255}
 						icon="map-marker-outline"
@@ -139,7 +129,7 @@ export function EditableAreaInfoCard({
 								paddingBottom: theme.space.md,
 							}}
 						>
-							<View
+							{/* <View
 								style={{
 									flexDirection: 'row',
 									alignItems: 'center',
@@ -151,15 +141,15 @@ export function EditableAreaInfoCard({
 									size={theme.space.iconSizeSm}
 									color={theme.colors.textMuted}
 								/>
-								<Text
+								{/* <Text
 									style={{
 										fontSize: theme.font.sm,
 										color: theme.colors.textMuted,
 									}}
 								>
 									{locationCoordinates}
-								</Text>
-							</View>
+								</Text> */}
+							{/* </View> */}
 
 							<Button
 								variant="tertiary"

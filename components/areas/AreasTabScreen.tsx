@@ -12,13 +12,14 @@ import StatusScreen from '@/components/status/StatusScreen'
 import Button from '@/components/ui/Button'
 import CardItem from '@/components/ui/CardItem'
 import { useTheme } from '@/context/ThemeContext'
+import { isSensorStationType } from '@/data/area'
 import { useDiscoveryStore } from '@/stores/discoveryStore'
 import type { AreaDbData, AreaMqttData } from '@/types/area'
 
 import OfflineBanner from '../ui/OfflineBanner'
 import AreaBottomSheet from './AreaBottomSheet'
 
-export interface AreasScreenProps {
+export interface AreasTabScreenProps {
 	areas: AreaDbData[]
 	mqttAreas: Record<string, AreaMqttData>
 	isAreaOnline: (key: string) => boolean
@@ -93,7 +94,7 @@ function UpdatingAwareCard({
 	)
 }
 
-export default function AreasScreen({
+export default function AreasTabScreen({
 	areas = [],
 	mqttAreas,
 	isAreaOnline,
@@ -111,7 +112,7 @@ export default function AreasScreen({
 	isOffline,
 	hasServerError,
 	canUseRemoteLinking,
-}: AreasScreenProps) {
+}: AreasTabScreenProps) {
 	const theme = useTheme()
 	const serverUnavailable = isOffline || hasServerError
 	const canOpenLinkSheet = canUseRemoteLinking && !serverUnavailable
@@ -193,16 +194,8 @@ export default function AreasScreen({
 									lineHeight: theme.lineHeight.paragraph,
 								}}
 							>
-								You can link a device by scanning a QR code or entering a{' '}
-								<Text
-									style={{
-										fontVariant: ['small-caps'],
-										color: theme.colors.textPrimary,
-										fontWeight: '500',
-									}}
-								>
-									Link Code
-								</Text>
+								You can link a device by scanning a QR code or entering a Link
+								Code
 							</Text>
 						}
 						buttonLabel="Link Area"
@@ -324,8 +317,10 @@ export default function AreasScreen({
 				const isUpdating = mqttAreas[area.key]?.updating ?? false
 				const allStations = Object.values(areaData.stations || {})
 				const solenoids = allStations.filter((s) => s.type === 'Solenoid')
-				const fertilizers = allStations.filter((s) => s.type === 'Fertilizer')
-				const sensors = allStations.filter((s) => s.type === 'Sensor')
+				const fertilizers = allStations.filter(
+					(s) => s.type === 'FertilizerPump',
+				)
+				const sensors = allStations.filter((s) => isSensorStationType(s.type))
 
 				const activeSolenoid = solenoids.find(
 					(station) => station.status.state === 'Running',

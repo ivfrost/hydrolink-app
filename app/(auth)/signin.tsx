@@ -46,7 +46,7 @@ export default function SignIn() {
 			})
 		},
 		onSuccess: async (data: SignInResponse) => {
-			if (data.error !== null || !data.details) {
+			if (data.error != null || !data.details) {
 				Burnt.toast({
 					title:
 						data.message ||
@@ -157,7 +157,7 @@ export default function SignIn() {
 							autoCapitalize="none"
 							autoCorrect={false}
 							onChangeText={(value) => handleInputChange('email', value)}
-							labelBackground={theme.colors.modal}
+							labelBackground={theme.colors.card}
 						/>
 						{errorState.email ? (
 							<Text
@@ -179,7 +179,7 @@ export default function SignIn() {
 							autoCorrect={false}
 							autoComplete="password"
 							onChangeText={(value) => handleInputChange('password', value)}
-							labelBackground={theme.colors.modal}
+							labelBackground={theme.colors.card}
 							onSubmitEditing={signin}
 							textContentType="password"
 							secureTextEntry

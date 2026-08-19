@@ -11,9 +11,7 @@ export const queryClient = new QueryClient({
 	},
 })
 
-// Key used for the persisted query cache. Kept in one place so logout can
-// remove the persisted copy explicitly instead of relying on the default
-// string ('REACT_QUERY_OFFLINE_CACHE') living in two files.
+// Key used for the persisted query cache.
 export const queryCacheStorageKey = 'REACT_QUERY_OFFLINE_CACHE'
 
 export const asyncStoragePersister = createAsyncStoragePersister({
