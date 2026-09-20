@@ -9,7 +9,7 @@ export default function Subtext({ text }: { text: string }) {
 		<Text
 			style={{
 				fontSize: theme.font.xs,
-				fontWeight: '400',
+				fontWeight: theme.fontWeight.regular,
 				color: theme.colors.textMuted,
 				marginTop: theme.space.sm,
 				marginLeft: theme.space.x2s,

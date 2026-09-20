@@ -41,3 +41,12 @@ example
 # generated native folders
 /ios
 /android
+
+# local notes and AI reference material
+NOTES.md
+RESOURCES.md
+/assets/lesson.css
+/assets/quiz.js
+/learning-records/
+/lessons/
+/reference/

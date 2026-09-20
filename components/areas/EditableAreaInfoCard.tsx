@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { AreaUpdatePayload } from '@/types/area'
 import { getFormattedGPSCoordinates } from '@/utils/getFormattedGPSCoordinates'
 
-import Button from '../ui/Button'
 import EditableInfoCardItem from '../ui/EditableInfoCardItem'
 
 interface EditableAreaInfoCardProps {
@@ -46,14 +46,14 @@ export function EditableAreaInfoCard({
 			style={{
 				borderRadius: theme.radius.card,
 				overflow: 'hidden',
-				backgroundColor: theme.colors.card,
+				backgroundColor: theme.colors.surfaceRaised,
 				width: '100%',
 				elevation: 0,
 			}}
 		>
 			{friendlyName !== undefined && (
 				<EditableInfoCardItem
-					label="Area Name"
+					label={t('profile.areaName')}
 					text={friendlyName}
 					onChangeText={(value) => onInfoChange('friendlyName', value)}
 					editable
@@ -72,7 +72,7 @@ export function EditableAreaInfoCard({
 
 			{description !== undefined && (
 				<EditableInfoCardItem
-					label="Area Description"
+					label={t('profile.areaDescription')}
 					text={description}
 					onChangeText={(value) => onInfoChange('description', value)}
 					editable
@@ -93,7 +93,7 @@ export function EditableAreaInfoCard({
 			{locationLabel !== undefined && (
 				<View style={{ width: '100%' }}>
 					<EditableInfoCardItem
-						label="Area Location"
+						label={t('profile.areaLocation')}
 						text={locationLabel}
 						onChangeText={(value) => onInfoChange('locationLabel', value)}
 						editable
@@ -109,10 +109,10 @@ export function EditableAreaInfoCard({
 						confirmLoading={confirmingField === 'locationLabel'}
 					/>
 
-					<View
+					{/* <View
 						style={{
 							marginVertical: theme.space.md,
-							backgroundColor: theme.colors.border,
+							backgroundColor: theme.colors.outline,
 							height: 1,
 						}}
 					/>
@@ -129,34 +129,12 @@ export function EditableAreaInfoCard({
 								paddingBottom: theme.space.md,
 							}}
 						>
-							{/* <View
-								style={{
-									flexDirection: 'row',
-									alignItems: 'center',
-									gap: theme.space.xs,
-								}}
-							>
-								<MaterialCommunityIcons
-									name="pin"
-									size={theme.space.iconSizeSm}
-									color={theme.colors.textMuted}
-								/>
-								{/* <Text
-									style={{
-										fontSize: theme.font.sm,
-										color: theme.colors.textMuted,
-									}}
-								>
-									{locationCoordinates}
-								</Text> */}
-							{/* </View> */}
-
 							<Button
 								variant="tertiary"
 								modifier={['outlined', 'small']}
 								icon="crosshairs-gps"
 								iconSize={theme.space.iconSizeSm}
-								label="Pin Location"
+								label={t('profile.pinLocation')}
 								loading={isFetchingLocation}
 								onPress={handleCaptureLocation}
 							/>
@@ -184,8 +162,8 @@ export function EditableAreaInfoCard({
 								loading={isFetchingLocation}
 								onPress={handleCaptureLocation}
 							/>
-						</View>
-					)}
+						</View> 
+					)}*/}
 				</View>
 			)}
 		</View>

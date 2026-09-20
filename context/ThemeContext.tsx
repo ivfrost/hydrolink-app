@@ -4,15 +4,18 @@ import { useColorScheme } from 'react-native'
 const themeTokens = {
 	colors: {
 		light: {
-			background: '#f6f8fb',
-			card: '#ffffff',
-			modal: '#ffffff',
+			// Surfaces are named for where they sit, so nesting reads directly:
+			// page -> raised card -> sunken inset, plus the modal overlay.
+			surface: '#f6f8fb',
+			surfaceRaised: '#ffffff',
+			surfaceSunken: '#f5f7fa',
+			surfaceOverlay: '#ffffff',
 			scrim: 'rgba(0,0,0,0.5)',
 			textPrimary: '#203247',
 			textSecondary: '#4d5a66',
 			textMuted: '#8a97a8',
-			inputBackground: '#f5f7fa',
-			border: '#e7ecf2',
+			// Boundaries (outline for component edges).
+			outline: '#e7ecf2',
 			accent: '#4a6a8a',
 			accentTint: '#eef2f7',
 			gradientStart: '#f4f6f9',
@@ -23,10 +26,10 @@ const themeTokens = {
 			buttonSecondaryText: '#1b2a3b',
 			buttonSecondaryBorder: '#d7dee5',
 			buttonDestructive: '#c44f3f',
+			buttonDestructiveText: '#ffffff',
 			buttonDisabled: '#d7dee5',
 			buttonDisabledText: '#5d6b7c',
 
-			cardPressed: '#f0f3f7',
 			buttonPrimaryPressed: '#141f2b',
 			buttonSecondaryPressed: '#c4cad1',
 			buttonTertiaryPressed: '#eef2f7',
@@ -34,7 +37,6 @@ const themeTokens = {
 
 			running: '#4a6a8a',
 			online: '#1a8f4c',
-			success: '#1a8f4c',
 			warning: '#a16a1c',
 			fault: '#ad3b2c',
 			offline: '#5d6b7c',
@@ -43,7 +45,6 @@ const themeTokens = {
 
 			runningBg: '#eef2f7',
 			onlineBg: '#e7f6ec',
-			successBg: '#e7f6ec',
 			warningBg: '#FFF6E8',
 			faultBg: '#f7f3f3',
 			offlineBg: '#F3F5F8',
@@ -52,7 +53,6 @@ const themeTokens = {
 
 			runningBorder: '#D7DEE5',
 			onlineBorder: '#bfe5cd',
-			successBorder: '#bfe5cd',
 			warningBorder: '#F4E3C8',
 			faultBorder: '#F1D5D2',
 			offlineBorder: '#DDE2E8',
@@ -61,15 +61,16 @@ const themeTokens = {
 		},
 
 		dark: {
-			background: '#0f1115',
-			card: '#1a1e26',
-			modal: '#1e222a',
+			// Surfaces (see the light-mode note above).
+			surface: '#0f1115',
+			surfaceRaised: '#1a1e26',
+			surfaceSunken: '#1e2430',
+			surfaceOverlay: '#1e222a',
 			scrim: 'rgba(0,0,0,0.7)',
 			textPrimary: '#f8fafc',
 			textSecondary: '#94a3b8',
 			textMuted: '#64748b',
-			inputBackground: '#1e2430',
-			border: '#2a3342',
+			outline: '#2a3342',
 			accent: '#6ba3e8',
 			accentTint: '#1e293b',
 			gradientStart: '#1a1e26',
@@ -80,10 +81,10 @@ const themeTokens = {
 			buttonSecondaryText: '#ffffff',
 			buttonSecondaryBorder: '#3d4656',
 			buttonDestructive: '#e55353',
+			buttonDestructiveText: '#ffffff',
 			buttonDisabled: '#2c323f',
 			buttonDisabledText: '#64748b',
 
-			cardPressed: '#222731',
 			buttonPrimaryPressed: '#4d85c9',
 			buttonSecondaryPressed: '#363d4a',
 			buttonTertiaryPressed: '#1e293b',
@@ -91,7 +92,6 @@ const themeTokens = {
 
 			running: '#6ba3e8',
 			online: '#4ade80',
-			success: '#4ade80',
 			warning: '#fbbf24',
 			fault: '#f87171',
 			offline: '#94A3B8',
@@ -100,7 +100,6 @@ const themeTokens = {
 
 			runningBg: 'rgba(107, 163, 232, 0.15)',
 			onlineBg: 'rgba(74, 222, 128, 0.15)',
-			successBg: 'rgba(74, 222, 128, 0.15)',
 			warningBg: 'rgba(251, 191, 36, 0.15)',
 			faultBg: 'rgba(248, 113, 113, 0.15)',
 			offlineBg: 'rgba(148, 163, 184, 0.15)',
@@ -109,7 +108,6 @@ const themeTokens = {
 
 			runningBorder: 'rgba(107, 163, 232, 0.3)',
 			onlineBorder: 'rgba(74, 222, 128, 0.3)',
-			successBorder: 'rgba(74, 222, 128, 0.3)',
 			warningBorder: 'rgba(251, 191, 36, 0.3)',
 			faultBorder: 'rgba(248, 113, 113, 0.3)',
 			offlineBorder: 'rgba(148, 163, 184, 0.3)',
@@ -130,6 +128,9 @@ const themeTokens = {
 		x2l: 24,
 		x3l: 32,
 		x4l: 40,
+		cardVerticalPadding: 20,
+		compactCardVerticalPadding: 16,
+		multilineCardVerticalPadding: 24,
 		iconSize: 22,
 		iconSizeSm: 14,
 		iconSizeLg: 26,
@@ -162,6 +163,7 @@ const themeTokens = {
 	},
 
 	font: {
+		xxs: 10,
 		xs: 12,
 		sm: 14,
 		base: 16,
@@ -170,10 +172,29 @@ const themeTokens = {
 		xl: 28,
 	},
 
+	fontWeight: {
+		regular: '400',
+		medium: '500',
+		semibold: '600',
+		bold: '700',
+	},
+
 	lineHeight: {
+		xs: 16,
+		sm: 20,
+		base: 24,
+		md: 26,
+		lg: 32,
+		xl: 36,
 		cardTextTitle: 20,
 		cardTextSubtitle: 18,
 		paragraph: 22,
+	},
+
+	duration: {
+		fast: 150,
+		normal: 250,
+		slow: 400,
 	},
 	terminal: {
 		bg: '#0d1117',
@@ -199,7 +220,9 @@ interface ThemeContextType {
 	space: typeof themeTokens.space
 	radius: typeof themeTokens.radius
 	font: typeof themeTokens.font
+	fontWeight: typeof themeTokens.fontWeight
 	lineHeight: typeof themeTokens.lineHeight
+	duration: typeof themeTokens.duration
 }
 
 export const ThemeContext = createContext<ThemeContextType | null>(null)
@@ -215,7 +238,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 		space: themeTokens.space,
 		radius: themeTokens.radius,
 		font: themeTokens.font,
+		fontWeight: themeTokens.fontWeight,
 		lineHeight: themeTokens.lineHeight,
+		duration: themeTokens.duration,
 	}
 
 	return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

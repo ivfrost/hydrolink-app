@@ -1,12 +1,14 @@
-import { useState } from 'react'
-import { Image, Pressable, Text, View } from 'react-native'
+import { useMemo, useState } from 'react'
+import { Pressable, Text, View } from 'react-native'
 
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import { UpdatingLabel } from '@/components/areas/AreaCardItem'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { AreaDbData } from '@/types/area'
 import resolveImageUrl from '@/utils/resolveImageUrl'
 
@@ -27,6 +29,10 @@ export default function AreaHeader({
 	const headerHeight = useHeaderHeight()
 	const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 	const [descriptionNeedsToggle, setDescriptionNeedsToggle] = useState(false)
+	const imageUri = useMemo(
+		() => resolveImageUrl(dbArea.imageUrl),
+		[dbArea.imageUrl],
+	)
 	const statusColor = updating
 		? theme.colors.online
 		: online
@@ -60,7 +66,7 @@ export default function AreaHeader({
 					numberOfLines={1}
 					style={{
 						fontSize: theme.font.xl,
-						fontWeight: '600',
+						fontWeight: theme.fontWeight.semibold,
 						letterSpacing: -0.3,
 						color: theme.colors.textPrimary,
 						flexShrink: 1,
@@ -69,9 +75,9 @@ export default function AreaHeader({
 					{dbArea.friendlyName || dbArea.key || 'Unnamed Area'}
 				</Text>
 				<Badge
-					text={online ? 'Online' : 'Offline'}
+					text={online ? t('status.online') : t('status.offline')}
 					icon="circle"
-					iconSize={8}
+					iconSize={6}
 					color={statusColor}
 					backgroundColor={statusBg}
 				/>
@@ -96,14 +102,14 @@ export default function AreaHeader({
 							icon="pound"
 							iconSize={12}
 							color={theme.colors.textMuted}
-							backgroundColor={theme.colors.inputBackground}
+							backgroundColor={theme.colors.surfaceSunken}
 						/>
 						<Badge
 							text={dbArea.locationLabel || 'Unknown Location'}
 							icon="map-marker"
 							iconSize={12}
 							color={theme.colors.textMuted}
-							backgroundColor={theme.colors.inputBackground}
+							backgroundColor={theme.colors.surfaceSunken}
 						/>
 					</View>
 					{dbArea.description?.trim() && (
@@ -117,14 +123,14 @@ export default function AreaHeader({
 								paddingStart: theme.space.md,
 								paddingVertical: theme.space.sm,
 								borderRadius: theme.radius.boxInCard,
-								backgroundColor: theme.colors.card,
+								backgroundColor: theme.colors.surfaceRaised,
 							}}
 						>
 							<MaterialCommunityIcons
 								name="note-text-outline"
 								size={16}
 								color={theme.colors.textMuted}
-								style={{ marginTop: 2 }}
+								style={{ marginTop: theme.space.x3s }}
 							/>
 							<View style={{ flex: 1 }}>
 								<Text
@@ -161,7 +167,7 @@ export default function AreaHeader({
 										<Text
 											style={{
 												fontSize: theme.font.xs,
-												fontWeight: '600',
+												fontWeight: theme.fontWeight.semibold,
 												color: theme.colors.accent,
 											}}
 										>
@@ -179,23 +185,20 @@ export default function AreaHeader({
 
 	return (
 		<View style={{ gap: theme.space.lg }}>
-			{dbArea.imageUrl ? (
+			{imageUri ? (
 				<>
 					{/* Full-bleed hero image — extends behind the transparent header. */}
 					<View style={{ marginHorizontal: -theme.space.lg }}>
 						<Image
-							source={{ uri: resolveImageUrl(dbArea.imageUrl) }}
+							source={imageUri}
+							cachePolicy="memory-disk"
+							contentFit="cover"
 							style={{
 								width: '100%',
 								aspectRatio: 16 / 9,
 							}}
-							resizeMode="cover"
 							onError={(e) =>
-								console.log(
-									'Failed to load image from URI:',
-									resolveImageUrl(dbArea.imageUrl),
-									e.nativeEvent.error,
-								)
+								console.log('Failed to load image from URI:', imageUri, e.error)
 							}
 						/>
 						{/* Scrim: dark at top so the header text stays readable. */}
@@ -216,10 +219,10 @@ export default function AreaHeader({
 						style={{
 							marginHorizontal: -theme.space.lg,
 							marginTop: -theme.space.x3l,
-							backgroundColor: theme.colors.background,
+							backgroundColor: theme.colors.surface,
 							borderTopLeftRadius: theme.radius.viewOverImage,
 							borderTopRightRadius: theme.radius.viewOverImage,
-							paddingTop: theme.space.lg,
+							paddingTop: theme.space.x2l,
 							paddingHorizontal: theme.space.lg,
 							paddingBottom: theme.space.lg,
 						}}

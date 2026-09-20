@@ -3,6 +3,7 @@ import { View } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 import Button from '../ui/Button'
 
@@ -35,11 +36,11 @@ export function StickyActionButtons({
 				flexDirection: 'row',
 				gap: theme.space.md,
 				paddingHorizontal: theme.space.lg,
-				backgroundColor: theme.colors.modal,
+				backgroundColor: theme.colors.surfaceOverlay,
 				paddingTop: theme.space.sm,
 				paddingBottom: bottomInset + theme.space.sm,
 				borderTopWidth: 1,
-				borderTopColor: theme.colors.border,
+				borderTopColor: theme.colors.outline,
 				shadowColor: theme.colors.textPrimary,
 				shadowOffset: { width: 0, height: -2 },
 				shadowOpacity: 0.1,
@@ -69,10 +70,10 @@ export function StickyActionButtons({
 					opacity: !disabled ? 1 : 0.4,
 				}}
 				disabled={disabled || isLoading}
-				label="Discard"
+				label={t('common.discard')}
 			/>
 			<Button
-				label="Save"
+				label={t('common.save')}
 				variant="primary"
 				onPress={onSave}
 				icon={

@@ -16,7 +16,7 @@ export default function Subtitle({
 		<Text
 			style={{
 				fontSize: theme.font.base,
-				fontWeight: '400',
+				fontWeight: theme.fontWeight.regular,
 				color: theme.colors.textSecondary,
 				textAlign: textAlign,
 				paddingHorizontal: theme.space.x2s,

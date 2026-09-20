@@ -22,6 +22,10 @@ export interface CardItemProps {
 	rightElement?: React.ReactNode
 	bottomElement?: React.ReactNode
 	disabled?: boolean
+	compact?: boolean
+	multiline?: boolean
+	verticalPadding?: number
+	hideTitle?: boolean
 }
 
 export default function CardItem({
@@ -37,6 +41,10 @@ export default function CardItem({
 	rightElement,
 	bottomElement,
 	disabled = false,
+	compact = false,
+	multiline = false,
+	verticalPadding,
+	hideTitle = false,
 }: CardItemProps) {
 	const theme = useTheme()
 
@@ -48,8 +56,14 @@ export default function CardItem({
 			style={{
 				flex: 1,
 				width: '100%',
-				paddingVertical: theme.space.xl,
-				gap: theme.space.md,
+				paddingVertical:
+					verticalPadding ??
+					(compact
+						? theme.space.compactCardVerticalPadding
+						: multiline
+							? theme.space.multilineCardVerticalPadding
+							: theme.space.cardVerticalPadding),
+				gap: compact ? theme.space.sm : theme.space.lg,
 			}}
 		>
 			<View
@@ -77,38 +91,43 @@ export default function CardItem({
 					}}
 				>
 					<View style={{ flex: 1 }}>
-						<Text
-							style={{
-								fontSize: theme.font.base,
-								fontWeight: titleFontWeight,
-								color: disabled
-									? theme.colors.buttonDisabledText
-									: (titleColor ?? theme.colors.textPrimary),
-								lineHeight: theme.lineHeight.cardTextTitle,
-							}}
-							numberOfLines={1}
-						>
-							{title}
-						</Text>
-						{subtitle && (
+						{!hideTitle && (
 							<Text
 								style={{
-									fontSize: theme.font.sm,
-									fontWeight: '400',
-									color: theme.colors.textSecondary,
-									lineHeight: theme.lineHeight.cardTextSubtitle,
+									fontSize: theme.font.base,
+									fontWeight: titleFontWeight,
+									color: disabled
+										? theme.colors.buttonDisabledText
+										: (titleColor ?? theme.colors.textPrimary),
+									lineHeight: theme.lineHeight.cardTextTitle,
 								}}
-								numberOfLines={1}
+								numberOfLines={multiline ? 3 : 1}
 							>
-								{subtitle}
+								{title}
 							</Text>
 						)}
+						{subtitle &&
+							(typeof subtitle === 'string' ? (
+								<Text
+									style={{
+										fontSize: theme.font.sm,
+										fontWeight: theme.fontWeight.regular,
+										color: theme.colors.textSecondary,
+										lineHeight: theme.lineHeight.cardTextSubtitle,
+									}}
+									numberOfLines={multiline ? 3 : 1}
+								>
+									{subtitle}
+								</Text>
+							) : (
+								<View style={{ flexShrink: 1 }}>{subtitle}</View>
+							))}
 					</View>
 
 					{rightElement && (
 						<View
 							style={{
-								alignItems: 'center',
+								alignItems: 'flex-end',
 								justifyContent: 'center',
 								overflow: 'hidden',
 								paddingLeft: theme.space.md,

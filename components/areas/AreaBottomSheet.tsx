@@ -7,6 +7,7 @@ import { Portal } from '@gorhom/portal'
 
 import BottomSheet from '@/components/layout/BottomSheet'
 import BottomSheetInput from '@/components/ui/BottomSheetInput'
+import { t } from '@/i18n'
 
 import Button from '../ui/Button'
 
@@ -35,7 +36,7 @@ export default function AreaBottomSheet({
 		<Portal>
 			<BottomSheet ref={bottomSheetRef} snapPoints={[364]}>
 				<Button
-					label="Scan QR Code"
+					label={t('areas.scanQrCode')}
 					modifier={['tall', 'full']}
 					icon={
 						<MaterialIcons
@@ -51,13 +52,13 @@ export default function AreaBottomSheet({
 						flexDirection: 'row',
 						width: '100%',
 						alignItems: 'center',
-						gap: 20,
-						marginVertical: 10,
+						gap: theme.space.x2l,
+						marginVertical: theme.space.base,
 					}}
 				>
 					<View
 						style={{
-							backgroundColor: theme.colors.border,
+							backgroundColor: theme.colors.outline,
 							height: 2,
 							flex: 1,
 						}}
@@ -67,7 +68,7 @@ export default function AreaBottomSheet({
 					</Text>
 					<View
 						style={{
-							backgroundColor: theme.colors.border,
+							backgroundColor: theme.colors.outline,
 							height: 2,
 							flex: 1,
 						}}
@@ -75,14 +76,14 @@ export default function AreaBottomSheet({
 				</View>
 				<View style={{ gap: theme.space.md, marginTop: theme.space.x2l }}>
 					<BottomSheetInput
-						label="Enter Link Code"
+						label={t('areas.enterLinkCode')}
 						value={linkCode}
 						onChangeText={setLinkCode}
 						onSubmitEditing={onLinkCodeSubmit}
-						labelBackground={theme.colors.card}
+						labelBackground={theme.colors.surfaceRaised}
 					/>
 					<Button
-						label="Submit"
+						label={t('areas.submit')}
 						variant="secondary"
 						modifier={['tall', 'full']}
 						disabled={

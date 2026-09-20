@@ -35,6 +35,7 @@ export interface ButtonProps extends TouchableOpacityProps {
 	iconPosition?: 'left' | 'right'
 	extraStyles?: StyleProp<ViewStyle>
 	hapticFeedback?: boolean
+	allowDisabledPress?: boolean
 }
 
 export default function Button({
@@ -55,6 +56,7 @@ export default function Button({
 	onPress,
 	isSubmenuOpen = false,
 	hapticFeedback = true,
+	allowDisabledPress = false,
 }: ButtonProps) {
 	const theme = useTheme()
 
@@ -70,7 +72,7 @@ export default function Button({
 	const effectiveIcon = icon ?? (variant === 'confirm' ? 'check' : undefined)
 
 	const handlePress = () => {
-		if (isMuted) return
+		if (isMuted && !allowDisabledPress) return
 		hapticFeedback && Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 		onPress?.()
 	}
@@ -103,7 +105,7 @@ export default function Button({
 		primary: theme.colors.buttonPrimaryText,
 		secondary: theme.colors.buttonSecondaryText,
 		tertiary: theme.colors.textSecondary,
-		destructive: '#ffffff',
+		destructive: theme.colors.buttonDestructiveText,
 		confirm: theme.colors.buttonPrimaryText,
 	} as const
 
@@ -191,7 +193,7 @@ export default function Button({
 				variant === 'tertiary' && isOutlined ? (outlineWidth ?? 1) : 0,
 			borderColor:
 				variant === 'tertiary' && isOutlined
-					? (outlineColor ?? theme.colors.border)
+					? (outlineColor ?? theme.colors.outline)
 					: 'transparent',
 			...(isFab && {
 				shadowColor: '#000',
@@ -203,7 +205,7 @@ export default function Button({
 		},
 		text: {
 			fontSize: isSmall ? theme.font.sm : theme.font.base,
-			fontWeight: '500',
+			fontWeight: theme.fontWeight.medium,
 			textAlign: 'center',
 			flexShrink: 1,
 			color: isMuted
@@ -262,8 +264,8 @@ export default function Button({
 		<Pressable
 			ref={ref}
 			onPress={handlePress}
-			disabled={disabled}
-			hitSlop={20}
+			disabled={disabled && !allowDisabledPress}
+			hitSlop={variant === 'confirm' ? 30 : 20}
 			style={({ pressed }) => {
 				const isPressed = pressed && !isMuted
 

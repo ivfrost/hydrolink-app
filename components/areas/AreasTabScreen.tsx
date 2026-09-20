@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode, type RefObject } from 'react'
-import { Animated, Text } from 'react-native'
+import { Animated, Text, View } from 'react-native'
 import { RefreshControl } from 'react-native-gesture-handler'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
@@ -13,6 +13,7 @@ import Button from '@/components/ui/Button'
 import CardItem from '@/components/ui/CardItem'
 import { useTheme } from '@/context/ThemeContext'
 import { isSensorStationType } from '@/data/area'
+import { t } from '@/i18n'
 import { useDiscoveryStore } from '@/stores/discoveryStore'
 import type { AreaDbData, AreaMqttData } from '@/types/area'
 
@@ -41,8 +42,7 @@ export interface AreasTabScreenProps {
 	onDiscoverPress?: () => void
 }
 
-// Area card that "breathes" (pulses) and gets a dashed accent border while the
-// device is undergoing an OTA firmware update.
+// Area card that "breathes" while the device is undergoing an OTA firmware update.
 function UpdatingAwareCard({
 	updating,
 	children,
@@ -96,7 +96,7 @@ function UpdatingAwareCard({
 
 export default function AreasTabScreen({
 	areas = [],
-	mqttAreas,
+	mqttAreas = {},
 	isAreaOnline,
 	isRefreshing,
 	onRefresh,
@@ -116,7 +116,22 @@ export default function AreasTabScreen({
 	const theme = useTheme()
 	const serverUnavailable = isOffline || hasServerError
 	const canOpenLinkSheet = canUseRemoteLinking && !serverUnavailable
-	const discoveredDevices = useDiscoveryStore((s) => s.devices)
+	const rawDiscoveredDevices = useDiscoveryStore((s) => s.devices) as unknown
+	const discoveredDevices =
+		rawDiscoveredDevices instanceof Map
+			? rawDiscoveredDevices
+			: new Map(
+					Array.isArray(rawDiscoveredDevices)
+						? rawDiscoveredDevices
+								.filter(
+									(device): device is { deviceKey: string } =>
+										typeof device === 'object' &&
+										device !== null &&
+										typeof device.deviceKey === 'string',
+								)
+								.map((device) => [device.deviceKey, device] as const)
+						: [],
+				)
 	const linkedKeys = new Set(areas.map((a) => a.key))
 	const unlinkedLocalDevices = Array.from(discoveredDevices.values()).filter(
 		(d) => !linkedKeys.has(d.deviceKey),
@@ -125,66 +140,81 @@ export default function AreasTabScreen({
 	if (areas.length === 0) {
 		return (
 			<>
-				{serverUnavailable && (
-					<OfflineBanner
-						message={
-							isOffline ? 'No internet connection' : "Can't reach the server"
-						}
-					/>
-				)}
 				{unlinkedLocalDevices.length > 0 ? (
-					<ScrollView
-						refreshControl={
-							<RefreshControl
-								refreshing={isRefreshing}
-								onRefresh={onRefresh}
-								progressViewOffset={headerHeight}
-							/>
-						}
-					>
-						{unlinkedLocalDevices.map((device) => (
-							<Card
-								key={device.deviceKey}
-								flexDirection="column"
-								elevation={0}
-								extraStyles={{
-									borderWidth: 1,
-									borderStyle: 'dashed',
-									borderColor: theme.colors.running,
-								}}
-							>
-								<CardItem
-									title={device.deviceKey}
-									subtitle={
-										<Text
-											style={{
-												fontSize: theme.font.sm,
-												color: theme.colors.running,
-												fontWeight: '600',
-											}}
-										>
-											Found on network • Tap to link
-										</Text>
-									}
-									icon="access-point"
-									statusColor={theme.colors.running}
-									statusBg={theme.colors.runningBg}
-									onPress={() => bottomSheetRef.current?.expand()}
-									rightElement={
-										<MaterialCommunityIcons
-											name="plus"
-											size={theme.space.iconSize}
-											color={theme.colors.running}
-										/>
-									}
+					<>
+						<ScrollView
+							fab={
+								<Button
+									modifier={['fab']}
+									icon="add"
+									extraStyles={{
+										position: 'absolute',
+										right: 0,
+										bottom: 0,
+									}}
+									disabled={!canOpenLinkSheet}
+									onPress={canOpenLinkSheet ? onAddPress : undefined}
 								/>
-							</Card>
-						))}
-					</ScrollView>
+							}
+							refreshControl={
+								<RefreshControl
+									refreshing={isRefreshing}
+									onRefresh={onRefresh}
+									progressViewOffset={theme.space.x3l}
+									colors={[theme.colors.accent, theme.colors.surface]}
+								/>
+							}
+						>
+							{unlinkedLocalDevices.map((device) => (
+								<Card
+									key={device.deviceKey}
+									flexDirection="column"
+									elevation={0}
+									extraStyles={{
+										borderWidth: 1,
+										borderStyle: 'dashed',
+										borderColor: theme.colors.accent,
+										backgroundColor: theme.colors.accentTint,
+									}}
+								>
+									<CardItem
+										title={device.deviceKey}
+										subtitle={
+											<Text
+												style={{
+													fontSize: theme.font.sm,
+													color: theme.colors.textSecondary,
+												}}
+											>
+												{t('areas.foundOnNetwork')}
+											</Text>
+										}
+										icon="access-point"
+										statusColor={theme.colors.running}
+										statusBg={theme.colors.runningBg}
+										onPress={() => bottomSheetRef.current?.expand()}
+										rightElement={
+											<MaterialCommunityIcons
+												name="plus"
+												size={theme.space.iconSize}
+												color={theme.colors.running}
+											/>
+										}
+									/>
+								</Card>
+							))}
+						</ScrollView>
+					</>
 				) : (
 					<StatusScreen
-						variant="missing-data"
-						title="No Areas Linked"
+						variant={serverUnavailable ? 'network-error' : 'missing-data'}
+						title={
+							serverUnavailable
+								? isOffline
+									? 'No internet connection'
+									: "Can't reach the server"
+								: 'No areas linked'
+						}
 						customContent={
 							<Text
 								style={{
@@ -194,8 +224,11 @@ export default function AreasTabScreen({
 									lineHeight: theme.lineHeight.paragraph,
 								}}
 							>
-								You can link a device by scanning a QR code or entering a Link
-								Code
+								{serverUnavailable
+									? isOffline
+										? 'Area menu unavailable while offline'
+										: 'Area menu unavailable while the server is down'
+									: 'You can link a device by scanning a QR code or entering a Link Code'}
 							</Text>
 						}
 						buttonLabel="Link Area"
@@ -259,32 +292,42 @@ export default function AreasTabScreen({
 				const areaData = mqttAreas[area.key]
 				let subtitle: ReactNode
 				const online = isAreaOnline(area.key)
+				const isLocal = discoveredDevices.has(area.key)
+				const locationLabel =
+					area.locationLabel?.trim() || t('areas.unknownLocation')
+
+				const locationText = (
+					<Text
+						style={{
+							color: theme.colors.accent,
+							fontWeight: theme.fontWeight.semibold,
+						}}
+					>
+						{locationLabel}
+					</Text>
+				)
 
 				if (!areaData || !online) {
-					const isLocal = discoveredDevices.has(area.key)
 					const isUpdating = mqttAreas[area.key]?.updating ?? false
 
-					subtitle = isUpdating
-						? 'Updating firmware…'
-						: `${isLocal ? 'Local' : area.locationLabel?.trim() || 'Unknown Location'} • Offline`
+					subtitle = isUpdating ? (
+						<UpdatingLabel />
+					) : (
+						<Text
+							style={{
+								fontSize: theme.font.sm,
+								color: theme.colors.textSecondary,
+							}}
+						>
+							{locationText}
+							{` • ${t('areas.offline')}`}
+						</Text>
+					)
 					return (
 						<Card key={area.id + idx} flexDirection="column" elevation={0}>
 							<CardItem
 								title={area.friendlyName || area.key || 'Unnamed Area'}
-								subtitle={
-									isUpdating ? (
-										<UpdatingLabel />
-									) : (
-										<Text
-											style={{
-												fontSize: theme.font.sm,
-												color: theme.colors.textSecondary,
-											}}
-										>
-											{subtitle}
-										</Text>
-									)
-								}
+								subtitle={subtitle}
 								icon={isUpdating ? 'update' : 'map-marker-off'}
 								statusColor={
 									isUpdating
@@ -302,11 +345,29 @@ export default function AreasTabScreen({
 								}
 								onPress={() => onAreaPress(area.key)}
 								rightElement={
-									<MaterialIcons
-										name="chevron-right"
-										size={theme.space.iconSize}
-										color={theme.colors.textMuted}
-									/>
+									<View
+										style={{
+											flexDirection: 'row',
+											alignItems: 'center',
+											gap: theme.space.x2s,
+										}}
+									>
+										{isLocal && (
+											<Text
+												style={{
+													color: theme.colors.textMuted,
+													fontSize: theme.font.xs,
+												}}
+											>
+												{t('areas.local')}
+											</Text>
+										)}
+										<MaterialIcons
+											name="chevron-right"
+											size={theme.space.iconSize}
+											color={theme.colors.textMuted}
+										/>
+									</View>
 								}
 							/>
 						</Card>
@@ -328,12 +389,7 @@ export default function AreasTabScreen({
 				const activeFertilizers = fertilizers.filter(
 					(station) => station.status.state === 'Running',
 				)
-				const isLocal = discoveredDevices.has(area.key)
-				const location = area.locationLabel
 
-				// Local devices always get a blue "Local" hint so it's clear
-				// they're reachable over the local network, even when the
-				// area has a location label set.
 				subtitle = (
 					<Text
 						style={{
@@ -341,25 +397,14 @@ export default function AreasTabScreen({
 							color: theme.colors.textSecondary,
 						}}
 					>
-						{isLocal ? (
-							<Text
-								style={{
-									fontSize: theme.font.sm,
-									color: theme.colors.running,
-									fontWeight: '600',
-								}}
-							>
-								Local
-							</Text>
-						) : (
-							location || 'Unknown Location'
-						)}
-						{(allStations.length > 0 &&
-							' • ' +
-								allStations.length +
-								' Station' +
-								(allStations.length > 1 ? 's' : '')) ||
-							'No Stations'}
+						{locationText}
+						{allStations.length > 0
+							? ` • ${
+									allStations.length === 1
+										? t('stations.stationCount')
+										: t('stations.stationsCount')
+								}`.replace('{value}', String(allStations.length))
+							: ` • ${t('stations.noStations')}`}
 					</Text>
 				)
 
@@ -373,6 +418,7 @@ export default function AreasTabScreen({
 							activeSolenoid={activeSolenoid}
 							activeFertilizers={activeFertilizers}
 							sensors={sensors}
+							local={isLocal}
 							onPress={() => onAreaPress(area.key)}
 						/>
 					</UpdatingAwareCard>
@@ -395,20 +441,19 @@ export default function AreasTabScreen({
 							<Text
 								style={{
 									fontSize: theme.font.sm,
-									color: theme.colors.running,
-									fontWeight: '600',
+									color: theme.colors.textSecondary,
 								}}
 							>
-								Found on network • Tap to link
+								{t('areas.foundOnNetwork')}
 							</Text>
 						}
-						icon="link-plus"
+						icon="access-point"
 						statusColor={theme.colors.running}
 						statusBg={theme.colors.runningBg}
 						onPress={() => bottomSheetRef.current?.expand()}
 						rightElement={
-							<MaterialIcons
-								name="chevron-right"
+							<MaterialCommunityIcons
+								name="plus"
 								size={theme.space.iconSize}
 								color={theme.colors.running}
 							/>

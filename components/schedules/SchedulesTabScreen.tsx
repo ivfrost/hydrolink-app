@@ -1,14 +1,18 @@
 import { RefreshControl, Text, View } from 'react-native'
 
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
 import { useTheme } from '@/context/ThemeContext'
+import { useAreaMqttData } from '@/hooks/useAreaMqttData'
+import { t } from '@/i18n'
 import { AreaDbData } from '@/types/area'
 import { Schedule } from '@/types/schedule'
 
 import ScrollView from '../layout/ScrollView'
 import Button from '../ui/Button'
 import { Picker } from '../ui/Picker'
+import SchedulePreviewCard from './SchedulePreviewCard'
 
 export interface SchedulesTabScreenProps {
 	schedules: Schedule[]
@@ -16,6 +20,7 @@ export interface SchedulesTabScreenProps {
 	isRefreshing: boolean
 	onRefresh: () => void
 	onCreateNewSchedule: () => void
+	onEditSchedule: (date: string) => void
 	selectedAreaKey: string | null
 	onSelectArea: (areaKey: string) => void
 }
@@ -25,11 +30,18 @@ export default function SchedulesTabScreen({
 	isRefreshing,
 	onRefresh,
 	onCreateNewSchedule,
+	onEditSchedule,
 	selectedAreaKey,
 	onSelectArea,
 }: SchedulesTabScreenProps) {
 	const theme = useTheme()
 	const headerHeight = useHeaderHeight()
+	const { allStations } = useAreaMqttData(selectedAreaKey ?? undefined)
+
+	// Map a window's pin to the live station name, falling back to an index label.
+	const stationName = (pin: number) =>
+		allStations.find((station) => station.id === pin)?.name ||
+		t('stations.stationFallback').replace('{value}', String(pin + 1))
 
 	return (
 		<ScrollView
@@ -57,27 +69,52 @@ export default function SchedulesTabScreen({
 			}
 		>
 			{areas.length > 0 && (
-				<Picker
-					modifier={['full', 'tall', 'outlined']}
-					placeholder="Select an area"
-					options={areas.map((area) => ({
-						label: area.friendlyName ?? area.key,
-						value: area.key,
-					}))}
-					selectedValue={selectedAreaKey}
-					onValueChange={onSelectArea}
-				/>
+				<View style={{ gap: theme.space.xs }}>
+					<Text
+						style={{
+							color: theme.colors.textSecondary,
+							fontSize: theme.font.xs,
+							fontWeight: theme.fontWeight.semibold,
+							paddingHorizontal: theme.space.xs,
+						}}
+					>
+						{t('schedules.area')}
+					</Text>
+					<Picker
+						modifier={['full', 'tall', 'outlined']}
+						placeholder={t('schedules.selectArea')}
+						options={areas.map((area) => ({
+							label: area.friendlyName ?? area.key,
+							value: area.key,
+						}))}
+						selectedValue={selectedAreaKey}
+						onValueChange={onSelectArea}
+					/>
+				</View>
 			)}
 			{areas.length === 0 ? (
-				<Text
+				<View
 					style={{
-						color: theme.colors.textSecondary,
-						paddingHorizontal: theme.space.sm,
+						alignItems: 'center',
+						gap: theme.space.sm,
+						paddingHorizontal: theme.space.lg,
+						paddingVertical: theme.space.xl,
 					}}
 				>
-					You don't have any linked areas yet. Link a device from the Areas tab
-					to set up schedules.
-				</Text>
+					<MaterialCommunityIcons
+						name="calendar-blank-outline"
+						size={theme.space.iconSizeLg}
+						color={theme.colors.textMuted}
+					/>
+					<Text
+						style={{
+							color: theme.colors.textSecondary,
+							textAlign: 'center',
+						}}
+					>
+						{t('schedules.linkAreaHint')}
+					</Text>
+				</View>
 			) : !selectedAreaKey ? (
 				<Text
 					style={{
@@ -85,46 +122,45 @@ export default function SchedulesTabScreen({
 						paddingHorizontal: theme.space.sm,
 					}}
 				>
-					Please select an area to view its schedules.
+					{t('schedules.selectAreaHint')}
 				</Text>
 			) : null}
-			{/* Render schedules list here */}
-			{schedules.length === 0 && selectedAreaKey && (
-				<Text
-					style={{
-						color: theme.colors.textSecondary,
-						paddingHorizontal: theme.space.sm,
-					}}
-				>
-					No schedules found for this area. Create a new schedule to get
-					started.
-				</Text>
-			)}
-			{schedules.map((schedule) => (
-				<View
-					key={schedule.id}
-					style={{
-						padding: theme.space.sm,
-						borderBottomWidth: 1,
-						borderBottomColor: theme.colors.border,
-					}}
-				>
-					<Text style={{ color: theme.colors.textPrimary }}>
-						{schedule.id}: {schedule.dayOfWeek}
+			{selectedAreaKey && (
+				<View style={{ gap: theme.space.sm }}>
+					<Text
+						style={{
+							color: theme.colors.textPrimary,
+							fontSize: theme.font.md,
+							fontWeight: theme.fontWeight.semibold,
+							paddingHorizontal: theme.space.xs,
+						}}
+					>
+						{t('schedules.schedules')}
 					</Text>
-					{schedule.windows.map((window) => (
-						<View key={window.id} style={{ paddingLeft: theme.space.md }}>
-							<Text style={{ color: theme.colors.textSecondary }}>
-								Window ID: {window.id}, Pin: {window.pin}, Start Type:{' '}
-								{window.startType}, Fixed Time: {window.fixedTime}, Linked Pin:{' '}
-								{window.linkedPin}, Offset Minutes: {window.offsetMinutes},
-								Duration Minutes: {window.durationMinutes}, Has Conflict:{' '}
-								{window.hasConflict ? 'Yes' : 'No'}
-							</Text>
+					{schedules.length === 0 ? (
+						<Text
+							style={{
+								color: theme.colors.textSecondary,
+								paddingHorizontal: theme.space.xs,
+								paddingVertical: theme.space.sm,
+							}}
+						>
+							{t('schedules.noSchedulesHint')}
+						</Text>
+					) : (
+						<View style={{ gap: theme.space.xl }}>
+							{schedules.map((schedule) => (
+								<SchedulePreviewCard
+									key={schedule.id}
+									schedule={schedule}
+									stationName={stationName}
+									onPress={() => onEditSchedule(schedule.date)}
+								/>
+							))}
 						</View>
-					))}
+					)}
 				</View>
-			))}
+			)}
 		</ScrollView>
 	)
 }

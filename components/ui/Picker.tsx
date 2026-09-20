@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+	Animated,
 	Dimensions,
 	findNodeHandle,
-	Platform,
+	Pressable,
 	ScrollView,
 	StyleSheet,
 	Text,
@@ -39,6 +40,7 @@ type PickerProps<T> = {
 	maxHeight?: number
 	isLoading?: boolean
 	disabled?: boolean
+	onDisabledPress?: () => void
 	modifier?: PickerModifier[]
 }
 
@@ -54,11 +56,13 @@ export function Picker<T extends string | number>({
 	maxHeight = 260,
 	isLoading = false,
 	disabled = false,
+	onDisabledPress,
 	modifier = ['outlined', 'small'],
 }: PickerProps<T>) {
 	const theme = useTheme()
 	const anchorRef = useRef(null)
 	const [isOpen, setIsOpen] = useState<boolean>(false)
+	const [menuOpacity] = useState(() => new Animated.Value(0))
 	const open = controlledOpen ?? isOpen
 	const setOpen = (v: boolean) => {
 		if (controlledOpen === undefined) setIsOpen(v)
@@ -73,6 +77,7 @@ export function Picker<T extends string | number>({
 		height: number
 	} | null>(null)
 	const [drawerHeight, setDrawerHeight] = useState<number | null>(null)
+	const pickerMenuWidth = 176
 
 	const currentOption =
 		selectedValue != null
@@ -98,11 +103,18 @@ export function Picker<T extends string | number>({
 	useEffect(() => {
 		if (!open) {
 			setAnchorLayout(null)
+			menuOpacity.setValue(0)
 			return
 		}
+		menuOpacity.setValue(0)
+		Animated.timing(menuOpacity, {
+			toValue: 1,
+			duration: 180,
+			useNativeDriver: true,
+		}).start()
 		const t = setTimeout(() => measureAnchor(), 0)
 		return () => clearTimeout(t)
-	}, [open, measureAnchor])
+	}, [open, measureAnchor, menuOpacity])
 
 	useEffect(() => {
 		const sub = Dimensions.addEventListener('change', measureAnchor)
@@ -111,7 +123,7 @@ export function Picker<T extends string | number>({
 
 	const computePortalStyle = () => {
 		const screen = Dimensions.get('window')
-		if (!anchorLayout) return { top: 0, left: 0, minWidth: 150 }
+		if (!anchorLayout) return { top: 0, left: 8, width: 150 }
 
 		const spaceBelow = screen.height - (anchorLayout.y + anchorLayout.height)
 		const spaceAbove = anchorLayout.y
@@ -122,24 +134,17 @@ export function Picker<T extends string | number>({
 			? anchorLayout.y + anchorLayout.height
 			: Math.max(8, anchorLayout.y - preferredHeight)
 
-		const minWidth = Math.max(anchorLayout.width, 150)
 		const anchorRight = anchorLayout.x + anchorLayout.width
 		const edge = 8
+		const left = Math.max(
+			edge,
+			Math.min(
+				anchorRight - pickerMenuWidth,
+				screen.width - pickerMenuWidth - edge,
+			),
+		)
 
-		// Prefer aligning the drawer's left edge with the anchor's left edge. When
-		// there is not enough room on the right (e.g. the picker sits near the
-		// right edge of the screen, or its selected label is short so the anchor is
-		// narrow and pushed right), align the drawer's right edge with the anchor's
-		// right edge instead so the list stays on screen.
-		let left = Math.max(edge, anchorLayout.x)
-		let maxWidth = screen.width - left - edge
-
-		if (minWidth > maxWidth) {
-			left = Math.max(edge, anchorRight - minWidth)
-			maxWidth = screen.width - left - edge
-		}
-
-		return { top, left, minWidth, maxWidth }
+		return { top, left }
 	}
 
 	const portalStyle = computePortalStyle()
@@ -151,26 +156,24 @@ export function Picker<T extends string | number>({
 		buttonRow: { flexDirection: 'row', alignItems: 'center' },
 		drawer: {
 			position: 'absolute',
-			borderRadius: theme.radius.boxInCard,
-			borderWidth: 1,
-			borderColor: theme.colors.border,
-			backgroundColor: theme.colors.card,
+			borderRadius: theme.radius.dropdown,
+			backgroundColor: theme.colors.surfaceRaised,
 			shadowColor: '#000',
 			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.12,
-			shadowRadius: 6,
-			elevation: 12,
+			shadowOpacity: 0.16,
+			shadowRadius: 8,
+			elevation: 6,
 			zIndex: 10000,
 			overflow: 'hidden',
+			paddingVertical: theme.space.sm,
 		},
 		optionItem: {
-			minHeight: theme.space.buttonSize,
+			height: theme.space.buttonSize,
 			flexDirection: 'row',
 			alignItems: 'center',
-			justifyContent: 'space-between',
+			justifyContent: 'center',
 			flexWrap: 'nowrap',
-			paddingHorizontal: theme.space.buttonHorizontalPadding,
-			paddingVertical: theme.space.sm,
+			paddingHorizontal: theme.space.xl,
 		},
 	})
 
@@ -181,11 +184,14 @@ export function Picker<T extends string | number>({
 					ref={anchorRef}
 					modifier={modifier}
 					variant="tertiary"
-					onPress={toggle}
 					activeOpacity={0.9}
 					label={displayLabel}
 					loading={isLoading}
 					disabled={isLoading || disabled}
+					allowDisabledPress={!!onDisabledPress && disabled && !isLoading}
+					onPress={
+						disabled && !isLoading && onDisabledPress ? onDisabledPress : toggle
+					}
 					iconPosition="right"
 					icon={
 						<MaterialCommunityIcons
@@ -212,16 +218,15 @@ export function Picker<T extends string | number>({
 						}}
 					/>
 
-					<View
+					<Animated.View
 						style={[
 							styles.drawer,
 							{
+								opacity: menuOpacity,
 								top: portalStyle.top,
 								left: portalStyle.left,
-								minWidth: portalStyle.minWidth,
-								maxWidth: portalStyle.maxWidth,
+								width: pickerMenuWidth,
 								zIndex: 10000,
-								elevation: Platform.OS === 'android' ? 20 : undefined,
 								maxHeight,
 							},
 						]}
@@ -231,64 +236,74 @@ export function Picker<T extends string | number>({
 						}}
 					>
 						<ScrollView nestedScrollEnabled style={{ maxHeight }}>
-							{options.map((option, idx) => {
+							{options.map((option) => {
 								const isSelected = option.value === selectedValue
 								return (
-									<TouchableOpacity
+									<Pressable
 										key={String(option.value)}
-										activeOpacity={0.9}
 										onPress={() => {
 											onValueChange(option.value)
 											close()
 										}}
-										style={[
+										style={({ pressed }) => [
 											styles.optionItem,
 											{
-												backgroundColor: isSelected
+												backgroundColor: pressed
 													? theme.colors.accentTint
-													: 'transparent',
-												borderBottomWidth: idx === options.length - 1 ? 0 : 1,
-												borderBottomColor: theme.colors.border,
+													: isSelected
+														? theme.colors.accentTint
+														: 'transparent',
 											},
 										]}
 									>
-										{option.icon && (
-											<MaterialCommunityIcons
-												name={option.icon}
-												size={18}
-												color={
-													option.iconColor ??
-													(isSelected
-														? theme.colors.accent
-														: theme.colors.textSecondary)
-												}
-												style={{ marginRight: theme.space.sm }}
-											/>
-										)}
-										<Text
+										<View
 											style={{
-												fontSize: theme.font.base,
-												fontWeight: isSelected ? '600' : '500',
-												color: isSelected
-													? theme.colors.accent
-													: theme.colors.textSecondary,
-												flex: 1,
+												flexDirection: 'row',
+												alignItems: 'center',
+												flexShrink: 0,
+												gap: theme.space.sm,
+												width: '100%',
 											}}
 										>
-											{option.label}
-										</Text>
-										{isSelected && (
-											<MaterialCommunityIcons
-												name="check"
-												size={18}
-												color={theme.colors.accent}
-											/>
-										)}
-									</TouchableOpacity>
+											{option.icon && (
+												<View
+													style={{
+														alignItems: 'center',
+														justifyContent: 'flex-start',
+														flexShrink: 0,
+														width: 32,
+													}}
+												>
+													<MaterialCommunityIcons
+														name={option.icon}
+														size={18}
+														color={option.iconColor ?? theme.colors.textPrimary}
+													/>
+												</View>
+											)}
+											<Text
+												style={{
+													color: theme.colors.textPrimary,
+													fontSize: theme.font.base,
+													fontWeight: theme.fontWeight.medium,
+													flex: 1,
+												}}
+											>
+												{option.label}
+											</Text>
+											{isSelected && (
+												<MaterialCommunityIcons
+													name="check"
+													size={18}
+													color={theme.colors.textPrimary}
+												/>
+											)}
+										</View>
+									</Pressable>
 								)
 							})}
 						</ScrollView>
-					</View>
+					</Animated.View>
 				</Portal>
 			)}
 		</View>

@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Text, TouchableOpacity, View } from 'react-native'
 
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
+import * as Burnt from 'burnt'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import {
 	isReadOnlyStationType,
 	STATION_PICKER_OPTIONS,
@@ -26,7 +28,7 @@ export const STATION_TYPE_ICON: Record<
 	FertilizerPump: 'water-pump',
 	CaudalSensor: 'gauge',
 	HumiditySensor: 'water-percent',
-	Unclassified: 'help-circle-outline',
+	Unknown: 'help-circle-outline',
 }
 
 export interface StationCardItemProps {
@@ -47,7 +49,7 @@ export interface StationCardItemProps {
 	onFieldCommit?: (
 		field: 'name' | 'description' | 'imageUrl' | 'type',
 		value: string,
-	) => void
+	) => void | Promise<void>
 	/** Original name from the live station, used to show the confirm button only
 	 *  when the draft name differs. */
 	initialName?: string
@@ -95,8 +97,23 @@ export default function StationCardItem({
 	const buttonVariant = isRunning ? 'destructive' : 'primary'
 	const actionIcon = isRunning ? 'stop' : 'play'
 	const headingIcon = newLeadingIcon ?? STATION_TYPE_ICON[station.type]
+	const isBlockedSolenoid =
+		station.type === 'Solenoid' && !isRunning && isActionDisabled
 
 	const stationLabel = `Station ${station.id + 1}`
+	const handleActionPress = () => {
+		if (isActionDisabled) {
+			if (station.type === 'Solenoid' && !isRunning) {
+				Burnt.toast({
+					title: 'Stop the running solenoid first',
+					preset: 'none',
+				})
+			}
+			return
+		}
+
+		onActionPress?.(isRunning ? 'Stop' : 'Start', minutes * 60 * 1000)
+	}
 
 	return (
 		<View style={{ elevation: isActive ? 20 : 0, overflow: 'visible' }}>
@@ -114,15 +131,23 @@ export default function StationCardItem({
 				{!!onDrag && (
 					<MaterialIcons
 						name="drag-indicator"
-						size={24}
-						color="gray"
-						style={{ marginRight: 2, marginTop: theme.space.x2l }}
+						size={theme.space.iconSize}
+						color={theme.colors.textMuted}
+						style={{ marginRight: theme.space.x3s, marginTop: theme.space.x2l }}
 					/>
 				)}
 				<CardItem
-					title={station.name?.trim() ? station.name : stationLabel}
+					title={
+						isMqttEditable ? stationLabel : station.name?.trim() || stationLabel
+					}
 					titleFontWeight="600"
-					subtitle={!isMqttEditable ? station.status.state : ''}
+					verticalPadding={theme.space.compactCardVerticalPadding}
+					hideTitle={isMqttEditable}
+					subtitle={
+						isMqttEditable
+							? `${t('stations.pin')} ${station.id}`
+							: `${t('stations.pin')} ${station.id} · ${station.status.state === 'Running' ? t('status.running') : station.status.state === 'Idle' ? t('status.idle') : t('status.unknown')}`
+					}
 					icon={headingIcon}
 					statusColor={
 						station.status.state === 'Running'
@@ -137,7 +162,7 @@ export default function StationCardItem({
 					rightElement={
 						isMqttEditable ? (
 							<Picker
-								label="Station Role"
+								label={t('stations.role')}
 								options={STATION_PICKER_OPTIONS}
 								selectedValue={selectedStationType}
 								onValueChange={handleTypeChange}
@@ -159,21 +184,21 @@ export default function StationCardItem({
 							<Button
 								modifier={['iconOnly']}
 								variant={buttonVariant}
-								disabled={isActionDisabled}
+								disabled={isLoading || isReadOnly || isBlockedSolenoid}
+								allowDisabledPress={isBlockedSolenoid}
 								loading={isLoading}
 								icon={
 									<MaterialCommunityIcons
 										name={actionIcon}
 										size={26}
-										color="white"
+										color={
+											isBlockedSolenoid
+												? theme.colors.buttonDisabledText
+												: 'white'
+										}
 									/>
 								}
-								onPress={() =>
-									onActionPress?.(
-										isRunning ? 'Stop' : 'Start',
-										minutes * 60 * 1000,
-									)
-								}
+								onPress={handleActionPress}
 							/>
 						)
 					}
@@ -189,9 +214,9 @@ export default function StationCardItem({
 								>
 									<View style={{ flex: 1 }}>
 										<Input
-											label="Name"
+											label={t('stations.name')}
 											value={station.name ?? ''}
-											labelBackground={theme.colors.card}
+											labelBackground={theme.colors.surfaceRaised}
 											onChangeText={(text) =>
 												onDataChange?.('name', station.id, text)
 											}
@@ -219,7 +244,7 @@ export default function StationCardItem({
 									text={STATION_TYPE_LABEL[station.type]}
 									color={theme.colors.textSecondary}
 									backgroundColor={''}
-									borderColor={theme.colors.border}
+									borderColor={theme.colors.outline}
 								/>
 
 								{!isReadOnly && !isActionDisabled && (

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const userRolesSchema = z.enum(['ADMIN', 'USER'])
 export const userSchema = z.object({
-	id: z.number(),
+	id: z.string(),
 	email: z
 		.email({ message: 'Invalid email address' })
 		.min(5, { message: 'Invalid email address' })
@@ -16,9 +16,11 @@ export const userSchema = z.object({
 		.min(6, { message: 'Full name must be at least 6 characters long' })
 		.max(40, { message: 'Full name must be at most 40 characters long' }),
 	imageUrl: z
-		.url()
-		.max(255, {
-			message: 'Profile picture URL must be at most 255 characters long',
+		// Holds a signed presigned URL on reads (which can be long) or a stored
+		// object key on writes. Accept either; don't validate it as a URL.
+		.string()
+		.max(2048, {
+			message: 'Profile picture URL must be at most 2048 characters long',
 		})
 		.nullable()
 		.optional(),

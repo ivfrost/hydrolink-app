@@ -18,7 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMachine } from '@xstate/react'
 import * as Burnt from 'burnt'
 import * as ImagePicker from 'expo-image-picker'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
 
 import { EditableAreaInfoCard } from '@/components/areas/EditableAreaInfoCard'
 import EditableStationCardItem from '@/components/areas/EditableStationCardItem'
@@ -48,7 +48,6 @@ export default function EditAreaScreen() {
 	const theme = useTheme()
 	const queryClient = useQueryClient()
 	const { key } = useLocalSearchParams() as { key: string }
-	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const initializedRef = useRef(false)
 	const [localAreaImage, setLocalAreaImage] = useState({
@@ -57,6 +56,7 @@ export default function EditAreaScreen() {
 		type: '',
 	})
 	const [confirmingField, setConfirmingField] = useState<string | null>(null)
+	const [reorderEnabled, setReorderEnabled] = useState(false)
 
 	// Baseline of the last successfully saved area info fields, used to know
 	// when a field's inline confirm button should disappear.
@@ -76,7 +76,7 @@ export default function EditAreaScreen() {
 		stations: [
 			{
 				id: 0,
-				type: 'Unclassified' as StationType,
+				type: 'Unknown' as StationType,
 				name: '',
 				description: '',
 				imageUrl: '',
@@ -100,9 +100,11 @@ export default function EditAreaScreen() {
 				})
 			},
 			onSuccess: (data) => {
+				// fileUrl is the object key now (not a presigned URL): persist the
+				// key and let the read endpoint mint a fresh URL when rendering.
 				setAreaFormState((prev) => ({
 					...prev,
-					imageUrl: resolveImageUrl(data.fileUrl) || data.fileUrl,
+					imageUrl: data.fileUrl,
 				}))
 			},
 		})
@@ -348,14 +350,15 @@ export default function EditAreaScreen() {
 						} as FileUploadPayload,
 						areaId: dbArea.id,
 					})
-					const url =
-						resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
+					// The upload response is the object key, not a URL. Store the key
+					// so it never expires; the read endpoint signs it on fetch.
+					const objectKey = uploadResult.fileUrl
 					await areaUpdateMutationFn({
 						key: dbArea.key,
-						imageUrl: url,
+						imageUrl: objectKey,
 					} as Partial<AreaUpdatePayload>)
 					queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
-					setAreaFormState((prev) => ({ ...prev, imageUrl: url }))
+					setAreaFormState((prev) => ({ ...prev, imageUrl: objectKey }))
 				}
 			} else {
 				Burnt.alert({
@@ -399,7 +402,7 @@ export default function EditAreaScreen() {
 							<RectangularMedia
 								aspectRatio={16 / 9}
 								isFullWidth
-								ringColor={theme.colors.border}
+								ringColor={theme.colors.outline}
 								elevation={0}
 								borderRadius={theme.radius.card}
 							>
@@ -422,7 +425,7 @@ export default function EditAreaScreen() {
 										style={[
 											StyleSheet.absoluteFill,
 											{
-												backgroundColor: theme.colors.card,
+												backgroundColor: theme.colors.surfaceRaised,
 												justifyContent: 'center',
 												alignItems: 'center',
 												gap: theme.space.sm,
@@ -436,7 +439,7 @@ export default function EditAreaScreen() {
 										<Text
 											style={{
 												fontSize: theme.font.sm + 2,
-												fontWeight: '500',
+												fontWeight: theme.fontWeight.medium,
 												color: theme.colors.textPrimary,
 											}}
 										>
@@ -448,30 +451,44 @@ export default function EditAreaScreen() {
 							<View
 								style={{
 									position: 'absolute',
-									bottom: theme.space.sm,
-									left: theme.space.sm,
+									bottom: theme.space.md,
+									left: theme.space.md,
 								}}
 							>
 								<Button
 									label="Remove"
-									variant="destructive"
+									variant="secondary"
 									icon="trash-can-outline"
 									modifier={['small']}
+									extraStyles={{
+										shadowColor: '#000',
+										shadowOffset: { width: 0, height: 1 },
+										shadowOpacity: 0.2,
+										shadowRadius: 3,
+										elevation: 3,
+									}}
 									onPress={handleRemoveImage}
 								/>
 							</View>
 							<View
 								style={{
 									position: 'absolute',
-									bottom: theme.space.sm,
-									right: theme.space.sm,
+									bottom: theme.space.md,
+									right: theme.space.md,
 								}}
 							>
 								<Button
 									label="Change"
-									variant="primary"
+									variant="secondary"
 									icon="image-edit-outline"
 									modifier={['small']}
+									extraStyles={{
+										shadowColor: '#000',
+										shadowOffset: { width: 0, height: 1 },
+										shadowOpacity: 0.2,
+										shadowRadius: 3,
+										elevation: 3,
+									}}
 									onPress={handleChooseImage}
 								/>
 							</View>
@@ -572,10 +589,10 @@ export default function EditAreaScreen() {
 								isActive={isActive}
 								isLoading={isStationLoading}
 								manualOverride={manualOverride}
-								onDrag={drag}
+								onDrag={reorderEnabled ? drag : undefined}
 								onDataChange={handleStationDataChange}
-								onFieldCommit={(field, value) => {
-									const committed = setNewValueForStation(
+								onFieldCommit={async (field, value) => {
+									const committed = await setNewValueForStation(
 										station.id,
 										field,
 										value,
@@ -610,6 +627,7 @@ export default function EditAreaScreen() {
 			setNewValueForStation,
 			theme.space.lg,
 			areaFormState.stations,
+			reorderEnabled,
 		],
 	)
 
@@ -757,7 +775,29 @@ export default function EditAreaScreen() {
 							<>
 								{renderApiEditableData()}
 								<View style={{ marginVertical: theme.space.x2l }} />
-								<SectionTitle text="Edit stations" />
+								<View
+									style={{
+										flexDirection: 'row',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+										gap: theme.space.md,
+									}}
+								>
+									<SectionTitle text="Edit stations" />
+									<View
+										style={{
+											transform: [{ translateY: -theme.space.md }],
+										}}
+									>
+										<Button
+											variant="tertiary"
+											modifier={['small', 'outlined']}
+											icon={reorderEnabled ? 'check' : 'swap-vertical'}
+											label={reorderEnabled ? 'Done' : 'Reorder'}
+											onPress={() => setReorderEnabled((enabled) => !enabled)}
+										/>
+									</View>
+								</View>
 							</>
 						}
 						ListFooterComponent={
@@ -787,9 +827,10 @@ export default function EditAreaScreen() {
 											fontSize: theme.font.sm,
 										}}
 									>
-										Hold and drag stations up or down to set their order. Use
-										the picker to set the role of a station. There can only ever
-										be one solenoid active at a time.
+										{reorderEnabled
+											? 'Hold and drag stations up or down to change their display order.'
+											: 'Station names and roles can be edited here. Pin numbers identify the physical outputs and cannot be changed.'}{' '}
+										There can only ever be one solenoid active at a time.
 									</Text>
 								</View>
 							</View>
@@ -802,8 +843,10 @@ export default function EditAreaScreen() {
 								colors={[theme.colors.accent]}
 							/>
 						}
-						onDragEnd={({ data }) =>
-							handleStationReorder(data.map((s) => s.id))
+						onDragEnd={
+							reorderEnabled
+								? ({ data }) => handleStationReorder(data.map((s) => s.id))
+								: undefined
 						}
 						removeClippedSubviews={false}
 						windowSize={5}

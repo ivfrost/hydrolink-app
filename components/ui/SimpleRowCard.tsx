@@ -14,6 +14,7 @@ interface SimpleCardItemProps {
 	modifiers?: string[]
 	disabled?: boolean
 	onPress?: () => void
+	compact?: boolean
 }
 
 export default function SimpleCardItem({
@@ -22,6 +23,7 @@ export default function SimpleCardItem({
 	modifiers,
 	disabled,
 	onPress,
+	compact = false,
 }: SimpleCardItemProps) {
 	const theme = useTheme()
 
@@ -36,9 +38,7 @@ export default function SimpleCardItem({
 			}
 			icon={icon}
 			statusColor={
-				modifiers?.includes('fault')
-					? theme.colors.fault
-					: theme.colors.accent
+				modifiers?.includes('fault') ? theme.colors.fault : theme.colors.accent
 			}
 			statusBg={
 				modifiers?.includes('fault')
@@ -61,6 +61,7 @@ export default function SimpleCardItem({
 				)
 			}
 			disabled={disabled}
+			compact={compact}
 			onPress={onPress}
 		/>
 	)

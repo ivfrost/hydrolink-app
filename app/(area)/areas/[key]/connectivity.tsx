@@ -5,11 +5,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import * as Burnt from 'burnt'
 import { useLocalSearchParams } from 'expo-router'
 
-import ScrollView from '@/components/layout/ScrollView'
+import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Picker } from '@/components/ui/Picker'
 import { useTheme } from '@/context/ThemeContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 
 // The ESP exposes its configuration API on the AP (captive portal) address.
 const ESP_BASE_URL = 'http://192.168.4.1'
@@ -56,13 +57,19 @@ async function fetchEspJson<T>(
 
 export default function Connectivity() {
 	const theme = useTheme()
+
+	const styles = StyleSheet.create({
+		content: {
+			gap: theme.space.md,
+		},
+	})
 	const { key } = useLocalSearchParams() as { key: string }
 
 	const [reachable, setReachable] = useState<boolean | null>(null)
 	const [currentNetwork, setCurrentNetwork] = useState<EspNetworkStatus | null>(
 		null,
 	)
-	const [isRefreshing, setIsRefreshing] = useState(false)
+	const { isRefreshing, refresh } = usePullToRefresh()
 	const [networks, setNetworks] = useState<EspNetwork[]>([])
 	const [scanning, setScanning] = useState(false)
 	const [selectedSsid, setSelectedSsid] = useState('')
@@ -72,18 +79,17 @@ export default function Connectivity() {
 	const selectedSsidSecure =
 		networks.find((n) => n.ssid === selectedSsid)?.secure === 'secure'
 
-	const refreshStatus = useCallback(async () => {
-		try {
-			setIsRefreshing(true)
-			const status = await fetchEspJson<EspNetworkStatus>('/api/network')
-			setCurrentNetwork(status)
-			setReachable(true)
-			setIsRefreshing(false)
-		} catch {
-			setReachable(false)
-			setIsRefreshing(false)
-		}
-	}, [])
+	const refreshStatus = useCallback(
+		() =>
+			refresh(async () => {
+				const status = await fetchEspJson<EspNetworkStatus>('/api/network')
+				setCurrentNetwork(status)
+				setReachable(true)
+			}).catch(() => {
+				setReachable(false)
+			}),
+		[refresh],
+	)
 
 	useEffect(() => {
 		refreshStatus()
@@ -171,7 +177,7 @@ export default function Connectivity() {
 			: theme.colors.fault
 
 	return (
-		<ScrollView>
+		<KeyboardAwareScrollView>
 			<View style={styles.content}>
 				<View
 					style={{
@@ -182,7 +188,7 @@ export default function Connectivity() {
 						paddingStart: theme.space.md,
 						paddingVertical: theme.space.sm,
 						borderRadius: theme.radius.boxInCard,
-						backgroundColor: theme.colors.card,
+						backgroundColor: theme.colors.surfaceRaised,
 					}}
 				>
 					<View
@@ -196,7 +202,7 @@ export default function Connectivity() {
 						<Text
 							style={{
 								fontSize: theme.font.base,
-								fontWeight: '600',
+								fontWeight: theme.fontWeight.semibold,
 								color: theme.colors.textPrimary,
 							}}
 						>
@@ -231,7 +237,10 @@ export default function Connectivity() {
 								color: theme.colors.textSecondary,
 							}}
 						>
-							Connect to the <Text style={{ fontWeight: '600' }}>{key}</Text>{' '}
+							Connect to the{' '}
+							<Text style={{ fontWeight: theme.fontWeight.semibold }}>
+								{key}
+							</Text>{' '}
 							network first, then refresh the status.
 						</Text>
 					)}
@@ -274,7 +283,7 @@ export default function Connectivity() {
 						secureTextEntry
 						autoCapitalize="none"
 						autoCorrect={false}
-						labelBackground={theme.colors.background}
+						labelBackground={theme.colors.surface}
 						placeholder="Enter the Wi-Fi password"
 						placeholderTextColor={theme.colors.textMuted}
 					/>
@@ -290,28 +299,6 @@ export default function Connectivity() {
 					/>
 				) : null}
 			</View>
-		</ScrollView>
+		</KeyboardAwareScrollView>
 	)
 }
-
-const styles = StyleSheet.create({
-	content: {
-		gap: 12,
-	},
-	description: {
-		fontSize: 14,
-		lineHeight: 20,
-		marginBottom: 4,
-	},
-	fileSelector: {
-		gap: 8,
-	},
-	fileMeta: {
-		fontSize: 12,
-		textAlign: 'center',
-	},
-	forceHint: {
-		fontSize: 12,
-		lineHeight: 18,
-	},
-})

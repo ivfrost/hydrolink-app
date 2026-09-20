@@ -46,7 +46,11 @@ export default function StatusScreen({
 				gap: theme.space.lg,
 			}}
 			refreshControl={
-				<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} progressBackgroundColor={theme.colors.background} />
+				<RefreshControl
+					refreshing={isRefreshing}
+					onRefresh={onRefresh}
+					progressBackgroundColor={theme.colors.surface}
+				/>
 			}
 		>
 			{variant === 'network-error' ? (
@@ -80,7 +84,7 @@ export default function StatusScreen({
 								color: theme.colors.textMuted,
 								textAlign: 'center',
 								marginBottom: theme.space.md,
-								fontWeight: '400',
+								fontWeight: theme.fontWeight.regular,
 							}}
 						>
 							{hint}

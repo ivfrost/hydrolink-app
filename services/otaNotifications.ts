@@ -3,8 +3,9 @@ import { Platform } from 'react-native'
 import * as Burnt from 'burnt'
 import * as Notifications from 'expo-notifications'
 
-import { mqttClient } from '@/services/mqtt'
-import { normalizeMqttPayload } from '@/utils/mqttPayload'
+import { sendDeviceCommand } from '@/services/deviceCommands'
+import type { DeviceCommand } from '@/types/deviceCommand'
+import { normalizeMqttPayload, parseMqttJson } from '@/utils/mqttPayload'
 
 // Ensure notifications show as a heads-up banner while the app is foregrounded
 Notifications.setNotificationHandler({
@@ -21,7 +22,6 @@ const OTA_CHANNEL_ID = 'ota-updates'
 /** Topic suffix the backend publishes OTA announcements on. */
 const OTA_ANNOUNCE_SUFFIX = '/announce'
 /** Topic suffix devices actually listen on for commands. */
-const OTA_COMMAND_SUFFIX = '/command'
 
 /**
  * Android 8.0+ requires a notification channel before any local notification
@@ -48,7 +48,7 @@ async function ensureOtaChannel() {
  * device so flashing actually starts.
  */
 let otaNotificationTapHandler:
-	| ((topic: string, payload: string) => void)
+	| ((deviceKey: string, payload: string) => void | Promise<void>)
 	| null = null
 
 // Dedupe: retained announces redeliver on every subscribe.
@@ -56,7 +56,7 @@ let lastNotifiedSha: string | null = null
 
 /** Register the callback invoked when the user taps an OTA notification. */
 export function setOtaNotificationTapHandler(
-	handler: (topic: string, payload: string) => void,
+	handler: (deviceKey: string, payload: string) => void | Promise<void>,
 ) {
 	otaNotificationTapHandler = handler
 }
@@ -66,23 +66,17 @@ export function setOtaNotificationTapHandler(
 // to the device command topic so it starts flashing immediately.
 Notifications.addNotificationResponseReceivedListener((response) => {
 	const data = response.notification.request.content.data as {
-		commandTopic?: string
+		deviceKey?: string
 		rawMessage?: string
 	}
-	if (!data?.commandTopic || !data?.rawMessage) return
+	if (!data?.deviceKey || !data?.rawMessage) return
 
 	if (!otaNotificationTapHandler) {
 		console.warn('OTA notification tapped but no tap handler is registered yet')
 		return
 	}
 
-	if (mqttClient && mqttClient.connected) {
-		otaNotificationTapHandler(data.commandTopic, data.rawMessage)
-	} else {
-		console.warn(
-			'OTA notification tapped but MQTT is not connected; cannot start update',
-		)
-	}
+	void otaNotificationTapHandler(data.deviceKey, data.rawMessage)
 })
 
 /** Ensure the app has permission to display local notifications. */
@@ -103,10 +97,15 @@ export type OtaUpdateInfo = {
 	version?: string
 }
 
+type OtaAnnouncement = Pick<DeviceCommand, 'action' | 'binUrl'> & {
+	version?: string
+	sha256?: string
+}
+
 /**
  * If the MQTT message is an OTA announcement (topic ends in /announce),
- * present a native notification whose tap sends the actual command to the
- * device's /command topic.
+ * present a native notification whose tap sends the actual command through
+ * the authenticated device-command API.
  */
 export async function notifyOtaUpdateIfCommand(
 	info: OtaUpdateInfo,
@@ -114,16 +113,13 @@ export async function notifyOtaUpdateIfCommand(
 	const { topic, rawMessage: incomingMessage, deviceKey, version } = info
 
 	if (!topic.endsWith(OTA_ANNOUNCE_SUFFIX)) return
-	const commandTopic =
-		topic.slice(0, -OTA_ANNOUNCE_SUFFIX.length) + OTA_COMMAND_SUFFIX
-
 	// Normalize the payload (services/mqtt.ts already does this, but be
 	// defensive here too so a valid announce is never dropped).
 	const rawMessage = normalizeMqttPayload(incomingMessage)
 
-	let command: { action?: string; binUrl?: string; version?: string }
+	let command: Partial<OtaAnnouncement>
 	try {
-		command = JSON.parse(rawMessage)
+		command = parseMqttJson<Partial<OtaAnnouncement>>(rawMessage)
 	} catch {
 		console.warn('[OTA] announce payload is not valid JSON:', rawMessage)
 		return
@@ -134,16 +130,19 @@ export async function notifyOtaUpdateIfCommand(
 	// instead of silently dropping the notification.
 	console.log('[OTA] announce received on', topic, '->', command)
 
-	if (command.action !== 'OTAUpdate' || !command.binUrl) {
+	if (
+		!['OTAUpdate', 'OtaUpdate'].includes(command.action ?? '') ||
+		!command.binUrl
+	) {
 		console.warn(
-			'[OTA] announce ignored: expected { action: "OTAUpdate", binUrl } but got:',
+			'[OTA] announce ignored: expected { action: "OtaUpdate", binUrl } but got:',
 			command,
 		)
 		return
 	}
 
 	// Skip repeats of the same firmware.
-	const sha = (command as { sha256?: string }).sha256
+	const sha = command.sha256
 	if (sha && sha === lastNotifiedSha) return
 	lastNotifiedSha = sha ?? null
 
@@ -188,7 +187,7 @@ export async function notifyOtaUpdateIfCommand(
 			content: {
 				title: 'Firmware update available',
 				body: `${deviceLabel} has a new firmware (v${versionLabel}). Tap to install now.`,
-				data: { commandTopic, rawMessage },
+				data: { deviceKey, rawMessage },
 				sound: false,
 			},
 			// Show immediately on the HIGH-importance "Firmware updates"
@@ -202,12 +201,17 @@ export async function notifyOtaUpdateIfCommand(
 	}
 }
 
-/** Publish a stored OTA command to its topic. */
-export function publishOtaCommand(topic: string, rawMessage: string) {
-	if (mqttClient && mqttClient.connected) {
-		mqttClient.publish(topic, rawMessage, { qos: 1 })
-		console.log(`Re-publishing OTA command to ${topic}`)
-	} else {
-		console.warn('Cannot re-publish OTA command: MQTT disconnected')
+/** Send a stored OTA command through the authenticated API. */
+export async function publishOtaCommand(deviceKey: string, rawMessage: string) {
+	try {
+		const command = parseMqttJson<Partial<DeviceCommand>>(rawMessage)
+		await sendDeviceCommand(deviceKey, {
+			...command,
+			action: 'OtaUpdate',
+			cause: command.cause ?? 'Manual',
+		})
+		console.log(`Sent OTA command to device ${deviceKey}`)
+	} catch (error) {
+		console.error('[OTA] failed to send command through API:', error)
 	}
 }

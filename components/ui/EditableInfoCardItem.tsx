@@ -53,13 +53,13 @@ export default function EditableInfoCardItem({
 		},
 		inputMetaGroup: {
 			flex: 1,
-			gap: 2,
+			gap: theme.space.x3s,
 		},
 		label: {
 			fontSize: theme.font.xs,
-			marginBottom: 2,
+			marginBottom: theme.space.x3s,
 			color: theme.colors.textMuted,
-			fontWeight: '400',
+			fontWeight: theme.fontWeight.regular,
 		},
 		text: {
 			fontSize: theme.font.base,
@@ -69,7 +69,7 @@ export default function EditableInfoCardItem({
 			padding: 0,
 			margin: 0,
 			borderBottomWidth: 1,
-			borderBottomColor: theme.colors.border,
+			borderBottomColor: theme.colors.outline,
 			paddingBottom: 4,
 		},
 		bottomContainer: {

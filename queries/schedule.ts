@@ -24,11 +24,9 @@ export const areaScheduleQueryFn = async (
 
 export const areaScheduleForDayQueryFn = async (
 	areaKey: string,
-	dayOfWeek: string,
+	date: string,
 ): Promise<Schedule | null> => {
-	const data = await apiFetch<Schedule>(
-		`/devices/${areaKey}/schedules/${dayOfWeek}`,
-	)
+	const data = await apiFetch<Schedule>(`/devices/${areaKey}/schedules/${date}`)
 
 	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {

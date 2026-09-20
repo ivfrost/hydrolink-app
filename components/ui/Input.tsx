@@ -6,14 +6,18 @@ import { useTheme } from '@/context/ThemeContext'
 export interface InputProps extends TextInputProps {
 	label: string
 	labelBackground?: string
+	modifier?: 'tall'[]
 }
 
 export default function Input({
 	label,
 	labelBackground,
+	modifier,
+	style,
 	...props
 }: InputProps) {
 	const theme = useTheme()
+	const isTall = modifier?.includes('tall') ?? false
 	const [focused, setFocused] = useState(false)
 
 	const labelAnim = useRef(new Animated.Value(props.value ? 1 : 0)).current
@@ -22,7 +26,7 @@ export default function Input({
 		(toValue: number) => {
 			Animated.timing(labelAnim, {
 				toValue,
-				duration: 150,
+				duration: theme.duration.fast,
 				useNativeDriver: false,
 			}).start()
 		},
@@ -70,20 +74,27 @@ export default function Input({
 			<View
 				style={{
 					borderWidth: 1.5,
-					borderColor: focused ? theme.colors.accent : theme.colors.border,
+					borderColor: focused ? theme.colors.accent : theme.colors.outline,
 					borderRadius: theme.radius.input,
-					padding: 14,
+					paddingHorizontal: theme.space.lg,
+					paddingVertical: isTall ? 0 : theme.space.lg,
+					...(isTall
+						? {
+								height: theme.space.tallButtonSize,
+								justifyContent: 'center' as const,
+							}
+						: {}),
 				}}
 			>
 				<Animated.Text
 					style={{
 						position: 'absolute',
-						left: 14,
+						left: theme.space.lg,
 						top: labelTop,
 						fontSize: labelSize,
 						color: labelColor,
-						backgroundColor: labelBackground ?? theme.colors.card,
-						paddingHorizontal: 4,
+						backgroundColor: labelBackground ?? theme.colors.surfaceRaised,
+						paddingHorizontal: theme.space.x2s,
 					}}
 				>
 					{label}
@@ -92,11 +103,14 @@ export default function Input({
 				<TextInput
 					onFocus={handleFocus}
 					onBlur={handleBlur}
-					style={{
-						fontSize: theme.font.base,
-						color: theme.colors.textPrimary,
-						padding: 0,
-					}}
+					style={[
+						{
+							fontSize: theme.font.base,
+							color: theme.colors.textPrimary,
+							padding: 0,
+						},
+						style,
+					]}
 					{...props}
 					placeholder={showPlaceholder ? props.placeholder : undefined}
 				/>

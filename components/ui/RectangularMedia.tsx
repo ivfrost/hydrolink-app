@@ -63,14 +63,14 @@ export function RectangularMedia({
 				...(aspectRatio ? { aspectRatio } : { height }),
 				borderRadius,
 				overflow: 'hidden' as const,
-				backgroundColor: theme.colors.card,
+				backgroundColor: theme.colors.surfaceRaised,
 			}
 		: {
 				width: typeof width === 'number' ? width : 64,
 				...(aspectRatio ? { aspectRatio } : { height }),
 				borderRadius,
 				overflow: 'hidden' as const,
-				backgroundColor: theme.colors.card,
+				backgroundColor: theme.colors.surfaceRaised,
 			}
 
 	const content = (

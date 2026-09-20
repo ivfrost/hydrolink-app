@@ -15,7 +15,7 @@ export interface BadgeProps {
 
 export default function Badge({
 	icon,
-	iconSize = 16,
+	iconSize = 11,
 	text,
 	color,
 	borderColor,
@@ -30,7 +30,7 @@ export default function Badge({
 				alignItems: 'center',
 				justifyContent: 'center',
 				gap: theme.space.x2s,
-				paddingHorizontal: theme.space.sm + theme.space.x3s,
+				paddingHorizontal: theme.space.sm,
 				paddingVertical: theme.space.x2s,
 				borderRadius: theme.radius.pill,
 				backgroundColor: backgroundColor,
@@ -45,8 +45,9 @@ export default function Badge({
 				<Text
 					style={{
 						fontSize: theme.font.xs,
-						fontWeight: '700',
+						fontWeight: theme.fontWeight.bold,
 						color: color,
+						paddingEnd: icon ? theme.space.x3s : 0,
 					}}
 				>
 					{text}

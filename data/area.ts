@@ -1,3 +1,4 @@
+import { t } from '@/i18n'
 import { StationType } from '@/types/area'
 
 export interface StationPickerOption {
@@ -6,11 +7,11 @@ export interface StationPickerOption {
 }
 
 export const STATION_TYPE_LABEL: Record<StationType, string> = {
-	Solenoid: 'Solenoid',
-	FertilizerPump: 'Fertilizer Pump',
-	CaudalSensor: 'Caudal Sensor',
-	HumiditySensor: 'Humidity Sensor',
-	Unclassified: 'Unclassified',
+	Solenoid: t('stations.solenoid'),
+	FertilizerPump: t('stations.fertilizerPump'),
+	CaudalSensor: t('stations.caudalSensor'),
+	HumiditySensor: t('stations.humiditySensor'),
+	Unknown: t('stations.unknown'),
 }
 
 // Sensor stations are read-only (no start/stop action) and are grouped
@@ -24,7 +25,7 @@ export const isSensorStationType = (type: StationType): boolean =>
 	SENSOR_STATION_TYPES.includes(type)
 
 export const isReadOnlyStationType = (type: StationType): boolean =>
-	type === 'Unclassified' || isSensorStationType(type)
+	type === 'Unknown' || isSensorStationType(type)
 
 export const STATION_PICKER_OPTIONS: StationPickerOption[] = (
 	Object.keys(STATION_TYPE_LABEL) as StationType[]

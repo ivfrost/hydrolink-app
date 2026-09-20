@@ -54,16 +54,16 @@ export default function CompoundListItem({
 		},
 		textStack: {
 			flex: 1,
-			gap: 2,
+			gap: theme.space.x3s,
 		},
 		titleText: {
 			fontSize: theme.font.sm,
-			fontWeight: '600',
+			fontWeight: theme.fontWeight.semibold,
 			color: theme.colors.textPrimary,
 		},
 		subtitleText: {
 			fontSize: theme.font.xs,
-			fontWeight: '400',
+			fontWeight: theme.fontWeight.regular,
 			color: theme.colors.textSecondary,
 		},
 		rightElementContainer: {

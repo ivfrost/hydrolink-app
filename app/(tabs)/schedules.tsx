@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
 
@@ -8,15 +9,19 @@ import SchedulesTabScreen from '@/components/schedules/SchedulesTabScreen'
 import StatusScreen from '@/components/status/StatusScreen'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 import { areasQueryFn } from '@/queries/areas'
 import { areaScheduleQueryFn } from '@/queries/schedule'
+
+const LAST_SCHEDULE_AREA_KEY = 'hydrolink:last-schedule-area'
 
 export default function ScheduleTabScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const router = useRouter()
-	const [isRefreshing, setIsRefreshing] = useState(false)
 	const [selectedAreaKey, setSelectedAreaKey] = useState<string | null>(null)
+	const [selectionReady, setSelectionReady] = useState(false)
+	const { isRefreshing, refresh } = usePullToRefresh()
 
 	// Query for fetching the user's linked areas from the API for populating
 	// the area picker.
@@ -31,6 +36,46 @@ export default function ScheduleTabScreen() {
 		refetchOnWindowFocus: true,
 		refetchOnMount: true,
 	})
+
+	useEffect(() => {
+		if (areas === undefined) return
+
+		let cancelled = false
+		const restoreSelection = async () => {
+			try {
+				const storedKey = await AsyncStorage.getItem(LAST_SCHEDULE_AREA_KEY)
+				const restoredKey =
+					storedKey && areas.some((area) => area.key === storedKey)
+						? storedKey
+						: (areas[0]?.key ?? null)
+
+				if (!cancelled) {
+					setSelectedAreaKey(restoredKey)
+					setSelectionReady(true)
+				}
+			} catch (error) {
+				console.error('Error restoring schedule area:', error)
+				if (!cancelled) {
+					setSelectedAreaKey(areas[0]?.key ?? null)
+					setSelectionReady(true)
+				}
+			}
+		}
+
+		void restoreSelection()
+		return () => {
+			cancelled = true
+		}
+	}, [areas])
+
+	const handleSelectArea = (areaKey: string) => {
+		setSelectedAreaKey(areaKey)
+		void AsyncStorage.setItem(LAST_SCHEDULE_AREA_KEY, areaKey).catch(
+			(error) => {
+				console.error('Error saving schedule area:', error)
+			},
+		)
+	}
 
 	// Query for fetching user's schedules
 	const {
@@ -51,25 +96,27 @@ export default function ScheduleTabScreen() {
 		if (!selectedAreaKey) return
 		router.push(`/schedules/new?areaKey=${selectedAreaKey}`)
 	}
+	const handleEditSchedule = (date: string) => {
+		if (!selectedAreaKey) return
+		router.push(
+			`/schedules/new?areaKey=${encodeURIComponent(selectedAreaKey)}&editDate=${encodeURIComponent(date)}`,
+		)
+	}
 
 	// Handler to refresh data on pull-to-refresh
-	const onRefresh = async () => {
-		setIsRefreshing(true)
-		try {
+	const onRefresh = () =>
+		refresh(async () => {
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS }),
 				queryClient.invalidateQueries({ queryKey: tanstackKeys.SCHEDULES }),
 			])
-		} catch (error) {
+		}).catch((error) => {
 			console.error('Error refreshing schedules:', error)
-		} finally {
-			setIsRefreshing(false)
-		}
-	}
+		})
 
 	// Before an area is selected, surface the areas list's own loading/error
 	// states so it's obvious whether the picker will be populated.
-	if (selectedAreaKey === null && areasPending) {
+	if ((!selectionReady && areasPending) || (areas && !selectionReady)) {
 		return (
 			<View
 				style={{
@@ -137,8 +184,9 @@ export default function ScheduleTabScreen() {
 			isRefreshing={isRefreshing}
 			onRefresh={onRefresh}
 			onCreateNewSchedule={handleCreateNewSchedule}
+			onEditSchedule={handleEditSchedule}
 			selectedAreaKey={selectedAreaKey}
-			onSelectArea={setSelectedAreaKey}
+			onSelectArea={handleSelectArea}
 		/>
 	)
 }

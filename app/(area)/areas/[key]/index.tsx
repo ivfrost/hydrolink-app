@@ -18,6 +18,8 @@ import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useAreaMqttData } from '@/hooks/useAreaMqttData'
 import useStationAction from '@/hooks/useStationAction'
+import useStationActionTimeout from '@/hooks/useStationActionTimeout'
+import { t } from '@/i18n'
 import { currentScreenMachine } from '@/machines/currentScreenMachine'
 import { areasQueryFn } from '@/queries/areas'
 import { useHeaderStore } from '@/stores/headerStore'
@@ -124,6 +126,12 @@ export default function AreaInfoScreen() {
 			}
 		})
 	}, [allStations, currentScreenState.context.pendingStationActions, send])
+
+	// Never leave a station action spinning if the device does not confirm.
+	useStationActionTimeout(
+		currentScreenState.context.pendingStationActions,
+		send,
+	)
 
 	// API specific data rendering
 	const renderApiData = useCallback(
@@ -239,7 +247,7 @@ export default function AreaInfoScreen() {
 							refreshing={currentScreenState.matches('loading')}
 							onRefresh={() => send({ type: 'RETRY' })}
 							progressViewOffset={theme.space.x3l}
-							colors={[theme.colors.accent, theme.colors.background]}
+							colors={[theme.colors.accent, theme.colors.surface]}
 						/>
 					}
 				>
@@ -290,7 +298,7 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accent, theme.colors.background]}
+						colors={[theme.colors.accent, theme.colors.surface]}
 					/>
 				}
 			>
@@ -306,7 +314,7 @@ export default function AreaInfoScreen() {
 						updating={isUpdating}
 					/>
 				</View>
-				<SectionTitle text="Stations & Roles" />
+				<SectionTitle text={t('stations.sectionTitle')} />
 				<LoadingScreen label="Connecting to MQTT..." />
 			</ScrollView>
 		)
@@ -336,7 +344,7 @@ export default function AreaInfoScreen() {
 							refreshing={currentScreenState.matches('loading')}
 							onRefresh={() => send({ type: 'RETRY' })}
 							progressViewOffset={theme.space.x3l}
-							colors={[theme.colors.accent, theme.colors.background]}
+							colors={[theme.colors.accent, theme.colors.surface]}
 						/>
 					}
 				>
@@ -367,7 +375,7 @@ export default function AreaInfoScreen() {
 									style={{
 										fontVariant: ['small-caps'],
 										color: theme.colors.textMuted,
-										fontWeight: '500',
+										fontWeight: theme.fontWeight.medium,
 									}}
 								>
 									Hydrolink
@@ -391,25 +399,30 @@ export default function AreaInfoScreen() {
 						refreshing={currentScreenState.matches('loading')}
 						onRefresh={() => send({ type: 'RETRY' })}
 						progressViewOffset={theme.space.x3l}
-						colors={[theme.colors.accent, theme.colors.background]}
+						colors={[theme.colors.accent, theme.colors.surface]}
 					/>
 				}
 			>
 				{renderApiData()}
-				<View style={{ gap: theme.space.lg }}>
-					<SectionTitle text="Stations & Roles" style={{ marginBottom: 0 }} />
-					{allStations.map((station) => (
-						<View key={`station-${station.id}`}>{renderStation(station)}</View>
-					))}
-				</View>
-
-				<View style={{ gap: theme.space.x2l }}>
+				<View>
+					<SectionTitle
+						text={t('stations.sectionTitle')}
+						style={{ marginBottom: theme.space.lg }}
+					/>
+					<View style={{ gap: theme.space.lg }}>
+						{allStations.map((station) => (
+							<View key={`station-${station.id}`}>
+								{renderStation(station)}
+							</View>
+						))}
+					</View>
 					<View
 						style={{
 							flexDirection: 'row',
 							alignItems: 'center',
 							gap: theme.space.sm,
 							paddingHorizontal: theme.space.sm,
+							marginTop: theme.space.sm,
 						}}
 					>
 						<MaterialCommunityIcons
@@ -424,8 +437,7 @@ export default function AreaInfoScreen() {
 								flex: 1,
 							}}
 						>
-							Only one Solenoid can run at a time per area. Unclassified
-							stations cannot be started until they are assigned a role.
+							{t('stations.roleTip')}
 						</Text>
 					</View>
 				</View>

@@ -16,7 +16,7 @@ export default function SectionTitle({
 			style={[
 				{
 					fontSize: theme.font.sm,
-					fontWeight: '600',
+					fontWeight: theme.fontWeight.semibold,
 					color: theme.colors.textSecondary,
 					marginBottom: theme.space.lg,
 					marginLeft: theme.space.x2s,

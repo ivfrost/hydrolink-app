@@ -5,18 +5,19 @@ import { isKnownErrorCode } from '@/utils/isKnownErrorCode'
 
 export const scheduleUpsertMutationFn = async (
 	areaKey: string,
-	dayOfWeek: string,
+	date: string,
 	windows: TimeWindowRequest[],
 ): Promise<Schedule> => {
 	const data = await apiFetch<Schedule>(
-		`/devices/${areaKey}/schedules/${dayOfWeek}`,
+		`/devices/${areaKey}/schedules/${date}`,
 		{
 			method: 'PUT',
-			body: JSON.stringify(windows),
+			// The backend wraps the windows in a ScheduleRequest object.
+			body: JSON.stringify({ windows }),
 		},
 	)
 
-	if (data.code !== null) {
+	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		}
@@ -36,16 +37,13 @@ export const scheduleUpsertMutationFn = async (
 
 export const scheduleDeleteMutationFn = async (
 	areaKey: string,
-	dayOfWeek: string,
+	date: string,
 ): Promise<void> => {
-	const data = await apiFetch<void>(
-		`/devices/${areaKey}/schedules/${dayOfWeek}`,
-		{
-			method: 'DELETE',
-		},
-	)
+	const data = await apiFetch<void>(`/devices/${areaKey}/schedules/${date}`, {
+		method: 'DELETE',
+	})
 
-	if (data.code !== null) {
+	if (data.code != null) {
 		if (isKnownErrorCode(data.code)) {
 			throw new AppError(data.code, data.message)
 		}

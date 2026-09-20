@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Platform, Text, View } from 'react-native'
-import { RefreshControl } from 'react-native-gesture-handler'
+import {
+	ActivityIndicator,
+	Platform,
+	RefreshControl,
+	Text,
+	View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -18,6 +23,8 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import SimpleCardItem from '@/components/ui/SimpleRowCard'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { t } from '@/i18n'
 import { profileUpdateFn } from '@/mutations/profile'
 import { profileFileUploadFn } from '@/mutations/storage'
 import { checkAvailabilityFn } from '@/queries/auth'
@@ -25,7 +32,6 @@ import { profileQueryFn } from '@/queries/profile'
 import { AppError } from '@/types/api'
 import type { UploadProfileImageVariables } from '@/types/storage'
 import { ProfileUpdatePayload, profileUpdateSchema, User } from '@/types/user'
-import resolveImageUrl from '@/utils/resolveImageUrl'
 
 type ErrorState = Partial<Record<keyof ProfileUpdatePayload, string>>
 
@@ -33,7 +39,7 @@ export default function ProfileScreen() {
 	const queryClient = useQueryClient()
 	const theme = useTheme()
 	const router = useRouter()
-	const [isRefreshing, setIsRefreshing] = useState(false)
+	const { isRefreshing, refresh } = usePullToRefresh()
 	const insets = useSafeAreaInsets()
 	const [errorState, setErrorState] = useState<ErrorState>({})
 	const [profileFormState, setProfileFormState] = useState<
@@ -92,21 +98,20 @@ export default function ProfileScreen() {
 				})
 			},
 			onSuccess: async (data) => {
+				// data.fileUrl is the object key, not a presigned URL. Persist the
+				// key so it never expires; the update response is signed on read and
+				// is what the UI renders.
 				setProfileFormState((prev) => ({
 					...prev,
 					imageUrl: data.fileUrl,
 				}))
 
-				// Persist the returned file URL to the user's profile automatically
 				try {
 					if (profile?.id) {
-						const fullUrl = resolveImageUrl(data.fileUrl) || data.fileUrl
-						const updated = await profileUpdateFn({ imageUrl: fullUrl } as any)
-						// Inject sent imageUrl into cache so UI shows it immediately
-						queryClient.setQueryData(['profile'], {
-							...updated,
-							imageUrl: fullUrl,
-						})
+						const updated = await profileUpdateFn({
+							imageUrl: data.fileUrl,
+						} as any)
+						queryClient.setQueryData(['profile'], updated)
 
 						Burnt.toast({ title: 'Profile picture saved', preset: 'done' })
 					}
@@ -135,16 +140,14 @@ export default function ProfileScreen() {
 				preset: 'error',
 			})
 		},
-		onSuccess: async (updatedUser: User, variables?: any) => {
+		onSuccess: async (updatedUser: User) => {
 			Burnt.toast({
 				title: 'Profile updated successfully',
 				preset: 'done',
 			})
-			const injectedImageUrl = variables?.imageUrl || updatedUser.imageUrl
-			queryClient.setQueryData(['profile'], {
-				...updatedUser,
-				imageUrl: injectedImageUrl,
-			})
+			// The update response already carries a signed imageUrl; never inject a
+			// stored image key here or the avatar would try to render it directly.
+			queryClient.setQueryData(['profile'], updatedUser)
 
 			router.back()
 		},
@@ -184,18 +187,16 @@ export default function ProfileScreen() {
 	}
 
 	// Handler to refresh the profile data on pull-to-refresh
-	const onRefresh = async () => {
-		setIsRefreshing(true)
-		try {
+	const onRefresh = () =>
+		refresh(async () => {
 			await queryClient.invalidateQueries({ queryKey: ['profile'] })
-		} catch (error) {
+		}).catch((error) => {
 			console.error('Error refreshing profile:', error)
-		} finally {
-			setIsRefreshing(false)
-		}
-	}
+		})
 
-	// Store result of image picker in state to be uploaded on save
+	// Pick an image and persist it immediately. This screen has no Save button
+	// (profile fields save per-field), so a picked image must upload and update
+	// the profile right away or it would only ever be a local preview.
 	const handleChooseImage = async () => {
 		if (Platform.OS === 'web') {
 			return
@@ -220,7 +221,23 @@ export default function ProfileScreen() {
 				const match = /\.(\w+)$/.exec(filename)
 				const type = match ? `image/${match[1]}` : 'image/jpeg'
 
-				setLocalImageFile({ uri: imageUri, name: filename, type })
+				const file = { uri: imageUri, name: filename, type }
+				setLocalImageFile(file)
+
+				// Upload + persist now. The upload mutation's onSuccess stores the
+				// returned object key on the profile and refreshes the signed cache.
+				if (profile?.id) {
+					try {
+						await uploadProfileImageAsync({
+							payload: file as any,
+							userId: String(profile.id),
+						})
+						setLocalImageFile(null)
+					} catch {
+						// onError already showed a toast; keep the local preview so
+						// the user can retry.
+					}
+				}
 			} else {
 				Burnt.alert({
 					title: 'Image Selection Cancelled',
@@ -247,16 +264,15 @@ export default function ProfileScreen() {
 			address: profileFormState.address,
 		}
 
-		// If there's a picked image file, upload it first and include the returned URL
+		// If there's a picked image file, upload it first. The upload mutation's
+		// onSuccess persists the returned object key to the profile, so the key is
+		// never placed in this payload (which profileUpdateSchema validates as a URL).
 		try {
 			if (localImageFile && profile?.id) {
-				const uploadResult = await uploadProfileImageAsync({
+				await uploadProfileImageAsync({
 					payload: localImageFile as any,
 					userId: String(profile.id),
 				})
-				// Resolve file key to full URL
-				basePayload.imageUrl =
-					resolveImageUrl(uploadResult.fileUrl) || uploadResult.fileUrl
 				setLocalImageFile(null)
 			}
 		} catch {
@@ -444,9 +460,9 @@ export default function ProfileScreen() {
 		return (
 			<StatusScreen
 				variant="network-error"
-				title="Profile Unavailable"
-				subtitle="We couldn't load your profile. Check your connection and try again."
-				hint="Only the local areas feature is available."
+				title={t('profile.profileUnavailable')}
+				subtitle={t('profile.profileUnavailableHint')}
+				hint={t('settings.localAreasOnly')}
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -458,9 +474,9 @@ export default function ProfileScreen() {
 		return (
 			<StatusScreen
 				variant="missing-data"
-				title="Profile Data Unavailable"
-				subtitle="Some profile data couldn't be loaded."
-				hint="Only the local areas feature is available."
+				title={t('profile.profileDataUnavailable')}
+				subtitle={t('profile.profileDataUnavailableHint')}
+				hint={t('settings.localAreasOnly')}
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -499,7 +515,7 @@ export default function ProfileScreen() {
 
 				<View style={{ gap: theme.space.x2l }}>
 					<View>
-						<SectionTitle text="Profile" />
+						<SectionTitle text={t('profile.profile')} />
 						<EditableProfileInfoCard
 							fullName={profileFormState.fullName}
 							username={profileFormState.username}
@@ -519,11 +535,12 @@ export default function ProfileScreen() {
 					</View>
 
 					<View>
-						<SectionTitle text="Account" />
+						<SectionTitle text={t('profile.account')} />
 						<Card>
 							<SimpleCardItem
 								label="Change email"
 								icon="email-outline"
+								compact
 								onPress={() =>
 									router.push({ pathname: '/settings/change-email' } as any)
 								}
@@ -531,6 +548,7 @@ export default function ProfileScreen() {
 							<SimpleCardItem
 								label="Change password"
 								icon="lock-outline"
+								compact
 								onPress={() =>
 									router.push({ pathname: '/settings/change-password' } as any)
 								}
@@ -539,6 +557,7 @@ export default function ProfileScreen() {
 								label="Delete account"
 								modifiers={['fault']}
 								icon="account-remove-outline"
+								compact
 								onPress={() =>
 									router.push({ pathname: '/settings/delete-account' } as any)
 								}

@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 import Card from '../layout/Card'
 import ScrollView from '../layout/ScrollView'
@@ -58,7 +59,7 @@ export default function SettingScreen({
 			{serverUnavailable && (
 				<OfflineBanner
 					message={
-						isOffline ? 'No internet connection' : "Can't reach the server"
+						isOffline ? t('settings.noInternet') : t('settings.serverUnavailable')
 					}
 				/>
 			)}
@@ -91,6 +92,7 @@ export default function SettingScreen({
 										onPress={row.onPress}
 										disabled={disabled}
 										modifiers={row.label === 'Logout' ? ['fault'] : undefined}
+										compact
 									/>
 								)
 							})}

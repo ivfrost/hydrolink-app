@@ -40,7 +40,7 @@ export function ProfileHeader({
 						numberOfLines={1}
 						style={{
 							fontSize: theme.font.lg,
-							fontWeight: '600',
+							fontWeight: theme.fontWeight.semibold,
 							color: theme.colors.textPrimary,
 						}}
 					>

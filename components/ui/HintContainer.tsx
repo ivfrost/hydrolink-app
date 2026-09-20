@@ -18,7 +18,7 @@ export default function HydroHint({ text, variant = 'info' }: HydroHintProps) {
 		info: theme.colors.textMuted,
 		warning: theme.colors.warning,
 		error: theme.colors.fault,
-		success: theme.colors.success,
+		success: theme.colors.online,
 	}
 
 	const variantIcon: Record<HintVariant, keyof typeof MaterialIcons.glyphMap> =
@@ -35,13 +35,13 @@ export default function HydroHint({ text, variant = 'info' }: HydroHintProps) {
 		container: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			marginTop: 12,
-			marginLeft: 6,
-			gap: 6,
+			marginTop: theme.space.md,
+			marginLeft: theme.space.xs,
+			gap: theme.space.xs,
 		},
 		text: {
 			fontSize: theme.font.xs,
-			fontWeight: '500',
+			fontWeight: theme.fontWeight.medium,
 			color,
 			flex: 1,
 		},
@@ -49,7 +49,11 @@ export default function HydroHint({ text, variant = 'info' }: HydroHintProps) {
 
 	return (
 		<View style={styles.container}>
-			<MaterialIcons name={variantIcon[variant]} size={14} color={color} />
+			<MaterialIcons
+				name={variantIcon[variant]}
+				size={theme.space.iconSizeSm}
+				color={color}
+			/>
 			<Text style={styles.text}>{text}</Text>
 		</View>
 	)

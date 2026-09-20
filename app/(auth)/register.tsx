@@ -1,181 +1,233 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Text, View } from 'react-native'
 
 import { MaterialIcons } from '@expo/vector-icons'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
+import {
+	AuthError,
+	confirmSignUp,
+	ConfirmSignUpInput,
+	ConfirmSignUpOutput,
+	resendSignUpCode,
+	signUp,
+	SignUpInput,
+	SignUpOutput,
+} from 'aws-amplify/auth'
 import * as Burnt from 'burnt'
 import { useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
-import { useDebounce } from 'use-debounce'
 
 import SpiralSvg from '@/assets/images/spiral-30-svgrepo-com.svg'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
-import { registerFn } from '@/mutations/auth'
-import { checkAvailabilityFn } from '@/queries/auth'
-import { useAuth } from '@/stores/authStore'
-import { AppError } from '@/types/api'
-import {
-	RegisterPayload,
-	RegisterResponse,
-	registerSchema,
-	TokenResponse,
-} from '@/types/auth'
-import { isValidEmailFormat } from '@/utils/isValidEmailFormat'
+import { t } from '@/i18n'
 
-type ErrorState = Partial<Record<keyof RegisterPayload, string>>
+type Step = 'signup' | 'confirm'
+
+interface SignUpForm {
+	fullName: string
+	username: string
+	email: string
+	password: string
+}
+
+type Field = 'fullName' | 'username' | 'email' | 'password' | 'confirmationCode'
+type ErrorState = Partial<Record<Field, string>>
+
+// Cognito exception names surfaced by Amplify's AuthError, mapped to the field
+// they belong to and friendly copy to show the user.
+const signUpErrors: Record<string, { field: Field; message: string }> = {
+	UsernameExistsException: {
+		field: 'email',
+		message: 'An account with this email already exists',
+	},
+	InvalidPasswordException: {
+		field: 'password',
+		message: 'Password does not meet the requirements',
+	},
+	InvalidParameterException: {
+		field: 'email',
+		message: 'Please check your details and try again',
+	},
+	LimitExceededException: {
+		field: 'password',
+		message: 'Too many attempts, try again shortly',
+	},
+	TooManyRequestsException: {
+		field: 'password',
+		message: 'Too many attempts, try again shortly',
+	},
+}
+
+const confirmErrors: Record<string, { field: Field; message: string }> = {
+	CodeMismatchException: {
+		field: 'confirmationCode',
+		message: 'Incorrect confirmation code',
+	},
+	ExpiredCodeException: {
+		field: 'confirmationCode',
+		message: 'That code has expired, request a new one',
+	},
+	TooManyRequestsException: {
+		field: 'confirmationCode',
+		message: 'Too many attempts, try again shortly',
+	},
+}
 
 export default function Register() {
 	const theme = useTheme()
 	const router = useRouter()
-	const setAccessToken = useAuth().setAccessToken
-	const [errorState, setErrorState] = useState<ErrorState>({})
-	const [inputState, setInputState] = useState<Partial<RegisterPayload>>({
-		email: '',
-		username: '',
+	const [step, setStep] = useState<Step>('signup')
+	const [form, setForm] = useState<SignUpForm>({
 		fullName: '',
+		username: '',
+		email: '',
 		password: '',
 	})
-	const [debouncedEmail] = useDebounce(inputState.email ?? '', 400)
-	const [debouncedUsername] = useDebounce(inputState.username ?? '', 400)
+	const [confirmationCode, setConfirmationCode] = useState('')
+	const [errorState, setErrorState] = useState<ErrorState>({})
 
-	// Mutation for registering a new user
-	const { mutate, isPending } = useMutation<
-		RegisterResponse,
-		AppError,
-		RegisterPayload
-	>({
-		mutationKey: tanstackKeys.REGISTER,
-		mutationFn: registerFn,
-		onError: (error: AppError) => {
-			Burnt.toast({
-				title:
-					error.code === 'UNKNOWN_ERROR'
-						? 'An unknown error occurred. Please try again later.'
-						: error.message,
-				preset: 'error',
-			})
-		},
-		onSuccess: async (data: RegisterResponse) => {
-			if (data.error != null || !data.details) {
-				Burnt.toast({
-					title:
-						data.message ||
-						'An unknown error occurred. Please try again later.',
-					preset: 'error',
-				})
-				return
-			}
-			const tokens = data.details.tokens
-
-			const accessToken = tokens.find((t) => t.type === 'AUTH_ACCESS_TOKEN')
-			const refreshToken = data.details.tokens.find(
-				(t) => t.type === 'AUTH_REFRESH_TOKEN',
-			)
-			const recoveryCodes: TokenResponse[] = data.details.tokens.filter(
-				(t) => t.type === 'AUTH_RECOVERY_CODE',
-			)
-
-			if (!accessToken || !refreshToken || recoveryCodes.length === 0) {
-				Burnt.toast({
-					title: 'Authentication error. Please try again later.',
-					preset: 'error',
-				})
-				return
-			}
-
-			setAccessToken(accessToken.value)
-			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
-
-			// Pass recovery codes to the next onboarding step via query params
-			router.replace({
-				pathname: '/onboarding/onboarding3',
-				params: {
-					recoveryCodes: JSON.stringify(
-						recoveryCodes.map((token) => token.value),
-					),
-				},
-			})
-		},
-	})
-
-	// Queries for checking email and username availability
-	const { data: isEmailAvailable, isFetching: emailChecking } = useQuery({
-		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedEmail],
-		queryFn: () => checkAvailabilityFn(debouncedEmail),
-		enabled: isValidEmailFormat(debouncedEmail),
-	})
-	const { data: isUsernameAvailable, isFetching: usernameChecking } = useQuery({
-		queryKey: [...tanstackKeys.VALID_EMAIL_USERNAME, debouncedUsername],
-		queryFn: () => checkAvailabilityFn(debouncedUsername),
-		// Use a simple length check client-side instead of invoking the schema
-		enabled: debouncedUsername.length >= 5 && debouncedUsername.length <= 20,
-	})
-
-	// Handler for input value changes
-	const handleInputChange = (field: keyof RegisterPayload, value: string) => {
-		setInputState((prev) => ({ ...prev, [field]: value }))
+	const handleInputChange = (field: keyof SignUpForm, value: string) => {
+		setForm((prev) => ({ ...prev, [field]: value }))
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
 
-	// Handler for clicking the register button
-	const register = () => {
-		const { success, error, data } = registerSchema.safeParse(inputState)
-		if (!success) {
-			setErrorState(
-				Object.fromEntries(
-					error.issues.map(({ path, message }) => [path[0], message]),
-				),
-			)
+	const { mutate: signUpMutate, isPending: signUpPending } = useMutation<
+		SignUpOutput,
+		AuthError,
+		SignUpInput
+	>({
+		mutationFn: (input) => signUp(input),
+		onSuccess: ({ nextStep }) => {
+			if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
+				Burnt.toast({
+					title: 'A confirmation code was sent to your email.',
+					preset: 'done',
+				})
+				setStep('confirm')
+			}
+		},
+		onError: (error) => {
+			const known = signUpErrors[error.name]
+			if (known) {
+				setErrorState((prev) => ({ ...prev, [known.field]: known.message }))
+				return
+			}
+			Burnt.toast({
+				title: 'Something went wrong, please try again',
+				preset: 'error',
+			})
+		},
+	})
+
+	const { mutate: confirmMutate, isPending: confirmPending } = useMutation<
+		ConfirmSignUpOutput,
+		AuthError,
+		ConfirmSignUpInput
+	>({
+		mutationFn: (input) => confirmSignUp(input),
+		onSuccess: ({ isSignUpComplete }) => {
+			if (isSignUpComplete) {
+				Burnt.toast({
+					title: 'Account confirmed! You can now sign in.',
+					preset: 'done',
+				})
+				router.replace('/(auth)/signin')
+			}
+		},
+		onError: (error) => {
+			const known = confirmErrors[error.name]
+			if (known) {
+				setErrorState((prev) => ({ ...prev, [known.field]: known.message }))
+				return
+			}
+			Burnt.toast({
+				title: 'Something went wrong, please try again',
+				preset: 'error',
+			})
+		},
+	})
+
+	const { mutate: resendMutate, isPending: resendPending } = useMutation<
+		void,
+		AuthError,
+		string
+	>({
+		mutationFn: async (username) => {
+			await resendSignUpCode({ username })
+		},
+		onSuccess: () => {
+			Burnt.toast({
+				title: 'A new code was sent to your email.',
+				preset: 'done',
+			})
+		},
+		onError: () => {
+			Burnt.toast({
+				title: 'Could not resend the code, please try again',
+				preset: 'error',
+			})
+		},
+	})
+
+	const handleSignUp = () => {
+		const nextErrors: ErrorState = {}
+		if (!form.fullName.trim()) nextErrors.fullName = 'Full name is required'
+		if (form.username.trim().length < 5) {
+			nextErrors.username = 'Username must be at least 5 characters'
+		}
+		if (!form.email.trim() || !form.email.includes('@')) {
+			nextErrors.email = 'Enter a valid email'
+		}
+		if (!form.password) nextErrors.password = 'Password is required'
+
+		if (Object.keys(nextErrors).length > 0) {
+			setErrorState(nextErrors)
 			return
 		}
+
 		setErrorState({})
-		mutate(data)
+		signUpMutate({
+			username: form.email,
+			password: form.password,
+			options: {
+				userAttributes: {
+					email: form.email,
+					name: form.fullName,
+					preferred_username: form.username,
+				},
+			},
+		})
 	}
 
-	// Effects to update error state based on availability checks
-	useEffect(() => {
-		if (inputState.email !== debouncedEmail) return
-		if (isEmailAvailable === false) {
-			setErrorState((prev) => ({ ...prev, email: 'Email is already in use' }))
-		} else if (isEmailAvailable === true) {
-			setErrorState((prev) => ({ ...prev, email: '' }))
-		}
-	}, [isEmailAvailable, inputState.email, debouncedEmail])
-	useEffect(() => {
-		if (inputState.username !== debouncedUsername) return
-		if (isUsernameAvailable === false) {
+	const handleConfirm = () => {
+		if (!confirmationCode.trim()) {
 			setErrorState((prev) => ({
 				...prev,
-				username: 'Username is already taken',
+				confirmationCode: 'Enter the code from your email',
 			}))
-		} else if (isUsernameAvailable === true) {
-			setErrorState((prev) => ({ ...prev, username: '' }))
+			return
 		}
-	}, [isUsernameAvailable, inputState.username, debouncedUsername])
+		setErrorState((prev) => ({ ...prev, confirmationCode: '' }))
+		confirmMutate({ username: form.email, confirmationCode })
+	}
 
-	// Button state management logic
-	const hasErrors = Object.values(errorState).some((message) => !!message)
-	const hasEmptyFields =
-		!inputState.email ||
-		!inputState.username ||
-		!inputState.fullName ||
-		!inputState.password
-	const checkPending = emailChecking || usernameChecking
+	const isSignUpDisabled =
+		!form.fullName ||
+		!form.username ||
+		!form.email ||
+		!form.password ||
+		signUpPending
+	const isConfirmDisabled = !confirmationCode || confirmPending
 
-	const isButtonDisabled =
-		hasErrors || hasEmptyFields || checkPending || isPending
-
-	const errorText = (field: keyof ErrorState) =>
+	const errorText = (field: Field) =>
 		errorState[field] ? (
 			<Text
 				style={{
 					color: theme.colors.fault,
 					fontSize: theme.font.sm,
-					marginTop: 4,
+					marginTop: theme.space.x2s,
 				}}
 			>
 				{errorState[field]}
@@ -195,7 +247,7 @@ export default function Register() {
 					<View
 						style={{
 							backgroundColor: theme.colors.accentTint,
-							borderRadius: 18,
+							borderRadius: theme.radius.card,
 							width: 68,
 							height: 68,
 							alignItems: 'center',
@@ -208,128 +260,142 @@ export default function Register() {
 					<Text
 						style={{
 							fontSize: theme.font.lg,
-							fontWeight: '600',
+							fontWeight: theme.fontWeight.semibold,
 							textAlign: 'center',
 							color: theme.colors.textPrimary,
 						}}
 					>
-						Create your account
+						{step === 'signup' ? 'Create your account' : 'Confirm your email'}
 					</Text>
+					{step === 'confirm' && (
+						<Text
+							style={{
+								fontSize: theme.font.sm,
+								textAlign: 'center',
+								fontWeight: theme.fontWeight.regular,
+								color: theme.colors.textSecondary,
+								marginTop: theme.space.x2s,
+							}}
+						>
+							Enter the code we sent to {form.email}
+						</Text>
+					)}
 				</View>
 
-				{/* Inputs */}
-				<View style={{ width: '100%', gap: theme.space.x2l }}>
-					<View>
-						<Input
-							label="Full name"
-							value={inputState.fullName}
-							autoCorrect={false}
-							onChangeText={(value) => handleInputChange('fullName', value)}
-							labelBackground={theme.colors.modal}
-						/>
-						{errorText('fullName')}
+				{step === 'signup' ? (
+					<View style={{ width: '100%', gap: theme.space.x2l }}>
+						<View>
+							<Input
+								label={t('auth.fullName')}
+								value={form.fullName}
+								autoCorrect={false}
+								onChangeText={(value) => handleInputChange('fullName', value)}
+								labelBackground={theme.colors.surfaceOverlay}
+							/>
+							{errorText('fullName')}
+						</View>
+						<View>
+							<Input
+								label={t('auth.username')}
+								value={form.username}
+								autoCapitalize="none"
+								autoCorrect={false}
+								onChangeText={(value) => handleInputChange('username', value)}
+								labelBackground={theme.colors.surfaceOverlay}
+							/>
+							{errorText('username')}
+						</View>
+						<View>
+							<Input
+								label={t('auth.email')}
+								value={form.email}
+								keyboardType="email-address"
+								autoCapitalize="none"
+								autoCorrect={false}
+								onChangeText={(value) => handleInputChange('email', value)}
+								labelBackground={theme.colors.surfaceOverlay}
+							/>
+							{errorText('email')}
+						</View>
+						<View>
+							<Input
+								label={t('auth.password')}
+								value={form.password}
+								autoCapitalize="none"
+								autoCorrect={false}
+								secureTextEntry
+								onChangeText={(value) => handleInputChange('password', value)}
+								onSubmitEditing={handleSignUp}
+								labelBackground={theme.colors.surfaceOverlay}
+							/>
+							{errorText('password')}
+						</View>
 					</View>
-					<View>
-						<Input
-							label="Username"
-							value={inputState.username}
-							autoCapitalize="none"
-							autoCorrect={false}
-							onChangeText={(value) => handleInputChange('username', value)}
-							labelBackground={theme.colors.modal}
+				) : (
+					<View style={{ width: '100%', gap: theme.space.x2l }}>
+						<View>
+							<Input
+								label={t('auth.confirmationCode')}
+								value={confirmationCode}
+								keyboardType="number-pad"
+								autoCapitalize="none"
+								autoCorrect={false}
+								onChangeText={(value) => {
+									setConfirmationCode(value)
+									setErrorState((prev) => ({
+										...prev,
+										confirmationCode: '',
+									}))
+								}}
+								onSubmitEditing={handleConfirm}
+								labelBackground={theme.colors.surfaceOverlay}
+							/>
+							{errorText('confirmationCode')}
+						</View>
+						<Button
+							label={resendPending ? 'Sending…' : 'Resend code'}
+							variant="tertiary"
+							onPress={() => resendMutate(form.email)}
+							disabled={resendPending}
 						/>
-						{usernameChecking && (
-							<Text
-								style={{
-									color: theme.colors.textSecondary,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								Checking availability…
-							</Text>
-						)}
-						{!usernameChecking && isUsernameAvailable === true && (
-							<Text
-								style={{
-									color: theme.colors.success,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								Username available
-							</Text>
-						)}
-						{!usernameChecking && errorText('username')}
 					</View>
-					<View>
-						<Input
-							label="Email"
-							value={inputState.email}
-							keyboardType="email-address"
-							autoCapitalize="none"
-							autoCorrect={false}
-							onChangeText={(value) => handleInputChange('email', value)}
-							labelBackground={theme.colors.modal}
-						/>
-						{emailChecking && (
-							<Text
-								style={{
-									color: theme.colors.textSecondary,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								Checking availability…
-							</Text>
-						)}
-						{!emailChecking && isEmailAvailable === true && (
-							<Text
-								style={{
-									color: theme.colors.success,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								Email available
-							</Text>
-						)}
-						{!emailChecking && errorText('email')}
-					</View>
-					<View>
-						<Input
-							label="Password"
-							value={inputState.password}
-							autoCapitalize="none"
-							autoCorrect={false}
-							secureTextEntry
-							onChangeText={(value) => handleInputChange('password', value)}
-							labelBackground={theme.colors.modal}
-						/>
-						{errorText('password')}
-					</View>
-				</View>
+				)}
 
-				<Button
-					label="Create account"
-					variant="primary"
-					modifier={['full']}
-					loading={isPending}
-					onPress={register}
-					disabled={isButtonDisabled}
-					iconPosition="right"
-					icon={
-						<MaterialIcons
-							name="arrow-forward"
-							size={theme.space.iconSize}
-							color={
-								isButtonDisabled
-									? theme.colors.buttonDisabledText
-									: theme.colors.buttonPrimaryText
-							}
-						/>
-					}
-				/>
+				{step === 'signup' ? (
+					<Button
+						label={t('auth.createAccount')}
+						variant="primary"
+						modifier={['full']}
+						loading={signUpPending}
+						onPress={handleSignUp}
+						disabled={isSignUpDisabled}
+						iconPosition="right"
+						icon={
+							<MaterialIcons
+								name="arrow-forward"
+								size={theme.space.iconSize}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						}
+					/>
+				) : (
+					<Button
+						label={t('auth.confirm')}
+						variant="primary"
+						modifier={['full']}
+						loading={confirmPending}
+						onPress={handleConfirm}
+						disabled={isConfirmDisabled}
+						iconPosition="right"
+						icon={
+							<MaterialIcons
+								name="arrow-forward"
+								size={theme.space.iconSize}
+								color={theme.colors.buttonPrimaryText}
+							/>
+						}
+					/>
+				)}
 			</KeyboardAwareScrollView>
 		</>
 	)

@@ -9,7 +9,8 @@ export const areaDbDataSchema = z.object({
 	locationLabel: z.string(),
 	locationCoordinates: z.string(),
 	description: z.string(),
-	imageUrl: z.url().nullable().optional(),
+	// Reads return a fresh presigned URL; writes store an object key. Accept both.
+	imageUrl: z.string().max(2048).nullable().optional(),
 	firmware: z.string(),
 	technicalName: z.string(),
 	ip: z.string(),
@@ -17,7 +18,7 @@ export const areaDbDataSchema = z.object({
 	updatedAt: z.coerce.date().transform((date) => date.toISOString()),
 	linkedAt: z.coerce.date().transform((date) => date.toISOString()),
 	lastSeen: z.coerce.date().transform((date) => date.toISOString()),
-	userId: z.number(),
+	userId: z.string(),
 	displayOrder: z.number(),
 })
 
@@ -33,32 +34,40 @@ export type ManualOverride = z.infer<typeof manualOverrideSchema>
 
 export const stationSchema = z.object({
 	id: z.number(),
-	type: z.enum([
-		'Solenoid',
-		'FertilizerPump',
-		'CaudalSensor',
-		'HumiditySensor',
-		'Unclassified',
-	]),
+	type: z
+		.enum([
+			'Solenoid',
+			'FertilizerPump',
+			'CaudalSensor',
+			'HumiditySensor',
+			'Unknown',
+		])
+		// Fall back to Unknown if the ESP ever reports a type the app does not
+		// know yet, instead of rejecting the whole status payload.
+		.catch('Unknown'),
 	name: z.string().nullable().optional(),
 	description: z.string().nullable().optional(),
-	// TODO: add API minio endpoint to upload images and store the URL here
-	imageUrl: z.url().nullable().optional(),
+	// The ESP echoes whatever the app sent (key) or a URL; accept both.
+	imageUrl: z.string().max(2048).nullable().optional(),
 	status: z.object({
 		state: z.enum(['Running', 'Idle', 'Unknown']),
 		cause: z.enum(['Manual', 'Sensor', 'Schedule', 'Done', 'None']),
 		manualOverride: manualOverrideSchema.optional(),
 	}),
 
-	// Current schedule is at idx 1, past at 0 and future at 2
-	schedules: z.array(
-		z.object({
-			start: z.coerce.string(),
-			end: z.coerce.string(),
-			active: z.boolean(),
-			ok: z.boolean(),
-		}),
-	),
+	// Current schedule is at idx 1, past at 0 and future at 2. The ESP status
+	// payload does not carry per-station schedules, so default to an empty list
+	// rather than rejecting an otherwise valid station snapshot.
+	schedules: z
+		.array(
+			z.object({
+				start: z.coerce.string(),
+				end: z.coerce.string(),
+				active: z.boolean(),
+				ok: z.boolean(),
+			}),
+		)
+		.default([]),
 })
 
 export type StationStatus = z.infer<typeof stationSchema.shape.status>
@@ -95,7 +104,8 @@ export const areaUpdatePayloadSchema = z.object({
 	locationLabel: z.string().optional(),
 	locationCoordinates: z.string().optional(),
 	description: z.string().optional(),
-	imageUrl: z.url().optional(),
+	// The upload response returns an object key, so this is not necessarily a URL.
+	imageUrl: z.string().max(2048).optional(),
 	// MQTT side fields (stations are keyed by station ID)
 	stations: z.record(z.number(), stationUpdateSchema),
 })

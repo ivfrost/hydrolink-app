@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button'
 import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 export default function AreaQRScan() {
 	const [permission, requestPermission] = useCameraPermissions()
@@ -42,11 +43,14 @@ export default function AreaQRScan() {
 				>
 					<QrCodeIllustration height={240} color={theme.colors.accent} />
 					<OnboardTextWrapper>
-						<Title text="Camera access needed" />
-						<Subtitle text="We need access to your camera to scan the QR code on your device." />
+						<Title text={t('areas.cameraAccessNeeded')} />
+						<Subtitle text={t('areas.cameraScanHint')} />
 					</OnboardTextWrapper>
 				</View>
-				<Button label="Allow camera access" onPress={requestPermission} />
+				<Button
+					label={t('areas.allowCameraAccess')}
+					onPress={requestPermission}
+				/>
 			</OnboardContainer>
 		)
 	}

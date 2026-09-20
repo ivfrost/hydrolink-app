@@ -215,12 +215,24 @@ export default function DropdownMenu({
 									left: menuLeft,
 									top: menuTop,
 									zIndex: 1001,
-									backgroundColor: theme.colors.card,
+									backgroundColor: theme.colors.surfaceRaised,
 									borderRadius: theme.radius.dropdown,
 									paddingVertical: theme.space.sm,
 									overflow: 'hidden',
-									elevation: 4,
+									shadowColor: '#000',
+									shadowOffset: { width: 0, height: 2 },
+									shadowOpacity: 0.16,
+									shadowRadius: 8,
+									elevation: 6,
 									opacity,
+									transform: [
+										{
+											translateY: opacity.interpolate({
+												inputRange: [0, 1],
+												outputRange: [-4, 0],
+											}),
+										},
+									],
 									alignSelf: 'flex-start',
 									flexShrink: 0,
 									flexGrow: 0,
@@ -311,7 +323,7 @@ export default function DropdownMenu({
 														style={{
 															color: theme.colors.textPrimary,
 															fontSize: theme.font.base,
-															fontWeight: '500',
+															fontWeight: theme.fontWeight.medium,
 															flexShrink: 0,
 														}}
 													>

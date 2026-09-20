@@ -28,7 +28,7 @@ export default function Card({
 			style={[
 				{
 					flexDirection: flexDirection,
-					backgroundColor: theme.colors.card,
+					backgroundColor: theme.colors.surfaceRaised,
 					borderRadius: theme.radius.card,
 					paddingHorizontal: theme.space.lg,
 					elevation: elevation,
@@ -52,7 +52,7 @@ export default function Card({
 								width: flexDirection === 'row' ? 1 : '100%',
 								height: flexDirection === 'row' ? '100%' : 1,
 								marginVertical: 'auto',
-								backgroundColor: theme.colors.border,
+								backgroundColor: theme.colors.outline,
 							}}
 						/>
 					)}

@@ -40,7 +40,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 		},
 		timeBadgeText: {
 			fontSize: theme.font.xs,
-			fontWeight: '600',
+			fontWeight: theme.fontWeight.semibold,
 		},
 	})
 
@@ -65,6 +65,7 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 				return (
 					<CardItem
 						key={idx}
+						compact
 						title={station.name}
 						subtitle={area.name}
 						icon={iconName}
@@ -80,9 +81,9 @@ export default function AreaCard({ areaData, actions }: AreaCardProps) {
 								{!incoming ? (
 									<View
 										style={{
-											width: 6,
-											height: 6,
-											borderRadius: 3,
+											width: 5,
+											height: 5,
+											borderRadius: 2.5,
 											backgroundColor: accentColor,
 										}}
 									/>

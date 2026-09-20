@@ -1,13 +1,14 @@
 import { ActivityIndicator, Text, View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 export interface LoadingScreenProps {
 	label?: string
 }
 
 export default function LoadingScreen({
-	label = 'Loading...',
+	label = t('common.loading'),
 }: LoadingScreenProps) {
 	const theme = useTheme()
 	return (

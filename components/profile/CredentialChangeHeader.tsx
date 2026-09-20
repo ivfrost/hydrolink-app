@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 interface CredentialChangeHeaderProps {
 	title: string
@@ -13,7 +14,7 @@ export function CredentialChangeHeader({
 	title,
 	description,
 	currentValue,
-	currentLabel = 'Current',
+	currentLabel = t('common.current'),
 }: CredentialChangeHeaderProps) {
 	const theme = useTheme()
 
@@ -22,7 +23,7 @@ export function CredentialChangeHeader({
 			<Text
 				style={{
 					fontSize: theme.font.lg,
-					fontWeight: '600',
+					fontWeight: theme.fontWeight.semibold,
 					color: theme.colors.textPrimary,
 				}}
 			>

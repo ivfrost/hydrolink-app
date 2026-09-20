@@ -206,7 +206,12 @@ export default function ChangeEmailScreen() {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
 				<ActivityIndicator size="large" color={theme.colors.accent} />
-				<Text style={{ color: theme.colors.textSecondary, marginTop: 12 }}>
+				<Text
+					style={{
+						color: theme.colors.textSecondary,
+						marginTop: theme.space.md,
+					}}
+				>
 					Loading profile...
 				</Text>
 			</View>
@@ -220,13 +225,10 @@ export default function ChangeEmailScreen() {
 					style={{
 						justifyContent: 'center',
 						alignItems: 'center',
-						paddingVertical: 20,
+						paddingVertical: theme.space.x2l,
 					}}
 				>
-					<ChangeEmailIllustration
-						height={180}
-						color={theme.colors.accent}
-					/>
+					<ChangeEmailIllustration height={180} color={theme.colors.accent} />
 				</View>
 				<CredentialChangeHeader
 					title="Change Email"

@@ -1,30 +1,34 @@
 import { Animated, StyleSheet, View } from 'react-native'
 
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { useQuery } from '@tanstack/react-query'
 import { Tabs, useRouter } from 'expo-router'
 
 import DropdownMenu from '@/components/ui/DropdownMenu'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { AreaMenuOptionValue, getAreasScreenHeaderOptions } from '@/data/area'
 import { useLocalDiscovery } from '@/hooks/useLocalDiscovery'
-import { useAuth } from '@/stores/authStore'
-import { decodeJwt } from '@/utils/decodeJwt'
+import { profileQueryFn } from '@/queries/profile'
 
 export const tabScrollValues: Record<string, Animated.Value> = {}
 export default function TabsLayout() {
 	useLocalDiscovery()
 	const theme = useTheme()
 	const router = useRouter()
-	const accessToken = useAuth((state) => state.accessToken)
-	const isAdmin = Boolean(
-		accessToken && (decodeJwt(accessToken)?.roles ?? []).includes('ADMIN'),
-	)
+	// Roles live in the API (the Cognito tokens don't carry them), so read them
+	// from the profile query.
+	const { data: profile } = useQuery({
+		queryKey: ['profile'],
+		queryFn: profileQueryFn,
+	})
+	const isAdmin = Boolean(profile?.roles.includes('ADMIN'))
 
 	return (
 		<Tabs
 			screenOptions={{
 				sceneStyle: {
-					backgroundColor: theme.colors.background,
+					backgroundColor: theme.colors.surface,
 				},
 				headerTintColor: theme.colors.textPrimary,
 				headerBackground: () => (
@@ -32,14 +36,14 @@ export default function TabsLayout() {
 						style={[
 							StyleSheet.absoluteFill,
 							{
-								backgroundColor: theme.colors.background,
+								backgroundColor: theme.colors.surface,
 							},
 						]}
 					/>
 				),
 				tabBarStyle: {
-					backgroundColor: theme.colors.modal,
-					borderTopColor: theme.colors.border,
+					backgroundColor: theme.colors.surfaceOverlay,
+					borderTopColor: theme.colors.outline,
 					paddingTop: theme.space.sm,
 					paddingHorizontal: theme.space.xs,
 					height: 90,
@@ -54,7 +58,7 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name="index"
 				options={{
-					title: 'Dashboard',
+					title: t('tabs.dashboard'),
 					tabBarIcon: ({ color, focused }) => (
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons
@@ -69,7 +73,7 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name="schedules"
 				options={{
-					title: 'Schedules',
+					title: t('tabs.schedules'),
 					tabBarIcon: ({ color, focused }) => (
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons
@@ -84,11 +88,11 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name="areas"
 				options={{
-					title: 'Areas',
+					title: t('tabs.areas'),
 					headerShown: true,
 					headerShadowVisible: false,
 					headerStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 					headerRightContainerStyle: {
 						paddingRight: theme.space.sm,
@@ -122,7 +126,7 @@ export default function TabsLayout() {
 			<Tabs.Screen
 				name="settings"
 				options={{
-					title: 'Settings',
+					title: t('tabs.settings'),
 					tabBarIcon: ({ color, focused }) => (
 						<View style={{ transform: [{ scale: focused ? 1.15 : 1.0 }] }}>
 							<MaterialCommunityIcons

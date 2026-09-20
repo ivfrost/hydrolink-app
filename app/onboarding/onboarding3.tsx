@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button'
 import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 
 export default function OnboardingStep3() {
 	const theme = useTheme()
@@ -100,14 +101,14 @@ export default function OnboardingStep3() {
 				}}
 			>
 				<OnboardTextWrapper>
-					<Title text="Save your recovery codes" />
+					<Title text={t('onboarding.saveRecoveryCodesTitle')} />
 					<Subtitle>
 						These{' '}
 						<Text
 							style={{
 								fontVariant: ['small-caps'],
 								color: theme.colors.textPrimary,
-								fontWeight: '500',
+								fontWeight: theme.fontWeight.medium,
 							}}
 						>
 							Recovery Codes
@@ -118,7 +119,7 @@ export default function OnboardingStep3() {
 				</OnboardTextWrapper>
 				<View
 					style={{
-						backgroundColor: theme.colors.card,
+						backgroundColor: theme.colors.surfaceRaised,
 						borderRadius: theme.radius.card,
 						gap: theme.space.md,
 						padding: theme.space.lg,
@@ -133,8 +134,8 @@ export default function OnboardingStep3() {
 								key={idx}
 								style={{
 									padding: theme.space.sm,
-									backgroundColor: theme.colors.inputBackground,
-									borderRadius: 8,
+									backgroundColor: theme.colors.surfaceSunken,
+									borderRadius: theme.radius.boxInCard,
 									alignItems: 'center',
 								}}
 							>
@@ -151,7 +152,7 @@ export default function OnboardingStep3() {
 						)
 					})}
 					<Button
-						label="Download codes"
+						label={t('onboarding.downloadCodes')}
 						onPress={downloadCodes}
 						modifier={['full']}
 						icon={
@@ -165,7 +166,7 @@ export default function OnboardingStep3() {
 				</View>
 
 				<Button
-					label="Continue"
+					label={t('onboarding.continue')}
 					variant="secondary"
 					modifier={['tall', 'full']}
 					iconPosition="right"

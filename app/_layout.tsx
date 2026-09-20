@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { TouchableOpacity } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import Toast from 'react-native-toast-message'
@@ -8,7 +8,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { PortalProvider } from '@gorhom/portal'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
-import { Stack, useRouter } from 'expo-router'
+import { fetchAuthSession } from 'aws-amplify/auth'
+import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SystemUI from 'expo-system-ui'
 
@@ -16,6 +17,7 @@ import { MqttProvider } from '@/context/MqttContext'
 import { NetworkProvider } from '@/context/NetworkContext'
 import { ThemeProvider, useTheme } from '@/context/ThemeContext'
 import { asyncStoragePersister, queryClient } from '@/queries/queryClient'
+import '@/services/amplify'
 
 export const unstable_settings = {
 	initialRouteName: '(tabs)',
@@ -32,10 +34,54 @@ export default function RootLayout() {
 function AppContent() {
 	const theme = useTheme()
 	const router = useRouter()
+	const segments = useSegments()
+	const [authChecked, setAuthChecked] = useState(false)
+	const isTabsRoute = segments[0] === '(tabs)'
 
 	useEffect(() => {
-		SystemUI.setBackgroundColorAsync(theme.colors.background)
-	}, [theme.colors.background])
+		SystemUI.setBackgroundColorAsync(theme.colors.surface)
+	}, [theme.colors.surface])
+
+	useEffect(() => {
+		let cancelled = false
+
+		const checkAuth = async () => {
+			let isAuthenticated = false
+			try {
+				const { tokens } = await fetchAuthSession()
+				isAuthenticated = Boolean(tokens?.idToken)
+			} catch {
+				isAuthenticated = false
+			}
+
+			if (cancelled) return
+
+			setAuthChecked(true)
+			if (!isAuthenticated && isTabsRoute) {
+				router.replace('/onboarding/onboarding2')
+			}
+		}
+
+		void checkAuth()
+		return () => {
+			cancelled = true
+		}
+	}, [isTabsRoute, router])
+
+	if (!authChecked) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: 'center',
+					alignItems: 'center',
+					backgroundColor: theme.colors.surface,
+				}}
+			>
+				<ActivityIndicator size="large" color={theme.colors.accent} />
+			</View>
+		)
+	}
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
@@ -44,10 +90,7 @@ function AppContent() {
 				persistOptions={{
 					persister: asyncStoragePersister,
 					// Don't persist account-scoped data (linked devices, profile,
-					// schedules) to AsyncStorage. Persisting these makes stale data —
-					// e.g. a device unlinked elsewhere, or another user's data after
-					// logout — reappear on the next launch before a fresh
-					// refetch succeeds (or forever, if the refetch fails).
+					// schedules) to AsyncStorage (stale data).
 					// In-memory caching is unaffected.
 					dehydrateOptions: {
 						shouldDehydrateQuery: (query) =>
@@ -59,15 +102,17 @@ function AppContent() {
 			>
 				<BottomSheetModalProvider>
 					<NetworkProvider>
-						<PortalProvider>
-							<KeyboardProvider>
-								<MqttProvider>
+						<MqttProvider>
+							<PortalProvider>
+								<KeyboardProvider>
 									<Stack
 										screenOptions={{
 											contentStyle: {
-												backgroundColor: theme.colors.background,
+												backgroundColor: theme.colors.surface,
 											},
-											headerStyle: { backgroundColor: theme.colors.card },
+											headerStyle: {
+												backgroundColor: theme.colors.surfaceRaised,
+											},
 											headerTintColor: theme.colors.textPrimary,
 											headerShown: false,
 										}}
@@ -85,7 +130,7 @@ function AppContent() {
 											options={{
 												headerBackVisible: false,
 												contentStyle: {
-													backgroundColor: theme.colors.card,
+													backgroundColor: theme.colors.surfaceRaised,
 												},
 												headerShown: true,
 												headerShadowVisible: false,
@@ -110,7 +155,7 @@ function AppContent() {
 											options={{
 												headerBackVisible: false,
 												contentStyle: {
-													backgroundColor: theme.colors.card,
+													backgroundColor: theme.colors.surfaceRaised,
 												},
 												headerShown: true,
 												headerShadowVisible: false,
@@ -133,9 +178,9 @@ function AppContent() {
 									</Stack>
 									<Toast />
 									<StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-								</MqttProvider>
-							</KeyboardProvider>
-						</PortalProvider>
+								</KeyboardProvider>
+							</PortalProvider>
+						</MqttProvider>
 					</NetworkProvider>
 				</BottomSheetModalProvider>
 			</PersistQueryClientProvider>

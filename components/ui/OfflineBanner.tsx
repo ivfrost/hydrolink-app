@@ -32,10 +32,11 @@ export default function OfflineBanner({ message }: OfflineBannerProps) {
 				color={theme.colors.warning}
 			/>
 			<Text
-				style={[
-					styles.text,
-					{ color: theme.colors.warning, fontSize: theme.font.xs },
-				]}
+				style={{
+					color: theme.colors.warning,
+					fontSize: theme.font.xs,
+					fontWeight: theme.fontWeight.medium,
+				}}
 			>
 				{message}
 			</Text>
@@ -48,8 +49,5 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		borderWidth: 1,
-	},
-	text: {
-		fontWeight: '500',
 	},
 })

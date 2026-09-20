@@ -6,6 +6,7 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 import Badge from '@/components/ui/Badge'
 import CardItem from '@/components/ui/CardItem'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { Station, StationSchedule } from '@/types/area'
 import { formatRelativeFromEpochStr } from '@/utils/formatRelativeTime'
 
@@ -18,6 +19,7 @@ export interface AreaCardItemProps {
 	activeFertilizers?: Station[] | undefined
 	sensors?: Station[] | undefined
 	schedules?: StationSchedule[] | undefined
+	local?: boolean
 	onPress?: () => void
 }
 
@@ -56,13 +58,13 @@ function runningDurationLabel(station: Station, now: number): string | null {
 function causeLabel(station: Station): string {
 	switch (station.status.cause) {
 		case 'Manual':
-			return 'Manual Mode'
+			return t('status.manualMode')
 		case 'Sensor':
-			return 'Sensor Triggered'
+			return t('status.sensorTriggered')
 		case 'Schedule':
-			return 'Scheduled'
+			return t('status.scheduled')
 		default:
-			return 'Unknown Cause'
+			return t('status.unknownCause')
 	}
 }
 
@@ -95,7 +97,7 @@ function ScheduleRow({
 				padding: theme.space.sm,
 				backgroundColor: active
 					? theme.colors.scheduleActiveBg
-					: theme.colors.card,
+					: theme.colors.surfaceRaised,
 				borderWidth: active ? 1 : 0,
 				borderColor: active ? theme.colors.scheduleActiveBorder : 'transparent',
 				borderRadius: theme.radius.boxInCard,
@@ -137,13 +139,13 @@ function RunningPill({
 		const loop = Animated.loop(
 			Animated.sequence([
 				Animated.timing(opacity, {
-					toValue: 0.4,
-					duration: 700,
+					toValue: 0.6,
+					duration: 1000,
 					useNativeDriver: true,
 				}),
 				Animated.timing(opacity, {
 					toValue: 1,
-					duration: 700,
+					duration: 1600,
 					useNativeDriver: true,
 				}),
 			]),
@@ -159,7 +161,7 @@ function RunningPill({
 				flexDirection: 'row',
 				alignItems: 'center',
 				gap: theme.space.x2s,
-				backgroundColor: theme.colors.card,
+				backgroundColor: theme.colors.surfaceRaised,
 				borderRadius: theme.radius.pill,
 				borderWidth: 1,
 				borderColor,
@@ -167,12 +169,13 @@ function RunningPill({
 				paddingVertical: theme.space.x2s,
 			}}
 		>
-			<MaterialCommunityIcons name="play" size={10} color={color} />
+			<MaterialCommunityIcons name="play" size={11} color={color} />
 			<Text
 				style={{
 					color,
 					fontSize: theme.font.xs,
-					fontWeight: '700',
+					fontWeight: theme.fontWeight.bold,
+					paddingEnd: theme.space.x3s,
 				}}
 			>
 				Running
@@ -188,10 +191,10 @@ export function UpdatingLabel() {
 			style={{
 				color: theme.colors.online,
 				fontSize: theme.font.sm,
-				fontWeight: '600',
+				fontWeight: theme.fontWeight.semibold,
 			}}
 		>
-			Updating firmware…
+			{t('status.updating')}
 		</Text>
 	)
 }
@@ -205,6 +208,7 @@ export default function AreaCardItem({
 	activeFertilizers,
 	sensors,
 	schedules,
+	local = false,
 	onPress,
 }: AreaCardItemProps) {
 	const theme = useTheme()
@@ -268,7 +272,6 @@ export default function AreaCardItem({
 	const runningFor = activeSolenoid
 		? runningDurationLabel(activeSolenoid, now)
 		: null
-
 	return (
 		<CardItem
 			title={title}
@@ -298,9 +301,19 @@ export default function AreaCardItem({
 							flexDirection: 'row',
 							alignItems: 'center',
 							gap: theme.space.x2s,
-							flex: 1,
 						}}
 					>
+						{local && (
+							<Text
+								style={{
+									color: theme.colors.textMuted,
+									fontSize: theme.font.xs,
+									fontWeight: theme.fontWeight.semibold,
+								}}
+							>
+								{t('areas.local')}
+							</Text>
+						)}
 						<MaterialIcons
 							name="chevron-right"
 							size={theme.space.iconSize}
@@ -322,16 +335,16 @@ export default function AreaCardItem({
 								<View
 									style={{
 										borderRadius: theme.radius.boxInCard,
-										backgroundColor: accent.bg,
+										backgroundColor: theme.colors.surfaceSunken,
 										padding: theme.space.lg,
 									}}
 								>
 									<View
 										style={{
 											flexDirection: 'row',
-											alignItems: 'center',
+											alignItems: 'flex-start',
 											justifyContent: 'space-between',
-											gap: theme.space.sm,
+											gap: theme.space.md,
 										}}
 									>
 										<Text
@@ -339,7 +352,7 @@ export default function AreaCardItem({
 											style={{
 												color: accent.color,
 												fontSize: theme.font.base,
-												fontWeight: '600',
+												fontWeight: theme.fontWeight.semibold,
 												flexShrink: 1,
 											}}
 										>
@@ -354,8 +367,8 @@ export default function AreaCardItem({
 										style={{
 											color: theme.colors.textSecondary,
 											fontSize: theme.font.sm,
-											fontWeight: '400',
-											marginTop: 2,
+											fontWeight: theme.fontWeight.regular,
+											marginTop: theme.space.x3s,
 										}}
 									>
 										{causeLabel(activeSolenoid)}
@@ -426,14 +439,14 @@ export default function AreaCardItem({
 						)}
 						{pastSchedule && (
 							<ScheduleRow
-								label="Last"
+								label={t('areas.last')}
 								icon="history"
 								schedule={pastSchedule}
 							/>
 						)}
 						{currentSchedule && (
 							<ScheduleRow
-								label="Current"
+								label={t('areas.current')}
 								icon="timer-play-outline"
 								schedule={currentSchedule}
 								active
@@ -441,7 +454,7 @@ export default function AreaCardItem({
 						)}
 						{futureSchedule && (
 							<ScheduleRow
-								label="Next"
+								label={t('areas.next')}
 								icon="calendar-clock-outline"
 								schedule={futureSchedule}
 							/>

@@ -1,25 +1,38 @@
+export type TimeWindowStartType = 'FIXED' | 'RELATIVE'
+
+export type LinkedReferencePoint = 'START' | 'END'
+
 export interface TimeWindowResponse {
 	id: number
 	pin: number
-	startType: string
-	fixedTime: string
-	linkedPin: number
-	offsetMinutes: number
+	startType: TimeWindowStartType
+	fixedTime: string | null
+	linkedPin: number | null
+	linkedReferencePoint?: LinkedReferencePoint | null
+	offsetMinutes: number | null
 	durationMinutes: number
-	hasConflict: boolean
 }
+
+/**
+ * Window payload for PUT /devices/{key}/schedules/{date}.
+ * When startType is FIXED, fixedTime is required.
+ * When startType is RELATIVE, linkedPin, linkedReferencePoint and offsetMinutes
+ * are required.
+ */
 export interface TimeWindowRequest {
 	pin: number
-	startType: string
-	fixedTime: string
-	linkedPin: number
-	linkedReferencePoint: 'start' | 'end'
-	offsetMinutes: number
+	startType: TimeWindowStartType
+	fixedTime?: string
+	linkedPin?: number
+	linkedReferencePoint?: LinkedReferencePoint
+	offsetMinutes?: number
 	durationMinutes: number
 }
+
 export interface Schedule {
 	id: number
-	dayOfWeek: string
+	/** ISO date (yyyy-MM-dd). Schedules are stored per concrete date. */
+	date: string
 	windows: TimeWindowResponse[]
 	conflictingWindowIds: number[]
 }

@@ -3,6 +3,7 @@ import { Text, View } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { formatRelativeFromEpochStr } from '@/utils/formatRelativeTime'
 
 import Card from '../layout/Card'
@@ -33,35 +34,35 @@ export default function AreaSummaryCard({
 		bg: string
 	}[] = [
 		{
-			label: 'Total',
+			label: t('common.total'),
 			value: solenoidCount + fertilizerCount + sensorCount + unclassifiedCount,
 			icon: 'chart-box',
 			color: theme.colors.accent,
 			bg: theme.colors.accentTint,
 		},
 		{
-			label: 'Solenoids',
+			label: t('common.solenoids'),
 			value: solenoidCount,
 			icon: 'valve',
 			color: theme.colors.accent,
 			bg: theme.colors.accentTint,
 		},
 		{
-			label: 'Fertilizers',
+			label: t('common.fertilizers'),
 			value: fertilizerCount,
 			icon: 'sprout',
 			color: theme.colors.accent,
 			bg: theme.colors.accentTint,
 		},
 		{
-			label: 'Sensors',
+			label: t('common.sensors'),
 			value: sensorCount,
 			icon: 'thermometer-lines',
 			color: theme.colors.accent,
 			bg: theme.colors.accentTint,
 		},
 		{
-			label: 'Unclassified',
+			label: t('common.unknown'),
 			value: unclassifiedCount,
 			icon: 'help-circle',
 			color: theme.colors.accent,
@@ -121,7 +122,7 @@ export default function AreaSummaryCard({
 									style={{
 										color: theme.colors.textPrimary,
 										fontSize: theme.font.base,
-										fontWeight: '500',
+										fontWeight: theme.fontWeight.medium,
 									}}
 								>
 									{stat.value}

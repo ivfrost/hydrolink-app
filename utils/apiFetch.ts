@@ -1,100 +1,47 @@
+import { fetchAuthSession, signOut } from 'aws-amplify/auth'
 import { router } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
 import { fetch } from 'expo/fetch'
 
-import { API_BASE_URL, ErrorCode } from '@/constants'
-import { useAuth } from '@/stores/authStore'
+import { API_BASE_URL } from '@/constants'
 import { ApiResponse, AppError } from '@/types/api'
-import { RefreshResponse } from '@/types/auth'
 
 import { isKnownErrorCode } from './isKnownErrorCode'
 
+// Dedupe concurrent sign-outs. Several mounted queries can 401 at once after a
+// session expires (areas, profile, schedules, MQTT credentials); without this
+// guard each one runs logoutAndRedirect, re-navigating and re-triggering
+// refetches that loop the whole 401 → sign-out → navigate sequence.
+let logoutPromise: Promise<void> | null = null
+
 const logoutAndRedirect = async () => {
-	useAuth.getState().removeAccessToken()
-	await SecureStore.deleteItemAsync('refreshToken')
-	// Small delay to ensure state clears before routing
-	await new Promise((r) => setTimeout(r, 10))
-	router.replace('/onboarding/onboarding2')
+	if (logoutPromise) return logoutPromise
+
+	logoutPromise = (async () => {
+		try {
+			await signOut()
+		} catch (e) {
+			console.warn('[apiFetch] Amplify signOut failed:', e)
+		}
+		// Small delay to ensure state clears before routing
+		await new Promise((r) => setTimeout(r, 10))
+		router.replace('/onboarding/onboarding2')
+	})().finally(() => {
+		setTimeout(() => {
+			logoutPromise = null
+		}, 1000)
+	})
+
+	return logoutPromise
 }
 
-// Shared in-flight refresh promise so concurrent 401s dedupe into a single
-// refresh call instead of racing each other and stomping on rotated tokens.
-let refreshPromise: Promise<string> | null = null
-
-export const refreshAccessToken = async (): Promise<string> => {
-	if (refreshPromise) return refreshPromise
-
-	refreshPromise = (async () => {
-		const refreshToken = await SecureStore.getItemAsync('refreshToken')
-		if (!refreshToken) {
-			console.log('[apiFetch] called by:', new Error().stack)
-			console.error('[apiFetch] No refresh token found, logging out.')
-			await logoutAndRedirect()
-			throw new Error('SESSION_EXPIRED')
-		}
-
-		console.log('[apiFetch] Refreshing access token…')
-		const refreshResponse = await fetch(`${API_BASE_URL}/users/auth/refresh`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'x-client-platform': 'react-native',
-			},
-			body: JSON.stringify({ refreshToken }),
-		})
-		console.log('[apiFetch] Refresh response status:', refreshResponse)
-
-		if (refreshResponse.status === 401) {
-			console.error(
-				'[apiFetch] Refresh token is invalid/expired (401), hard logout.',
-			)
-			await logoutAndRedirect()
-			throw new AppError(
-				'TOKEN_EXPIRED',
-				'Your session has expired. Please log in again.',
-			)
-		}
-
-		const data = (await refreshResponse.json()) as RefreshResponse
-
-		// If backend returns a non-null error code, the refresh session is invalid
-		if (data.code != null) {
-			const isKnown = isKnownErrorCode(data.code)
-
-			console.error(
-				`[apiFetch] Refresh failed with ${isKnown ? 'known' : 'unknown'} error code ${data.code}, logging out.`,
-			)
-
-			await logoutAndRedirect()
-			throw new AppError(isKnown ? data.code : 'UNKNOWN_ERROR', data.message)
-		}
-
-		const tokens = data.details
-		if (!tokens || !Array.isArray(tokens)) {
-			console.error('[apiFetch] Invalid refresh response, logging out.')
-			await logoutAndRedirect()
-			throw new AppError('UNKNOWN_ERROR', 'Invalid refresh response')
-		}
-		const newAccessToken = tokens.find((t) => t.type === 'AUTH_ACCESS_TOKEN')
-		const newRefreshToken = tokens.find((t) => t.type === 'AUTH_REFRESH_TOKEN')
-
-		if (!newAccessToken || !newRefreshToken) {
-			console.error('[apiFetch] Invalid refresh response, logging out.')
-			await logoutAndRedirect()
-			throw new AppError('UNKNOWN_ERROR', 'Invalid refresh response')
-		}
-
-		useAuth.getState().setAccessToken(newAccessToken.value)
-		await SecureStore.setItemAsync('refreshToken', newRefreshToken.value)
-		console.log('[apiFetch] New tokens set.')
-		return newAccessToken.value
-	})()
-
+// Amplify keeps the ID token fresh and refreshes it automatically. Returns the
+// current ID token (or null when there is no active session).
+const getIdToken = async (forceRefresh = false): Promise<string | null> => {
 	try {
-		return await refreshPromise
-	} finally {
-		// Always clear the promise after completion so subsequent failures can re-trigger refresh
-		refreshPromise = null
+		const { tokens } = await fetchAuthSession({ forceRefresh })
+		return tokens?.idToken?.toString() ?? null
+	} catch {
+		return null
 	}
 }
 
@@ -102,89 +49,72 @@ const apiFetch = async <T = unknown>(
 	url: string,
 	options: RequestInit = {},
 ): Promise<ApiResponse<T>> => {
-	const accessToken = useAuth.getState().accessToken
 	const isFormData = options.body instanceof FormData
 
-	const headers = new Headers(options.headers)
-	if (!headers.has('Authorization') && accessToken) {
-		headers.set('Authorization', `Bearer ${accessToken}`)
-	}
-	if (isFormData) {
-		// Force remove Content-Type so the browser calculates the multipart
-		// boundary
-		headers.delete('Content-Type')
-	} else if (!headers.has('Content-Type')) {
-		// Set default for JSON/typical payloads if not provided
-		headers.set('Content-Type', 'application/json')
-	}
-
-	const finalOptions: RequestInit = {
-		...options,
-		headers,
-	}
-
-	// Expects API_BASE_URL to not have a trailing slash, and url to have a
-	// leading slash
-	let response = await fetch(`${API_BASE_URL}${url}`, finalOptions)
-	// Read raw text first to check for empty bodies safely
-	const responseText = await response.text()
-	let data = (responseText ? JSON.parse(responseText) : {}) as ApiResponse<T>
-
-	const authErrors: ErrorCode[] = ['TOKEN_EXPIRED', 'TOKEN_INVALID']
-
-	// Don't retry if the error is due to bad credentials as opposed to an
-	// expired or invalid token.
-	const isBadCredentials = data.code === 'BAD_CREDENTIALS'
-
-	// If the response is an auth error, attempt to refresh the token and retry
-	// the original request with a new access token.
-	const isAuthError =
-		!isBadCredentials &&
-		(response.status === 401 ||
-			(data.code != null &&
-				authErrors.includes(data.code as unknown as ErrorCode)))
-
-	if (isAuthError) {
-		console.warn(`[apiFetch] ${data.code} received, attempting refresh…`)
-		const newAccessToken = await refreshAccessToken()
-
-		const retryHeaders = new Headers(finalOptions.headers)
-		retryHeaders.set('Authorization', `Bearer ${newAccessToken}`)
-
-		const retryOptions: RequestInit = {
-			...finalOptions,
-			headers: retryHeaders,
+	const buildHeaders = (token: string | null) => {
+		const headers = new Headers(options.headers)
+		if (token && !headers.has('Authorization')) {
+			headers.set('Authorization', `Bearer ${token}`)
 		}
+		if (isFormData) {
+			// Force remove Content-Type so the browser calculates the multipart
+			// boundary
+			headers.delete('Content-Type')
+		} else if (!headers.has('Content-Type')) {
+			headers.set('Content-Type', 'application/json')
+		}
+		return headers
+	}
 
-		response = await fetch(`${API_BASE_URL}${url}`, retryOptions)
+	const request = async (token: string | null) => {
+		const finalOptions: RequestInit = {
+			...options,
+			headers: buildHeaders(token),
+		}
+		const response = await fetch(`${API_BASE_URL}${url}`, finalOptions)
 		const responseText = await response.text()
-		data = (responseText ? JSON.parse(responseText) : {}) as ApiResponse<T>
+		const parsed = responseText ? JSON.parse(responseText) : {}
+		// The backend omits null fields (JsonInclude.NON_NULL), so a successful
+		// response has no `code` key at all. Default it to null so the envelope
+		// matches the declared ApiSuccessResponse contract for all callers.
+		const data = { code: null, ...parsed } as ApiResponse<T>
+		return { response, data }
+	}
 
-		// If the retry fails with another auth error, log out the user
-		const isRetryAuthError =
-			response.status === 401 ||
-			(data?.code != null &&
-				authErrors.includes(data.code as unknown as ErrorCode))
+	let token = await getIdToken()
+	const first = await request(token)
+	let response = first.response
+	let data = first.data
 
-		if (isRetryAuthError) {
-			console.error(
-				`[apiFetch] ${data?.code || response.status} received on retry, logging out user.`,
-			)
-			await logoutAndRedirect()
-			throw new AppError(
-				'TOKEN_EXPIRED',
-				'Your session has expired. Please log in again.',
-			)
-		}
+	// If the token was stale, force a fresh one and retry exactly once.
+	if (response.status === 401) {
+		token = await getIdToken(true)
+		const retry = await request(token)
+		response = retry.response
+		data = retry.data
+	}
 
-		// If it wasn't an auth error but still a failure status, throw it up to
-		// the caller
-		if (!response.ok) {
-			throw new AppError(
-				'UNKNOWN_ERROR',
-				data.message || 'An error occurred during the request.',
-			)
-		}
+	if (response.status === 401 && token) {
+		await logoutAndRedirect()
+		throw new AppError(
+			'TOKEN_EXPIRED',
+			'Your session has expired. Please log in again.',
+		)
+	}
+
+	if (response.status === 401) {
+		throw new AppError(
+			'TOKEN_EXPIRED',
+			'Authentication is not ready. Please try again.',
+		)
+	}
+
+	if (!response.ok) {
+		const code = isKnownErrorCode(data.code) ? data.code : 'UNKNOWN_ERROR'
+		throw new AppError(
+			code,
+			data.message || 'An error occurred during the request.',
+		)
 	}
 
 	return data

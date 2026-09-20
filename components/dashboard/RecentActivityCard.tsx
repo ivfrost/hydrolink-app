@@ -49,7 +49,7 @@ export default function RecentActivityCard({
 								style={{
 									fontSize: theme.font.xs,
 									color: theme.colors.textMuted,
-									fontWeight: '500',
+									fontWeight: theme.fontWeight.medium,
 								}}
 							>
 								{formatRelativeFromEpochStr(event.time)}

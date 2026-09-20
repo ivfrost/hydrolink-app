@@ -1,6 +1,7 @@
 import { View } from 'react-native'
 
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { ProfileUpdatePayload } from '@/types/user'
 
 import EditableInfoCardItem from '../ui/EditableInfoCardItem'
@@ -46,14 +47,14 @@ export function EditableProfileInfoCard({
 			style={{
 				borderRadius: theme.radius.card,
 				overflow: 'hidden',
-				backgroundColor: theme.colors.card,
+				backgroundColor: theme.colors.surfaceRaised,
 				width: '100%',
 				elevation: 0,
 			}}
 		>
 			{fullName !== undefined && (
 				<EditableInfoCardItem
-					label="Full name"
+					label={t('auth.fullName')}
 					text={fullName}
 					onChangeText={(value) => onInfoChange('fullName', value)}
 					editable
@@ -61,9 +62,7 @@ export function EditableProfileInfoCard({
 					icon="account-outline"
 					initialValue={initialValues?.fullName}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('fullName', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('fullName', v) : undefined
 					}
 					confirmLoading={confirmingField === 'fullName'}
 				/>
@@ -71,7 +70,7 @@ export function EditableProfileInfoCard({
 
 			{username !== undefined && (
 				<EditableInfoCardItem
-					label="Username"
+					label={t('auth.username')}
 					text={username}
 					onChangeText={(value) => onInfoChange('username', value)}
 					autoCapitalize="none"
@@ -80,9 +79,7 @@ export function EditableProfileInfoCard({
 					icon="at"
 					initialValue={initialValues?.username}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('username', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('username', v) : undefined
 					}
 					confirmLoading={confirmingField === 'username'}
 				/>
@@ -90,7 +87,7 @@ export function EditableProfileInfoCard({
 
 			{email !== undefined && (
 				<EditableInfoCardItem
-					label="New Email"
+					label={t('auth.email')}
 					text={email}
 					onChangeText={(value) => onInfoChange('email', value)}
 					textContentType="emailAddress"
@@ -100,9 +97,7 @@ export function EditableProfileInfoCard({
 					icon="email-outline"
 					initialValue={initialValues?.email}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('email', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('email', v) : undefined
 					}
 					confirmLoading={confirmingField === 'email'}
 				/>
@@ -110,7 +105,7 @@ export function EditableProfileInfoCard({
 
 			{password !== undefined && (
 				<EditableInfoCardItem
-					label="New Password"
+					label={t('auth.password')}
 					text={password}
 					onChangeText={(value) => onInfoChange('password', value)}
 					secureTextEntry
@@ -122,9 +117,7 @@ export function EditableProfileInfoCard({
 					icon="lock-plus-outline"
 					initialValue={initialValues?.password}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('password', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('password', v) : undefined
 					}
 					confirmLoading={confirmingField === 'password'}
 				/>
@@ -132,11 +125,9 @@ export function EditableProfileInfoCard({
 
 			{isCredentialChanging && currentPassword !== undefined && (
 				<EditableInfoCardItem
-					label="Current Password (Required)"
+					label={t('common.currentPasswordRequired')}
 					text={currentPassword}
-					onChangeText={(value) =>
-						onInfoChange('currentPassword', value)
-					}
+					onChangeText={(value) => onInfoChange('currentPassword', value)}
 					secureTextEntry
 					editable
 					autoCapitalize="none"
@@ -149,7 +140,7 @@ export function EditableProfileInfoCard({
 
 			{phoneNumber !== undefined && (
 				<EditableInfoCardItem
-					label="Phone number"
+					label={t('profile.phoneNumber')}
 					text={phoneNumber}
 					onChangeText={(value) => onInfoChange('phoneNumber', value)}
 					keyboardType="phone-pad"
@@ -158,9 +149,7 @@ export function EditableProfileInfoCard({
 					icon="phone-outline"
 					initialValue={initialValues?.phoneNumber}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('phoneNumber', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('phoneNumber', v) : undefined
 					}
 					confirmLoading={confirmingField === 'phoneNumber'}
 				/>
@@ -168,7 +157,7 @@ export function EditableProfileInfoCard({
 
 			{address !== undefined && (
 				<EditableInfoCardItem
-					label="Address"
+					label={t('profile.address')}
 					text={address}
 					onChangeText={(value) => onInfoChange('address', value)}
 					editable
@@ -176,9 +165,7 @@ export function EditableProfileInfoCard({
 					icon="map-marker-outline"
 					initialValue={initialValues?.address}
 					onConfirm={
-						onFieldConfirm
-							? (v) => onFieldConfirm('address', v)
-							: undefined
+						onFieldConfirm ? (v) => onFieldConfirm('address', v) : undefined
 					}
 					confirmLoading={confirmingField === 'address'}
 				/>

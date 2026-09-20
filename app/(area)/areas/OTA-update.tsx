@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
 import * as DocumentPicker from 'expo-document-picker'
 
-import ScrollView from '@/components/layout/ScrollView'
+import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Picker } from '@/components/ui/Picker'
@@ -17,6 +17,24 @@ import { FileUploadPayload } from '@/types/storage'
 
 export default function AdminBinUpload() {
 	const theme = useTheme()
+
+	const styles = StyleSheet.create({
+		content: {
+			gap: theme.space.md,
+		},
+		description: {
+			fontSize: theme.font.sm,
+			lineHeight: theme.lineHeight.sm,
+			marginBottom: theme.space.x2s,
+		},
+		fileSelector: {
+			gap: theme.space.sm,
+		},
+		forceHint: {
+			fontSize: theme.font.xs,
+			lineHeight: theme.lineHeight.cardTextSubtitle,
+		},
+	})
 	const [file, setFile] = useState<FileUploadPayload | null>(null)
 	const [version, setVersion] = useState('')
 	const [forceInstall, setForceInstall] = useState(false)
@@ -124,7 +142,7 @@ export default function AdminBinUpload() {
 	}
 
 	return (
-		<ScrollView>
+		<KeyboardAwareScrollView>
 			<View style={styles.content}>
 				<Text
 					style={[styles.description, { color: theme.colors.textSecondary }]}
@@ -157,7 +175,7 @@ export default function AdminBinUpload() {
 					keyboardType="decimal-pad"
 					onChangeText={setVersion}
 					autoCapitalize="none"
-					labelBackground={theme.colors.background}
+					labelBackground={theme.colors.surface}
 					placeholder="e.g. 2.1.0"
 					placeholderTextColor={theme.colors.textMuted}
 				/>
@@ -199,28 +217,6 @@ export default function AdminBinUpload() {
 					onPress={handleUpload}
 				/>
 			</View>
-		</ScrollView>
+		</KeyboardAwareScrollView>
 	)
 }
-
-const styles = StyleSheet.create({
-	content: {
-		gap: 12,
-	},
-	description: {
-		fontSize: 14,
-		lineHeight: 20,
-		marginBottom: 4,
-	},
-	fileSelector: {
-		gap: 8,
-	},
-	fileMeta: {
-		fontSize: 12,
-		textAlign: 'center',
-	},
-	forceHint: {
-		fontSize: 12,
-		lineHeight: 18,
-	},
-})

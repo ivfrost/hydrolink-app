@@ -1,10 +1,9 @@
-import { useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
 
+import { signOut } from '@aws-amplify/auth'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
 
 import SettingScreen, {
 	SettingSection,
@@ -12,9 +11,10 @@ import SettingScreen, {
 import StatusScreen from '@/components/status/StatusScreen'
 import { useNetwork } from '@/context/NetworkContext'
 import { useTheme } from '@/context/ThemeContext'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
+import { t } from '@/i18n'
 import { profileQueryFn } from '@/queries/profile'
 import { queryCacheStorageKey } from '@/queries/queryClient'
-import { useAuth } from '@/stores/authStore'
 import { useOnboarding } from '@/stores/onboardingStore'
 
 export default function SettingTabScreen() {
@@ -22,13 +22,17 @@ export default function SettingTabScreen() {
 	const setHasOnboarded = useOnboarding().setHasOnboarded
 	const router = useRouter()
 	const theme = useTheme()
-	const [isRefreshing, setIsRefreshing] = useState(false)
+	const { isRefreshing, refresh } = usePullToRefresh()
 	const { isNetworkConnected, isInternetReachable } = useNetwork()
 	const isOffline = !isNetworkConnected || !isInternetReachable
 
 	const logout = async () => {
-		useAuth.getState().removeAccessToken()
-		await SecureStore.deleteItemAsync('refreshToken')
+		try {
+			await signOut()
+		} catch (e) {
+			console.warn('[apiFetch] Amplify signOut failed:', e)
+		}
+
 		// Wipe the query cache (and its AsyncStorage copy) so the next
 		// session/user can't see stale devices, profile data, etc. from
 		// this one.
@@ -43,16 +47,12 @@ export default function SettingTabScreen() {
 		router.replace('/onboarding/onboarding1')
 	}
 
-	const onRefresh = async () => {
-		setIsRefreshing(true)
-		try {
+	const onRefresh = () =>
+		refresh(async () => {
 			await queryClient.invalidateQueries({ queryKey: ['profile'] })
-		} catch (error) {
+		}).catch((error) => {
 			console.error('Error refreshing profile:', error)
-		} finally {
-			setIsRefreshing(false)
-		}
-	}
+		})
 
 	const {
 		data: profile,
@@ -70,12 +70,12 @@ export default function SettingTabScreen() {
 					flex: 1,
 					justifyContent: 'center',
 					alignItems: 'center',
-					gap: 12,
+					gap: theme.space.md,
 				}}
 			>
 				<ActivityIndicator size="large" color={theme.colors.accent} />
 				<Text style={{ color: theme.colors.textSecondary }}>
-					Loading profile...
+					{t('common.loadingProfile')}
 				</Text>
 			</View>
 		)
@@ -87,8 +87,8 @@ export default function SettingTabScreen() {
 			return (
 				<StatusScreen
 					variant="network-error"
-					title="No internet connection"
-					subtitle="Check your connection and try again."
+					title={t('settings.noInternet')}
+					subtitle={t('settings.checkConnection')}
 					onRefresh={onRefresh}
 					isRefreshing={isRefreshing}
 				/>
@@ -97,8 +97,8 @@ export default function SettingTabScreen() {
 		return (
 			<StatusScreen
 				variant="network-error"
-				title="Settings Unavailable"
-				subtitle="We couldn't reach the server. Try again shortly."
+				title={t('settings.settingsUnavailable')}
+				subtitle={t('settings.serverUnavailable')}
 				onRefresh={onRefresh}
 				isRefreshing={isRefreshing}
 			/>
@@ -107,26 +107,26 @@ export default function SettingTabScreen() {
 
 	const sections: SettingSection[] = [
 		{
-			title: 'Preferences',
+			title: t('settings.preferences'),
 			rows: [
 				{
-					label: 'Notifications',
+					label: t('settings.notifications'),
 					icon: 'notifications-none',
 					onPress: () => {},
 				},
 			],
 		},
 		{
-			title: 'Support',
+			title: t('settings.support'),
 			rows: [
 				{
-					label: 'Help centre',
+					label: t('settings.helpCentre'),
 					icon: 'help-outline',
 					onPress: () => {},
 					requiresServer: true,
 				},
 				{
-					label: 'Contact support',
+					label: t('settings.contactSupport'),
 					icon: 'mail-outline',
 					onPress: () => {},
 					requiresServer: true,
@@ -134,14 +134,14 @@ export default function SettingTabScreen() {
 			],
 		},
 		{
-			title: 'Session',
-			rows: [{ label: 'Logout', icon: 'logout', onPress: logout }],
+			title: t('settings.session'),
+			rows: [{ label: t('settings.logout'), icon: 'logout', onPress: logout }],
 		},
 		{
-			title: 'Development',
+			title: t('settings.development'),
 			rows: [
 				{
-					label: 'Reset onboarding',
+					label: t('settings.resetOnboarding'),
 					icon: 'restart-alt',
 					onPress: resetOnboarding,
 				},

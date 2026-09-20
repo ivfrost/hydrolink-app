@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native'
 
+import { fetchAuthSession } from '@aws-amplify/core'
 import { useRouter } from 'expo-router'
 
 import WebDevicesIllustration from '@/assets/images/onboarding/undraw_web-devices_i15y.svg'
@@ -9,18 +10,21 @@ import Button from '@/components/ui/Button'
 import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
 import { useTheme } from '@/context/ThemeContext'
-import { useAuth } from '@/stores/authStore'
+import { t } from '@/i18n'
 
 export default function OnboardingStep1() {
 	const router = useRouter()
 	const theme = useTheme()
-	const accessToken = useAuth().accessToken
 
 	const handleNextStep = () => {
 		// TODO: check whether the user already has linked areas and skip
-		if (accessToken) {
-			router.push('/onboarding/onboarding4')
-		} else {
+		const checkToken = async () => {
+			await fetchAuthSession()
+		}
+		try {
+			checkToken()
+			// router.replace('/onboarding/onboarding4')
+		} catch {
 			router.push('/onboarding/onboarding2')
 		}
 	}
@@ -30,7 +34,7 @@ export default function OnboardingStep1() {
 			<Text
 				style={{
 					fontSize: theme.font.xl,
-					fontWeight: '500',
+					fontWeight: theme.fontWeight.medium,
 					color: theme.colors.textPrimary,
 					letterSpacing: -0.4,
 					textAlign: 'center',
@@ -51,11 +55,11 @@ export default function OnboardingStep1() {
 					color={theme.colors.accent}
 				/>
 				<OnboardTextWrapper>
-					<Title text="All your valves, one app." />
-					<Subtitle text="Connect every controller, zone, and sensor across your garden — and water smarter, automatically." />
+					<Title text={t('onboarding.welcomeTitle')} />
+					<Subtitle text={t('onboarding.welcomeSubtitle')} />
 				</OnboardTextWrapper>
 			</View>
-			<Button label="Let's Get Started" onPress={handleNextStep} />
+			<Button label={t('onboarding.getStarted')} onPress={handleNextStep} />
 		</OnboardContainer>
 	)
 }

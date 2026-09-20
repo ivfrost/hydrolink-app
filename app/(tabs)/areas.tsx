@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from 'react-native'
 import { BottomSheetMethods } from '@gorhom/bottom-sheet/lib/typescript/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import * as Burnt from 'burnt'
+import { useFocusEffect } from 'expo-router'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useHeaderHeight } from 'expo-router/build/react-navigation'
 
@@ -17,6 +18,7 @@ import { areaLinkMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
 import { useAreaStore } from '@/stores/areaStore'
 import { AppError } from '@/types/api'
+import { usePullToRefresh } from '@/hooks/usePullToRefresh'
 
 export default function AreaTabScreen() {
 	const queryClient = useQueryClient()
@@ -24,11 +26,17 @@ export default function AreaTabScreen() {
 	const bottomSheetRef = useRef<BottomSheetMethods>(null)
 	const router = useRouter()
 	const [linkCode, setLinkCode] = useState('')
-	const [isRefreshing, setIsRefreshing] = useState(false)
+	const { isRefreshing, refresh } = usePullToRefresh()
 	const headerHeight = useHeaderHeight()
 	const { scanned } = useLocalSearchParams<{ scanned?: string }>()
 	const { reconnect: reconnectMqtt, requestStatusSnapshot } = useMqtt()
 	const { rescan: rescanLocal } = useLocalDiscovery()
+
+	useFocusEffect(
+		useCallback(() => {
+			rescanLocal()
+		}, [rescanLocal]),
+	)
 
 	// Query for fetching user's areas
 	const {
@@ -51,25 +59,6 @@ export default function AreaTabScreen() {
 	const isOffline = !isNetworkConnected || !isInternetReachable
 	const canUseRemoteLinking = Boolean(isNetworkConnected && isInternetReachable)
 	const canUseLocalDiscovery = Boolean(isNetworkConnected)
-
-	// // Keep the latest snapshot-request callback in a ref so the focus effect
-	// // below stays stable (the callback's identity changes on every render).
-	// // The ref is updated inside an effect to satisfy React's rules (no ref
-	// // writes during render).
-	// const requestStatusSnapshotRef = useRef(requestStatusSnapshot)
-	// useEffect(() => {
-	// 	requestStatusSnapshotRef.current = requestStatusSnapshot
-	// }, [requestStatusSnapshot])
-
-	// // Auto-sync whenever the Areas tab regains focus: refetch the linked
-	// // devices list and request a fresh MQTT status snapshot, so area updates
-	// // (links, renames, unlinks, status) appear without pulling to refresh.
-	// useFocusEffect(
-	// 	useCallback(() => {
-	// 		queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
-	// 		requestStatusSnapshotRef.current()
-	// 	}, [queryClient]),
-	// )
 
 	// Mutation for linking an area
 	const { mutate, isPending: linkPending } = useMutation({
@@ -104,18 +93,14 @@ export default function AreaTabScreen() {
 	}, [linkCode, mutate])
 
 	// Handler to refresh areas data on pull-to-refresh
-	const onRefresh = async () => {
-		setIsRefreshing(true)
-		try {
+	const onRefresh = () =>
+		refresh(async () => {
 			await queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
 			reconnectMqtt()
 			rescanLocal()
-		} catch (error) {
+		}).catch((error) => {
 			console.error('Error refreshing areas:', error)
-		} finally {
-			setIsRefreshing(false)
-		}
-	}
+		})
 
 	// Effect to handle received scanned code from QR scanner
 	useEffect(() => {

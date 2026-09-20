@@ -60,6 +60,12 @@ export const currentScreenMachine = setup({
 					stationId: number
 					targetState: 'Running' | 'Idle'
 			  }
+			// Fired when the device never confirms a pending station action, so the
+			// UI does not spin forever. Clears the pending entry.
+			| {
+					type: 'STATION_ACTION_TIMEOUT'
+					stationId: number
+			  }
 			// Fired when MQTT receives actual hardware state confirmation from ESP
 			| {
 					type: 'STATION_STATE_CONFIRMED'
@@ -180,6 +186,14 @@ export const currentScreenMachine = setup({
 							[event.stationId]: { targetState: event.targetState },
 						},
 					})),
+				},
+				STATION_ACTION_TIMEOUT: {
+					actions: assign(({ context, event }) => {
+						if (!(event.stationId in context.pendingStationActions)) return {}
+						const { [event.stationId]: _, ...rest } =
+							context.pendingStationActions
+						return { pendingStationActions: rest }
+					}),
 				},
 				// Triggered when MQTT listener receives confirmed status from the ESP device
 				STATION_STATE_CONFIRMED: {

@@ -8,7 +8,7 @@ import {
 	Station,
 	stationArrSchema,
 } from '@/types/area'
-import { normalizeMqttPayload } from '@/utils/mqttPayload'
+import { normalizeMqttPayload, parseMqttJson } from '@/utils/mqttPayload'
 
 import { useLogStore } from './logStore'
 
@@ -217,9 +217,33 @@ export const useAreaStore = create<AreaState>()(
 						}
 
 						// Case 2: JSON status
-						const data = JSON.parse(trimmed)
+						const data = parseMqttJson<Record<string, any>>(trimmed)
+
+						// The ESP announces presence as {"presence":"online"} (retained,
+						// republished on every connect).
+						if (data?.presence === 'online' || data?.presence === 'offline') {
+							return {
+								areas: {
+									...state.areas,
+									[areaKey]: {
+										...prev,
+										online: data.presence === 'online',
+										lastUpdated: new Date().toISOString(),
+										updating:
+											data.presence === 'online' ? false : prev.updating,
+									},
+								},
+							}
+						}
+
 						const targetArray =
 							data && typeof data === 'object' ? data.stations : null
+
+						// The ESP also publishes non-station envelopes on this topic
+						// (e.g. {"event":"pin_config","pins":[...]} on connect). Those
+						// are not station snapshots; ignore them instead of reporting
+						// a schema error for every connect.
+						if (!Array.isArray(targetArray)) return state
 
 						const validated = stationArrSchema.safeParse(targetArray)
 						if (!validated.success) {

@@ -1,12 +1,9 @@
-// @/components/ui/DurationControl.tsx
 import React, { useEffect, useReducer, useState } from 'react'
 import { Text, View } from 'react-native'
 
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-
 import { useTheme } from '@/context/ThemeContext'
 
-import Button from './Button'
+import { Picker } from './Picker'
 
 export interface DurationControlProps {
 	endTimestamp?: number
@@ -16,6 +13,10 @@ export interface DurationControlProps {
 
 const MIN_MINUTES = 1
 const MAX_MINUTES = 60
+const DURATION_OPTIONS = [1, 3, 5, 10, 15, 30, 60].map((value) => ({
+	label: `${value} min`,
+	value,
+}))
 
 export const DurationControl = React.memo(
 	function DurationControl({
@@ -48,13 +49,7 @@ export const DurationControl = React.memo(
 			? Math.max(0, endTimestamp - Date.now())
 			: 0
 
-		const handleAdjust = (type: 'plus' | 'minus') => {
-			let next = minutes
-			if (type === 'minus') {
-				next = minutes === 5 ? 3 : minutes === 3 ? 1 : minutes - 5
-			} else {
-				next = minutes === 1 ? 3 : minutes === 3 ? 5 : minutes + 5
-			}
+		const handleDurationChange = (next: number) => {
 			const clamped = Math.max(MIN_MINUTES, Math.min(MAX_MINUTES, next))
 			setMinutes(clamped)
 			onDurationChange(clamped)
@@ -64,7 +59,12 @@ export const DurationControl = React.memo(
 			const totalSeconds = Math.floor(remainingMs / 1000)
 			return (
 				<View style={{ justifyContent: 'center' }}>
-					<Text style={{ fontWeight: '600', color: theme.colors.textPrimary }}>
+					<Text
+						style={{
+							fontWeight: theme.fontWeight.semibold,
+							color: theme.colors.textPrimary,
+						}}
+					>
 						{Math.floor(totalSeconds / 60)}:
 						{(totalSeconds % 60).toString().padStart(2, '0')} remaining
 					</Text>
@@ -73,48 +73,13 @@ export const DurationControl = React.memo(
 		}
 
 		return (
-			<View
-				style={{
-					flexDirection: 'row',
-					alignItems: 'center',
-					gap: 8,
-				}}
-			>
-				<Button
-					modifier={['iconOnly', 'outlined', 'small']}
-					variant="tertiary"
-					disabled={disabled || minutes <= MIN_MINUTES}
-					icon={
-						<MaterialCommunityIcons
-							name="minus"
-							size={16}
-							color={theme.colors.textSecondary}
-						/>
-					}
-					onPress={() => handleAdjust('minus')}
-				/>
-				<Text
-					style={{
-						fontWeight: '500',
-						color: theme.colors.textSecondary,
-						width: 40,
-						textAlign: 'center',
-					}}
-				>
-					{minutes}m
-				</Text>
-				<Button
-					modifier={['iconOnly', 'outlined', 'small']}
-					variant="tertiary"
-					disabled={disabled || minutes >= MAX_MINUTES}
-					icon={
-						<MaterialCommunityIcons
-							name="plus"
-							size={16}
-							color={theme.colors.textSecondary}
-						/>
-					}
-					onPress={() => handleAdjust('plus')}
+			<View style={{ alignSelf: 'flex-end', width: 104 }}>
+				<Picker
+					modifier={['outlined', 'small', 'full']}
+					options={DURATION_OPTIONS}
+					selectedValue={minutes}
+					onValueChange={handleDurationChange}
+					disabled={disabled}
 				/>
 			</View>
 		)

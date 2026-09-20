@@ -35,10 +35,10 @@ export function UserCard({
 		card: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			backgroundColor: theme.colors.card,
+			backgroundColor: theme.colors.surfaceRaised,
 			borderRadius: theme.radius.card,
-			padding: 16,
-			gap: 14,
+			padding: theme.space.xl,
+			gap: theme.space.lg,
 			elevation: 0,
 		},
 		info: {
@@ -46,14 +46,14 @@ export function UserCard({
 		},
 		name: {
 			fontSize: theme.font.md,
-			fontWeight: '600',
+			fontWeight: theme.fontWeight.semibold,
 			color: theme.colors.textPrimary,
 		},
 		email: {
-			fontSize: 13,
-			fontWeight: '400',
+			fontSize: theme.font.sm,
+			fontWeight: theme.fontWeight.regular,
 			color: theme.colors.textSecondary,
-			marginTop: 2,
+			marginTop: theme.space.x3s,
 		},
 	})
 

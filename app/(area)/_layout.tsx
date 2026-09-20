@@ -11,15 +11,17 @@ import { tanstackKeys } from '@/constants'
 import { useMqtt } from '@/context/MqttContext'
 import { useTheme } from '@/context/ThemeContext'
 import { AreaMenuOptionValue, getAreaMenuOptions } from '@/data/area'
+import { t } from '@/i18n'
 import { areaUnlinkMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
+import { sendDeviceCommand } from '@/services/deviceCommands'
 import { useAreaStore } from '@/stores/areaStore'
 import { useHeaderStore } from '@/stores/headerStore'
 import { AppError } from '@/types/api'
 
 export default function AreaLayout() {
 	const theme = useTheme()
-	const mqtt = useMqtt()
+	const { reconnect: reconnectMqtt } = useMqtt()
 	const queryClient = useQueryClient()
 	const isOnline = useAreaStore((state) => state.isOnline)
 	const removeArea = useAreaStore((state) => state.removeArea)
@@ -38,6 +40,7 @@ export default function AreaLayout() {
 				}
 				removeArea(areaKey)
 				queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+				reconnectMqtt()
 			}
 			Burnt.toast({
 				title:
@@ -53,6 +56,7 @@ export default function AreaLayout() {
 			}
 			removeArea(areaKey)
 			queryClient.invalidateQueries({ queryKey: tanstackKeys.AREAS })
+			reconnectMqtt()
 			Burnt.toast({ title: 'Area unlinked successfully.', preset: 'done' })
 		},
 	})
@@ -96,7 +100,10 @@ export default function AreaLayout() {
 							text: 'Reboot',
 							style: 'destructive',
 							onPress: () => {
-								mqtt.rebootArea(areaKey)
+								void sendDeviceCommand(areaKey, {
+									action: 'Reboot',
+									cause: 'Manual',
+								})
 								// Return to the areas list. The device reports itself
 								// offline via the broker's last-will while it reboots,
 								// then comes back online once it reconnects.
@@ -133,12 +140,12 @@ export default function AreaLayout() {
 					headerShown: true,
 					headerShadowVisible: false,
 					animation: 'slide_from_right',
-					headerTitle: 'Scan QR Code',
+					headerTitle: t('areas.scanQrCode'),
 					contentStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 					headerStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 				}}
 			/>
@@ -150,10 +157,10 @@ export default function AreaLayout() {
 					animation: 'slide_from_bottom',
 					headerTitle: 'Edit Area',
 					contentStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 					headerStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 				}}
 			/>
@@ -166,10 +173,10 @@ export default function AreaLayout() {
 					animation: 'slide_from_right',
 					headerTitle: 'OTA Update',
 					contentStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 					headerStyle: {
-						backgroundColor: theme.colors.background,
+						backgroundColor: theme.colors.surface,
 					},
 				}}
 			/>
@@ -212,7 +219,7 @@ export default function AreaLayout() {
 									style={{
 										fontSize: theme.font.md,
 										color: theme.colors.textPrimary,
-										fontWeight: '600',
+										fontWeight: theme.fontWeight.semibold,
 										flexShrink: 1,
 									}}
 									numberOfLines={1}
@@ -222,7 +229,7 @@ export default function AreaLayout() {
 							</View>
 						),
 						contentStyle: {
-							backgroundColor: theme.colors.background,
+							backgroundColor: theme.colors.surface,
 						},
 						headerStyle: {
 							backgroundColor: 'transparent',
@@ -260,13 +267,13 @@ export default function AreaLayout() {
 							<View
 								style={{
 									flex: 1,
-									backgroundColor: theme.colors.background,
+									backgroundColor: theme.colors.surface,
 									opacity,
 								}}
 							/>
 						),
 						contentStyle: {
-							backgroundColor: theme.colors.background,
+							backgroundColor: theme.colors.surface,
 						},
 						presentation: 'modal',
 						headerRight: () => (
@@ -320,7 +327,7 @@ export default function AreaLayout() {
 									style={{
 										fontSize: theme.font.md,
 										color: theme.colors.textPrimary,
-										fontWeight: '600',
+										fontWeight: theme.fontWeight.semibold,
 									}}
 								>
 									Logs for {key}
@@ -329,14 +336,14 @@ export default function AreaLayout() {
 						)
 					},
 					headerShadowVisible: false,
-					contentStyle: { backgroundColor: theme.colors.background },
-					headerStyle: { backgroundColor: theme.colors.background },
+					contentStyle: { backgroundColor: theme.colors.surface },
+					headerStyle: { backgroundColor: theme.colors.surface },
 					headerRight: () => {
 						const { key } = route.params as { key: string }
 
 						return (
 							<Badge
-								text={isOnline(key) ? 'Online' : 'Offline'}
+								text={isOnline(key) ? t('status.online') : t('status.offline')}
 								icon="circle"
 								iconSize={8}
 								color={

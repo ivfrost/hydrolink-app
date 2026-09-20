@@ -18,6 +18,7 @@ import Subtitle from '@/components/ui/Subtitle'
 import Title from '@/components/ui/Title'
 import { tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
+import { t } from '@/i18n'
 import { areaLinkMutationFn } from '@/mutations/areas'
 import { areasQueryFn } from '@/queries/areas'
 import { useOnboarding } from '@/stores/onboardingStore'
@@ -86,6 +87,21 @@ export default function OnboardingStep4() {
 		router.setParams({ scanned: undefined })
 	}, [scanned, mutate, router])
 
+	if (fetchAreasPending || (areas && areas.length > 0)) {
+		return (
+			<View
+				style={{
+					flex: 1,
+					justifyContent: 'center',
+					alignItems: 'center',
+					backgroundColor: theme.colors.surface,
+				}}
+			>
+				<ActivityIndicator size="large" color={theme.colors.accent} />
+			</View>
+		)
+	}
+
 	// Handler to go to the QR code scanner screen
 	const handleGoScan = () => {
 		bottomSheetRef.current?.close()
@@ -119,26 +135,25 @@ export default function OnboardingStep4() {
 					color={theme.colors.accent}
 				/>
 				<OnboardTextWrapper>
-					<Title text="Add your first area" />
+					<Title text={t('onboarding.addFirstAreaTitle')} />
 					<Subtitle>
-						Each device controls one area of your irrigation system. Scan the QR
-						code or enter your{' '}
+						{t('onboarding.addFirstAreaSubtitleBeforeCode')}{' '}
 						<Text
 							style={{
 								fontVariant: ['small-caps'],
 								color: theme.colors.textPrimary,
-								fontWeight: '500',
+								fontWeight: theme.fontWeight.medium,
 							}}
 						>
-							Link Code
+							{t('areas.enterLinkCode')}
 						</Text>{' '}
-						to connect your device.
+						{t('onboarding.addFirstAreaSubtitleAfterCode')}
 					</Subtitle>
 				</OnboardTextWrapper>
 			</View>
 			<ButtonColumnWrapper>
 				<Button
-					label="Add Area"
+					label={t('onboarding.addArea')}
 					onPress={() => bottomSheetRef.current?.expand()}
 					iconPosition="right"
 					disabled={fetchAreasPending}
@@ -166,14 +181,14 @@ export default function OnboardingStep4() {
 					}
 				/>
 				<Button
-					label="Skip for now"
+					label={t('onboarding.skipForNow')}
 					onPress={() => router.replace('/(tabs)')}
 					variant="secondary"
 				/>
 			</ButtonColumnWrapper>
 			<HydroBSheet ref={bottomSheetRef} snapPoints={[364]}>
 				<Button
-					label="Scan QR Code"
+					label={t('areas.scanQrCode')}
 					modifier={['tall', 'full']}
 					disabled={fetchAreasPending}
 					icon={
@@ -190,13 +205,13 @@ export default function OnboardingStep4() {
 						flexDirection: 'row',
 						width: '100%',
 						alignItems: 'center',
-						gap: 20,
-						marginVertical: 10,
+						gap: theme.space.x2l,
+						marginVertical: theme.space.base,
 					}}
 				>
 					<View
 						style={{
-							backgroundColor: theme.colors.border,
+							backgroundColor: theme.colors.outline,
 							height: 2,
 							flex: 1,
 						}}
@@ -207,20 +222,20 @@ export default function OnboardingStep4() {
 					<View
 						style={{
 							width: 'auto',
-							backgroundColor: theme.colors.border,
+							backgroundColor: theme.colors.outline,
 							height: 2,
 							flex: 1,
 						}}
 					/>
 				</View>
-				<View style={{ gap: 20 }}>
+				<View style={{ gap: theme.space.x2l }}>
 					<View>
 						<BottomSheetInput
-							label="Enter Link Code"
+							label={t('areas.enterLinkCode')}
 							value={linkCode}
 							onChangeText={setLinkCode}
 							onSubmitEditing={handleLinkCodeSubmit}
-							labelBackground={theme.colors.card}
+							labelBackground={theme.colors.surfaceRaised}
 						/>
 					</View>
 					<Button

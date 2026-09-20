@@ -13,10 +13,10 @@ export default function SettingsLayout() {
 				animation: 'slide_from_right',
 				headerTintColor: theme.colors.textPrimary,
 				contentStyle: {
-					backgroundColor: theme.colors.background,
+					backgroundColor: theme.colors.surface,
 				},
 				headerStyle: {
-					backgroundColor: theme.colors.background,
+					backgroundColor: theme.colors.surface,
 				},
 			}}
 		>

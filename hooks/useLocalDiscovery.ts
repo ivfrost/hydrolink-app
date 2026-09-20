@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import Zeroconf from 'react-native-zeroconf'
 
 import { useDiscoveryStore } from '@/stores/discoveryStore'
@@ -28,16 +28,19 @@ export function useLocalDiscovery() {
 		})
 
 		zeroconf.on('remove', (name) => {
-			const device_key = nameToKeyRef.current.get(name)
-			if (device_key) {
-				useDiscoveryStore.getState().removeDevice(device_key)
-				nameToKeyRef.current.delete(name)
-			}
+			// Zeroconf can emit remove while a service is being refreshed. Keep
+			// the last resolved device until the stale-device timeout decides it
+			// is really gone; a subsequent resolved event refreshes lastSeen.
+			nameToKeyRef.current.delete(name)
 		})
 
 		zeroconf.scan('hydro', 'tcp', 'local.')
+		const retryOne = setTimeout(() => zeroconf.scan('hydro', 'tcp', 'local.'), 750)
+		const retryTwo = setTimeout(() => zeroconf.scan('hydro', 'tcp', 'local.'), 2000)
 
 		return () => {
+			clearTimeout(retryOne)
+			clearTimeout(retryTwo)
 			zeroconf.stop()
 			zeroconf.removeAllListeners()
 			zeroconfRef.current = null
@@ -71,7 +74,12 @@ export function useLocalDiscovery() {
 		return () => clearInterval(interval)
 	}, [])
 
-	const rescan = () => zeroconfRef.current?.scan('hydro', 'tcp', 'local.')
+	const rescan = useCallback(() => {
+		const zeroconf = zeroconfRef.current
+		if (!zeroconf) return
+		zeroconf.scan('hydro', 'tcp', 'local.')
+		setTimeout(() => zeroconf.scan('hydro', 'tcp', 'local.'), 750)
+	}, [])
 
 	return { rescan }
 }

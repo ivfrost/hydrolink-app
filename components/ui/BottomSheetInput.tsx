@@ -19,7 +19,7 @@ export default function BottomSheetInput({
 		(toValue: number) => {
 			Animated.timing(labelAnim, {
 				toValue,
-				duration: 150,
+				duration: theme.duration.fast,
 				useNativeDriver: false,
 			}).start()
 		},
@@ -65,22 +65,22 @@ export default function BottomSheetInput({
 			style={{
 				width: '100%',
 				borderWidth: 1.5,
-				borderColor: focused ? theme.colors.accent : theme.colors.border,
+				borderColor: focused ? theme.colors.accent : theme.colors.outline,
 				borderRadius: theme.radius.input,
-				paddingHorizontal: 14,
-				paddingTop: 18,
-				paddingBottom: 10,
+				paddingHorizontal: theme.space.lg,
+				paddingTop: theme.space.xl,
+				paddingBottom: theme.space.base,
 			}}
 		>
 			<Animated.Text
 				style={{
 					position: 'absolute',
-					left: 14,
+					left: theme.space.lg,
 					top: labelTop,
 					fontSize: labelSize,
 					color: labelColor,
-					backgroundColor: labelBackground ?? theme.colors.background,
-					paddingHorizontal: 4,
+					backgroundColor: labelBackground ?? theme.colors.surface,
+					paddingHorizontal: theme.space.x2s,
 				}}
 			>
 				{label}

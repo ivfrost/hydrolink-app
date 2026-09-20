@@ -14,7 +14,7 @@ export default function Title({ text, extraStyles }: TitleProps) {
 			style={[
 				{
 					fontSize: theme.font.lg,
-					fontWeight: '500',
+					fontWeight: theme.fontWeight.medium,
 					letterSpacing: -0.25,
 					paddingHorizontal: theme.space.base,
 					color: theme.colors.textPrimary,

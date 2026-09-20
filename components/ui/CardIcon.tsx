@@ -25,7 +25,7 @@ export default function CardIcon({
 				width: theme.space.x3l,
 				height: theme.space.x3l,
 				borderRadius: theme.radius.fab,
-				backgroundColor: backgroundColor ?? theme.colors.background,
+				backgroundColor: backgroundColor ?? theme.colors.surface,
 				justifyContent: 'center',
 				alignItems: 'center',
 			}}

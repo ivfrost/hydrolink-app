@@ -3,102 +3,136 @@ import { Text, View } from 'react-native'
 
 import { MaterialIcons } from '@expo/vector-icons'
 import { useMutation } from '@tanstack/react-query'
-import * as Burnt from 'burnt'
-import * as SecureStore from 'expo-secure-store'
+import {
+	AuthError,
+	fetchAuthSession,
+	signIn,
+	SignInInput,
+	SignInOutput,
+} from 'aws-amplify/auth'
+import { useRouter } from 'expo-router'
 
 import SpiralSvg from '@/assets/images/spiral-30-svgrepo-com.svg'
 import KeyboardAwareScrollView from '@/components/layout/KeyboardAwareScrollView'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { errorCodes, tanstackKeys } from '@/constants'
 import { useTheme } from '@/context/ThemeContext'
-import { signinFn } from '@/mutations/auth'
-import { useAuth } from '@/stores/authStore'
-import { AppError } from '@/types/api'
-import { SignInPayload, SignInResponse, signInSchema } from '@/types/auth'
+import { t } from '@/i18n'
+import { verifySyncFn } from '@/queries/auth'
 
-type ErrorState = Partial<Record<keyof SignInPayload, string>>
+interface SignInForm {
+	username: string
+	password: string
+}
+
+type ErrorState = Partial<Record<'username' | 'password', string>>
+
+const signInErrors: Record<
+	string,
+	{ field: keyof ErrorState; message: string }
+> = {
+	NotAuthorizedException: {
+		field: 'password',
+		message: 'Incorrect email or password',
+	},
+	UserNotFoundException: {
+		field: 'username',
+		message: 'No account with that email',
+	},
+	UserNotConfirmedException: {
+		field: 'username',
+		message: 'Please verify your email before signing in',
+	},
+	TooManyRequestsException: {
+		field: 'password',
+		message: 'Too many attempts, try again shortly',
+	},
+}
 
 export default function SignIn() {
 	const theme = useTheme()
-	const [inputState, setInputState] = useState<SignInPayload>({
-		email: '',
-		password: '',
-	})
+	const router = useRouter()
+	const [form, setForm] = useState<SignInForm>({ username: '', password: '' })
 	const [errorState, setErrorState] = useState<ErrorState>({})
-	const setAccessToken = useAuth().setAccessToken
 
-	// Mutation for signing in
 	const { mutate, isPending } = useMutation<
-		SignInResponse,
-		AppError,
-		SignInPayload
+		SignInOutput,
+		AuthError,
+		SignInInput
 	>({
-		mutationKey: tanstackKeys.SIGN_IN,
-		mutationFn: signinFn,
-		onError: (error: AppError) => {
-			Burnt.toast({
-				title:
-					error.code === errorCodes.UNKNOWN_ERROR
-						? 'An unknown error occurred. Please try again later.'
-						: error.message,
-				preset: 'error',
-			})
+		mutationFn: (input) => signIn(input),
+		onSuccess: async ({ isSignedIn, nextStep }) => {
+			if (!isSignedIn || nextStep.signInStep !== 'DONE') {
+				setErrorState({
+					password: 'Sign-in requires an extra verification step',
+				})
+				return
+			}
+
+			try {
+				const { tokens } = await fetchAuthSession()
+				const idToken = tokens?.idToken?.toString()
+				if (!idToken) {
+					setErrorState({
+						password: 'Could not establish a session, please try again',
+					})
+					return
+				}
+
+				await verifySyncFn()
+				router.replace('/onboarding/onboarding4')
+			} catch {
+				setErrorState({
+					password: 'Could not establish a session, please try again',
+				})
+			}
 		},
-		onSuccess: async (data: SignInResponse) => {
-			if (data.error != null || !data.details) {
-				Burnt.toast({
-					title:
-						data.message ||
-						'An unknown error occurred. Please try again later.',
-					preset: 'error',
-				})
+		onError: (error) => {
+			const known = signInErrors[error.name]
+			if (known) {
+				setErrorState((prev) => ({ ...prev, [known.field]: known.message }))
 				return
 			}
-
-			const tokens = data.details.tokens
-
-			const accessToken = tokens.find((t) => t.type === 'AUTH_ACCESS_TOKEN')
-			const refreshToken = tokens.find((t) => t.type === 'AUTH_REFRESH_TOKEN')
-
-			if (!accessToken || !refreshToken) {
-				Burnt.toast({
-					title: 'Authentication error. Please try again later.',
-					preset: 'error',
-				})
-				return
-			}
-
-			setAccessToken(accessToken.value)
-			await SecureStore.setItemAsync('refreshToken', refreshToken.value)
+			setErrorState((prev) => ({
+				...prev,
+				password: 'Something went wrong, please try again',
+			}))
 		},
 	})
 
-	// Handler for input value changes
-	const handleInputChange = (field: keyof SignInPayload, value: string) => {
-		setInputState((prev) => ({
-			...prev,
-			[field]: value,
-		}))
+	const handleInputChange = (field: keyof SignInForm, value: string) => {
+		setForm((prev) => ({ ...prev, [field]: value }))
 		setErrorState((prev) => ({ ...prev, [field]: '' }))
 	}
 
-	// Handler for clicking the sign-in button
-	const signin = () => {
-		const { success, error, data } = signInSchema.safeParse(inputState)
+	const handleSignIn = () => {
+		const nextErrors: ErrorState = {}
+		if (!form.username.trim() || !form.username.includes('@')) {
+			nextErrors.username = 'Enter a valid email'
+		}
+		if (!form.password) nextErrors.password = 'Password is required'
 
-		if (!success) {
-			setErrorState(
-				Object.fromEntries(
-					error.issues.map(({ path, message }) => [path[0], message]),
-				),
-			)
+		if (Object.keys(nextErrors).length > 0) {
+			setErrorState(nextErrors)
 			return
 		}
 
-		setErrorState({ email: '', password: '' })
-		mutate(data)
+		setErrorState({})
+		mutate({ username: form.username, password: form.password })
 	}
+
+	const errorText = (field: keyof ErrorState) =>
+		errorState[field] ? (
+			<Text
+				style={{
+					color: theme.colors.fault,
+					fontSize: theme.font.sm,
+					marginTop: theme.space.x2s,
+				}}
+			>
+				{errorState[field]}
+			</Text>
+		) : null
 
 	return (
 		<>
@@ -114,7 +148,7 @@ export default function SignIn() {
 					<View
 						style={{
 							backgroundColor: theme.colors.accentTint,
-							borderRadius: 18,
+							borderRadius: theme.radius.card,
 							width: 68,
 							height: 68,
 							alignItems: 'center',
@@ -127,7 +161,7 @@ export default function SignIn() {
 					<Text
 						style={{
 							fontSize: theme.font.lg,
-							fontWeight: '600',
+							fontWeight: theme.fontWeight.semibold,
 							textAlign: 'center',
 							color: theme.colors.textPrimary,
 						}}
@@ -138,7 +172,7 @@ export default function SignIn() {
 						style={{
 							fontSize: theme.font.sm,
 							textAlign: 'center',
-							fontWeight: '400',
+							fontWeight: theme.fontWeight.regular,
 							color: theme.colors.textSecondary,
 							marginTop: theme.space.x2s,
 						}}
@@ -147,60 +181,40 @@ export default function SignIn() {
 					</Text>
 				</View>
 
-				{/* Inputs */}
 				<View style={{ width: '100%', gap: theme.space.x2l }}>
 					<View>
 						<Input
-							label="Email"
-							value={inputState.email}
+							label={t('auth.email')}
+							value={form.username}
 							keyboardType="email-address"
 							autoCapitalize="none"
 							autoCorrect={false}
-							onChangeText={(value) => handleInputChange('email', value)}
-							labelBackground={theme.colors.card}
+							onChangeText={(value) => handleInputChange('username', value)}
+							labelBackground={theme.colors.surfaceRaised}
 						/>
-						{errorState.email ? (
-							<Text
-								style={{
-									color: theme.colors.fault,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								{errorState.email}
-							</Text>
-						) : null}
+						{errorText('username')}
 					</View>
 					<View>
 						<Input
-							label="Password"
-							value={inputState.password}
+							label={t('auth.password')}
+							value={form.password}
 							autoCapitalize="none"
 							autoCorrect={false}
 							autoComplete="password"
 							onChangeText={(value) => handleInputChange('password', value)}
-							labelBackground={theme.colors.card}
-							onSubmitEditing={signin}
+							labelBackground={theme.colors.surfaceRaised}
+							onSubmitEditing={handleSignIn}
 							textContentType="password"
 							secureTextEntry
 						/>
-						{errorState.password ? (
-							<Text
-								style={{
-									color: theme.colors.fault,
-									fontSize: theme.font.sm,
-									marginTop: 4,
-								}}
-							>
-								{errorState.password}
-							</Text>
-						) : null}
+						{errorText('password')}
 					</View>
 				</View>
+
 				<Button
-					label="Sign In"
+					label={t('auth.signIn')}
 					modifier={['full']}
-					onPress={signin}
+					onPress={handleSignIn}
 					iconPosition="right"
 					loading={isPending}
 					icon={

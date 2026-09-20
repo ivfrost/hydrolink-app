@@ -2,12 +2,9 @@ import { useCallback } from 'react'
 
 import * as Burnt from 'burnt'
 
-import { useMqtt } from '@/context/MqttContext'
 import { isReadOnlyStationType } from '@/data/area'
-import { publishableTopics } from '@/services/mqtt'
+import { sendDeviceCommand } from '@/services/deviceCommands'
 import { StationAction } from '@/types/area'
-import { MqttCommand } from '@/types/mqtt'
-import { getCommandTopic } from '@/utils/mqttTopics'
 
 import { useAreaMqttData } from './useAreaMqttData'
 
@@ -17,7 +14,6 @@ export default function useStationAction(
 	pendingStationActions: Record<number, { targetState: 'Running' | 'Idle' }>,
 ) {
 	const { allStations, activeSolenoid } = useAreaMqttData(areaKey)
-	const { publish } = useMqtt()
 
 	// Check state machine context passed from screen
 	const isStationActionPending = useCallback(
@@ -29,7 +25,7 @@ export default function useStationAction(
 
 	// Function to initiate a station action
 	const initiateStationAction = useCallback(
-		(stationId: number, action: StationAction) => {
+		async (stationId: number, action: StationAction) => {
 			// Ignore commands for a station that already has an in-flight
 			// action. This guards against rapid taps before the machine
 			// re-renders the pending state and keeps multiple quick starts
@@ -66,35 +62,35 @@ export default function useStationAction(
 
 			const targetState = action.action === 'Start' ? 'Running' : 'Idle'
 
-			// Tell machine to mark action as pending in context
+			const command = {
+				action: action.action,
+				stationId,
+				cause: action.cause,
+				durationMs: action.durationMs,
+			}
+
+			try {
+				await sendDeviceCommand(areaKey, command)
+			} catch (error) {
+				console.error(`Failed to send command to ${areaKey}:`, error)
+				Burnt.toast({ title: 'Could not send command', preset: 'error' })
+				return
+			}
+
+			// API acceptance is not device confirmation. The state machine remains
+			// pending until the MQTT status stream reports the target state.
 			send({
 				type: 'INITIATE_STATION_ACTION',
 				stationId,
 				targetState,
 			})
 
-			const command: MqttCommand = {
-				action: action.action,
-				stationId: stationId,
-				cause: action.cause,
-				durationMs: action.durationMs,
-			}
-			const serializedCommand = JSON.stringify(command)
-			const areaTopic = publishableTopics.find((topic) =>
-				topic.includes(areaKey),
-			)
-			if (!areaTopic) {
-				console.error(`No publishable topic found for areaKey: ${areaKey}`)
-				return
-			}
-			publish(getCommandTopic(areaTopic), serializedCommand)
-
 			Burnt.toast({
 				title: `Sent ${action.action} command to station ${stationId + 1}`,
 				preset: 'done',
 			})
 		},
-		[areaKey, publish, allStations, send, pendingStationActions],
+		[areaKey, allStations, send, pendingStationActions],
 	)
 
 	// Helper for action button state management

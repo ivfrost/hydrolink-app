@@ -34,6 +34,7 @@ export const areaUnlinkMutationFn = async (areaKey: string): Promise<void> => {
 			}
 			throw new AppError(data.code, data.message)
 		}
+		console.log(data)
 		throw new AppError('UNKNOWN_ERROR', data.message)
 	}
 }

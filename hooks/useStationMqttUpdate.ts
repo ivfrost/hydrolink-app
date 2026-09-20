@@ -1,8 +1,7 @@
 import { useCallback, useEffect } from 'react'
 
-import { useMqtt } from '@/context/MqttContext'
+import { sendDeviceCommand } from '@/services/deviceCommands'
 import { useAreaStore } from '@/stores/areaStore'
-import { StationType } from '@/types/area'
 
 import { useAreaMqttData } from './useAreaMqttData'
 
@@ -11,7 +10,6 @@ export default function useStationMqttUpdate(
 	changeSet: Map<string, Record<number, string | undefined>>,
 	send: (message: any) => void,
 ) {
-	const mqtt = useMqtt()
 	const { allStations } = useAreaMqttData(areaKey)
 
 	// On MQTT message, if there is a pending station field change and it has
@@ -40,41 +38,48 @@ export default function useStationMqttUpdate(
 	// ESP publishes the new state back to the MQTT topic, store updates the UI
 	// TODO: might be worth saving directly to API in a future, or at least
 	const setNewValueForStation = useCallback(
-		(
+		async (
 			stationId: number,
 			field: 'type' | 'name' | 'description' | 'imageUrl',
 			newValue: string,
-		): boolean => {
+		): Promise<boolean> => {
 			const currentValue = allStations?.find((s) => s.id === stationId)?.[
 				field as keyof (typeof allStations)[number]
 			] as string | undefined
 
 			if (currentValue === newValue) return false
 
-			// flushing last good known copy to API regularly, else there's no offline
-			// access to these values.
-			send({ type: 'SET_STATION_FIELD', stationId, field, newValue })
+			const action =
+				field === 'imageUrl'
+					? 'SetImage'
+					: `Set${field[0].toUpperCase()}${field.slice(1)}`
+			try {
+				await sendDeviceCommand(areaKey, {
+					action: action as
+						| 'SetType'
+						| 'SetName'
+						| 'SetDescription'
+						| 'SetImage',
+					stationId,
+					cause: 'Manual',
+					...(field === 'type' ? { type: newValue } : {}),
+					...(field === 'name' ? { name: newValue } : {}),
+					...(field === 'description' ? { description: newValue } : {}),
+					...(field === 'imageUrl' ? { imageUrl: newValue } : {}),
+				})
+			} catch (error) {
+				console.error(`Failed to update ${field} for ${areaKey}:`, error)
+				return false
+			}
 
-			// Optimistically update the store so the "saved" value matches the
-			// draft immediately. This lets the inline confirm button disappear
-			// without waiting for the ESP to echo the change back.
+			send({ type: 'SET_STATION_FIELD', stationId, field, newValue })
 			useAreaStore
 				.getState()
 				.setStationField(areaKey, stationId, field, newValue)
 
-			if (field === 'type') {
-				mqtt.setTypeForAreaStation(areaKey, stationId, newValue as StationType)
-			} else if (field === 'name') {
-				mqtt.setNameForAreaStation(areaKey, stationId, newValue)
-			} else if (field === 'description') {
-				mqtt.setDescriptionForAreaStation(areaKey, stationId, newValue)
-			} else if (field === 'imageUrl') {
-				mqtt.setImageUrlForAreaStation(areaKey, stationId, newValue)
-			}
-
 			return true
 		},
-		[mqtt, send, areaKey, allStations],
+		[send, areaKey, allStations],
 	)
 
 	return {

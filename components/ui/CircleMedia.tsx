@@ -39,7 +39,7 @@ export function CircleMedia({
 					height: size,
 					borderRadius: size / 2,
 					overflow: 'hidden',
-					backgroundColor: theme.colors.card,
+					backgroundColor: theme.colors.surfaceRaised,
 				}}
 			>
 				{children}

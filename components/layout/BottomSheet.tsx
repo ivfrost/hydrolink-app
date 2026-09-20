@@ -53,7 +53,10 @@ export default function BottomSheet({
 			keyboardBehavior="interactive"
 			keyboardBlurBehavior="restore"
 			backdropComponent={renderBackdrop}
-			backgroundStyle={{ backgroundColor: theme.colors.card }}
+			backgroundStyle={{ backgroundColor: theme.colors.surfaceRaised }}
+			handleIndicatorStyle={{
+				backgroundColor: theme.colors.textMuted,
+			}}
 			animationConfigs={animConfigs}
 			animateOnMount={false}
 			index={-1}
