@@ -111,11 +111,8 @@ bun start                    # expo start
 
 Other scripts:
 
-- `bun run android` / `bun run ios` build and run a dev client (needed for MQTT and camera)
+- `bun run android` build and run a dev client (needed for MQTT and camera)
 - `bun run lint` runs ESLint through `expo lint`
-
-> `bun run server` is defined in `package.json` but the `mocks/` directory is not present in this
-> repository, so it will fail until that mock server is added.
 
 The AWS values are not secrets. The user pool id, app client id, identity pool id, region, and IoT
 endpoint are all public identifiers, but they are kept in env so the same build can point at a dev
