@@ -218,6 +218,8 @@ a configured dev stack; the app itself only needs the API base URL and the Cogni
 
 ## License
 
-Released under the
-[Creative Commons Attribution-NonCommercial 4.0 International](LICENSE) license. Noncommercial use
-is fine; any other use needs permission.
+Copyright (c) 2026 ivfrost. All rights reserved.
+
+The source is public for viewing and reference. No permission is granted to use, copy, modify, or
+redistribute it without prior written permission. See [LICENSE](LICENSE). Third-party dependencies
+remain under their own licenses.
