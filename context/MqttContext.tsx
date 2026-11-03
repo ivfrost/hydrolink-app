@@ -83,8 +83,11 @@ export const MqttProvider: React.FC<{ children: React.ReactNode }> = ({
 			setMqttConnectionStateHandler(setStatus)
 
 			initMqtt()
-				.then(() => {
-					if (disposed) return
+				.then((connected) => {
+					// No linked areas (nothing to subscribe to) or the connection
+					// failed: leave the status as set by the service, don't claim
+					// CONNECTED and don't ask for a status snapshot.
+					if (disposed || !connected) return
 					setStatus('CONNECTED')
 					// ESP presence is not retained, so a client that subscribes
 					// after the device booted never sees the online ping. Ask every

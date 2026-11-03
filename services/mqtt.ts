@@ -13,7 +13,7 @@ import { normalizeMqttPayload } from '@/utils/mqttPayload'
 
 export let mqttClient: MqttClient | null = null
 export let subscribedTopics: string[] = []
-let activeRun: Promise<void> | null = null
+let activeRun: Promise<boolean> | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 let reconnectQueued = false
 let connectionGeneration = 0
@@ -165,11 +165,12 @@ export function endMqtt(): Promise<void> {
 	return teardownPromise
 }
 
-export const initMqtt = async (): Promise<void> => {
+export const initMqtt = async (): Promise<boolean> => {
 	if (activeRun) {
 		reconnectQueued = true
-		return activeRun.then(() => {
+		return activeRun.then((connected) => {
 			if (reconnectQueued) return initMqtt()
+			return connected
 		})
 	}
 
@@ -204,6 +205,17 @@ export const initMqtt = async (): Promise<void> => {
 					getUniqueDeviceId(),
 					getLiveTopics(),
 				])
+
+			// With no linked areas there are no topics, so the API never attaches
+			// an IoT policy to this identity and the gateway rejects CONNECT. Stay
+			// idle instead of retrying forever; linking an area calls reconnect().
+			if (topicsToSubscribe.length === 0) {
+				subscribedTopics = []
+				console.info('[AWS IoT] no linked areas; read channel stays idle')
+				connectionStateHandler?.('DISCONNECTED')
+				return false
+			}
+
 			// A per-connection nonce keeps the client id unique across reconnects and
 			// remounts. AWS IoT allows only one connection per client id and silently
 			// drops a duplicate, which shows up as "connack timeout". The IoT policy
@@ -303,10 +315,13 @@ export const initMqtt = async (): Promise<void> => {
 					console.warn(`[AWS IoT] subscribe failed for ${topic}:`, error)
 				}
 			}
+
+			return true
 		} catch (error) {
 			console.error('[AWS IoT] failed to initialize read channel:', error)
 			mqttClient = null
 			scheduleReconnect(generation)
+			return false
 		} finally {
 			activeRun = null
 		}

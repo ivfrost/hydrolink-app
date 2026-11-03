@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Text, View } from 'react-native'
 
 import { MaterialIcons } from '@expo/vector-icons'
@@ -87,6 +87,15 @@ export default function Register() {
 	})
 	const [confirmationCode, setConfirmationCode] = useState('')
 	const [errorState, setErrorState] = useState<ErrorState>({})
+	// Seconds left before another code can be requested. Cognito rate-limits
+	// resends, so keep the button disabled instead of surfacing an error.
+	const [resendCooldown, setResendCooldown] = useState(0)
+
+	useEffect(() => {
+		if (resendCooldown === 0) return
+		const timer = setTimeout(() => setResendCooldown((s) => s - 1), 1000)
+		return () => clearTimeout(timer)
+	}, [resendCooldown])
 
 	const handleInputChange = (field: keyof SignUpForm, value: string) => {
 		setForm((prev) => ({ ...prev, [field]: value }))
@@ -106,6 +115,7 @@ export default function Register() {
 					preset: 'done',
 				})
 				setStep('confirm')
+				setResendCooldown(60)
 			}
 		},
 		onError: (error) => {
@@ -162,6 +172,7 @@ export default function Register() {
 				title: 'A new code was sent to your email.',
 				preset: 'done',
 			})
+			setResendCooldown(60)
 		},
 		onError: () => {
 			Burnt.toast({
@@ -173,7 +184,9 @@ export default function Register() {
 
 	const handleSignUp = () => {
 		const nextErrors: ErrorState = {}
-		if (!form.fullName.trim()) nextErrors.fullName = 'Full name is required'
+		if (form.fullName.trim().length < 6) {
+			nextErrors.fullName = 'Full name must be at least 6 characters long'
+		}
 		if (form.username.trim().length < 5) {
 			nextErrors.username = 'Username must be at least 5 characters'
 		}
@@ -353,10 +366,16 @@ export default function Register() {
 							{errorText('confirmationCode')}
 						</View>
 						<Button
-							label={resendPending ? 'Sending…' : 'Resend code'}
+							label={
+								resendPending
+									? 'Sending…'
+									: resendCooldown > 0
+										? `Resend in ${resendCooldown}s`
+										: 'Resend code'
+							}
 							variant="tertiary"
 							onPress={() => resendMutate(form.email)}
-							disabled={resendPending}
+							disabled={resendPending || resendCooldown > 0}
 						/>
 					</View>
 				)}
